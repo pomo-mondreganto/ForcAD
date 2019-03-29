@@ -1,0 +1,138 @@
+import os
+import subprocess
+from typing import Tuple
+
+import helpers.models
+import helpers.status
+from helpers.status import TaskStatus
+
+
+def run_check_command(checker_path: str,
+                      env_path: str,
+                      host: str,
+                      team_name: str,
+                      timeout: int,
+                      logger) -> Tuple[helpers.status.TaskStatus, str]:
+    check_command = [
+        checker_path,
+        'check',
+        host,
+    ]
+
+    env = os.environ.copy()
+    env['PATH'] = f"{env_path}:{env['PATH']}"
+
+    try:
+        check_result = subprocess.run(
+            check_command,
+            capture_output=True,
+            timeout=timeout,
+            env=env,
+        )
+
+        try:
+            status = TaskStatus(check_result.returncode)
+            message = check_result.stderr[:1024].decode().strip()
+        except ValueError:
+            status = TaskStatus.CHECK_FAILED
+            message = 'Check failed'
+            logger.warning(
+                f'Check of team {team_name} failed with exit code {check_result.returncode}, '
+                f'stdout: {check_result.stdout}\nstderr: {check_result.stderr}'
+            )
+
+    except subprocess.TimeoutExpired:
+        status = TaskStatus.DOWN
+        message = 'Check timeout'
+
+    return status, message
+
+
+def run_put_command(checker_path: str,
+                    env_path: str,
+                    host: str,
+                    place: int,
+                    flag: helpers.models.Flag,
+                    team_name: str,
+                    timeout: int,
+                    logger) -> Tuple[helpers.status.TaskStatus, str]:
+    put_command = [
+        checker_path,
+        'put',
+        host,
+        'lolkek',
+        flag.flag,
+        str(place),
+    ]
+
+    env = os.environ.copy()
+    env['PATH'] = f"{env_path}:{env['PATH']}"
+
+    try:
+        put_result = subprocess.run(
+            put_command,
+            capture_output=True,
+            timeout=timeout,
+            env=env,
+        )
+
+        try:
+            status = TaskStatus(put_result.returncode)
+            message = put_result.stderr[:1024].decode().strip()
+        except ValueError:
+            status = TaskStatus.CHECK_FAILED
+            message = 'Check failed'
+            logger.warning(
+                f'Put for team {team_name} failed with exit code {put_result.returncode}, '
+                f'stderr: {put_result.stderr}'
+            )
+
+    except subprocess.TimeoutExpired:
+        status = TaskStatus.DOWN
+        message = 'Put timeout'
+
+    return status, message
+
+
+def run_get_command(checker_path: str,
+                    env_path: str,
+                    host: str,
+                    flag: helpers.models.Flag,
+                    team_name: str,
+                    timeout: int,
+                    logger) -> Tuple[helpers.status.TaskStatus, str]:
+    get_command = [
+        checker_path,
+        'get',
+        host,
+        flag.flag_data,
+        flag.flag,
+    ]
+
+    env = os.environ.copy()
+    env['PATH'] = f"{env_path}:{env['PATH']}"
+
+    try:
+        get_result = subprocess.run(
+            get_command,
+            capture_output=True,
+            timeout=timeout,
+            env=env,
+        )
+
+        try:
+            status = TaskStatus(get_result.returncode)
+            message = get_result.stderr[:1024].decode().strip()
+        except ValueError:
+            status = TaskStatus.CHECK_FAILED
+            message = 'Check failed'
+            logger.warning(
+                f'Get for team {team_name} failed with exit code {get_result.returncode}, '
+                f'stderr: {get_result.stderr}'
+            )
+
+    except subprocess.TimeoutExpired:
+        status = TaskStatus.DOWN
+        message = 'Get timeout'
+
+    return status, message

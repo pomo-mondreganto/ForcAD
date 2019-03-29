@@ -1,0 +1,2 @@
+class FlagSubmitException(Exception):
+    pass
