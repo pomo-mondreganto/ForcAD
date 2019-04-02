@@ -7,6 +7,57 @@ import helpers.status
 from helpers.status import TaskStatus
 
 
+def run_command_gracefully(*popenargs,
+                           input=None,
+                           capture_output=False,
+                           timeout=None,
+                           check=False,
+                           terminate_timeout=1,
+                           **kwargs):
+    if input is not None:
+        kwargs['stdin'] = subprocess.PIPE
+
+    if capture_output:
+        kwargs['stdout'] = subprocess.PIPE
+        kwargs['stderr'] = subprocess.PIPE
+
+    with subprocess.Popen(*popenargs, **kwargs) as proc:
+        try:
+            stdout, stderr = proc.communicate(input, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.terminate()
+            try:
+                stdout, stderr = proc.communicate(input, timeout=terminate_timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                stdout, stderr = proc.communicate()
+            except:
+                proc.kill()
+                raise
+
+            raise subprocess.TimeoutExpired(
+                proc.args,
+                timeout=timeout,
+                output=stdout,
+                stderr=stderr,
+            )
+        except:
+            proc.kill()
+            raise
+
+        retcode = proc.poll()
+
+        if check and retcode:
+            raise subprocess.CalledProcessError(
+                retcode,
+                proc.args,
+                output=stdout,
+                stderr=stderr
+            )
+
+    return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr)
+
+
 def run_check_command(checker_path: str,
                       env_path: str,
                       host: str,
@@ -23,7 +74,7 @@ def run_check_command(checker_path: str,
     env['PATH'] = f"{env_path}:{env['PATH']}"
 
     try:
-        check_result = subprocess.run(
+        check_result = run_command_gracefully(
             check_command,
             capture_output=True,
             timeout=timeout,
@@ -69,7 +120,7 @@ def run_put_command(checker_path: str,
     env['PATH'] = f"{env_path}:{env['PATH']}"
 
     try:
-        put_result = subprocess.run(
+        put_result = run_command_gracefully(
             put_command,
             capture_output=True,
             timeout=timeout,
@@ -113,7 +164,7 @@ def run_get_command(checker_path: str,
     env['PATH'] = f"{env_path}:{env['PATH']}"
 
     try:
-        get_result = subprocess.run(
+        get_result = run_command_gracefully(
             get_command,
             capture_output=True,
             timeout=timeout,
