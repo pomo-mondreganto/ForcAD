@@ -1,4 +1,5 @@
 import os
+import secrets
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,7 +16,8 @@ def run():
     CREATE TABLE IF NOT EXISTS Teams(
         id SERIAL PRIMARY KEY,
         name varchar(255) not null default '',
-        ip inet
+        ip inet,
+        token varchar(16) not null default ''
     )'''
 
     conn = storage.get_db_pool().getconn()
@@ -28,8 +30,9 @@ def run():
 
     for team_conf in teams_config:
         team = models.Team(id=None, **team_conf)
-        query = 'INSERT INTO Teams (name, ip) VALUES (%s, %s) RETURNING id'
-        curs.execute(query, (team.name, team.ip))
+        team_token = secrets.token_hex(8)
+        query = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
+        curs.execute(query, (team.name, team.ip, team_token))
         team.id, = curs.fetchone()
         teams.append(team)
 

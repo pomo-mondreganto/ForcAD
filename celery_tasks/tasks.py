@@ -156,6 +156,9 @@ def process_round():
 
     logger.info(f'Processing round {current_round}')
 
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        pipeline.set('round', current_round - 1)
+
     teams = storage.teams.get_teams()
     for team in teams:
         process_team.delay(team.to_json(), current_round)

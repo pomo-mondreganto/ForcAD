@@ -15,3 +15,14 @@ def get_teams() -> List[models.Team]:
         teams = list(models.Team.from_json(team) for team in teams)
 
     return teams
+
+
+def get_team_id_by_token(token: str) -> int:
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        cached, = pipeline.exists('teams:cached').execute()
+        if not cached:
+            caching.cache_teams()
+
+        team_id, = pipeline.get(f'team:token:{token}').execute()
+
+    return team_id

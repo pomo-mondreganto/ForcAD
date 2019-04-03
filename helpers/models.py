@@ -27,18 +27,21 @@ class Team(Model):
     id: Optional[int]
     name: str
     ip: str
+    token: str
 
-    def __init__(self, id: Optional[int], name: str, ip: str):
+    def __init__(self, id: Optional[int], name: str, ip: str, token: str):
         super(Team, self).__init__()
         self.id = id
         self.name = name
         self.ip = ip
+        self.token = token
 
     def to_json(self):
         d = {
             'id': self.id,
             'name': self.name,
             'ip': self.ip,
+            'token': self.token,
         }
         return json.dumps(d)
 

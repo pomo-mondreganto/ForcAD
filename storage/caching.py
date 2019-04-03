@@ -15,7 +15,6 @@ def cache_teams():
 
     teams = curs.fetchall()
     teams = list(models.Team.from_dict(team) for team in teams)
-    print(teams)
 
     storage.get_db_pool().putconn(conn)
 
@@ -23,6 +22,7 @@ def cache_teams():
         pipeline.delete('teams', 'teams:cached')
         for team in teams:
             pipeline.sadd('teams', team.to_json())
+            pipeline.set(f'team:token:{team.token}', team.id)
         pipeline.set('teams:cached', 1)
         pipeline.execute()
 

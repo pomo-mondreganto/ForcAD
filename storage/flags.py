@@ -12,6 +12,8 @@ from storage import caching
 def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.sadd(f'team:{attacker}:stolen_flags', flag.id)
+        pipeline.incr(f'team:{attacker}:task:{flag.task_id}:stolen')
+        pipeline.incr(f'team:{flag.team_id}:task:{flag.task_id}:lost')
 
     query = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
     conn = storage.get_db_pool().getconn()
