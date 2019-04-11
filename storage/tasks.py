@@ -27,6 +27,7 @@ def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskSt
     conn.commit()
     storage.get_db_pool().putconn(conn)
 
+    # TODO: this might be obsolete
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set(f'team_{team_id}:task_{task_id}:cached', 1)
         pipeline.set(f'team_{team_id}:task_{task_id}:status', status.value)

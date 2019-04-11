@@ -1,6 +1,6 @@
 round_time: 60
 flag_lifetime: 5
-start_time: 2019-03-29 13:21:00 +0000 # UTC TIME
+start_time: 2019-03-29 13:21:00+03:00
 tasks:
   - name: Test task
     checker: /path/to/checker/check.py
