@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Tuple
+from typing import Tuple, List
 
 import helpers.models
 import helpers.status
@@ -58,6 +58,46 @@ def run_command_gracefully(*popenargs,
     return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr)
 
 
+def get_patched_environ(env_path):
+    env = os.environ.copy()
+    env['PATH'] = f"{env_path}:{env['PATH']}"
+    return env
+
+
+def run_generic_command(command: List,
+                        command_type: str,
+                        env_path: str,
+                        timeout: int,
+                        team_name: str,
+                        logger):
+    env = get_patched_environ(env_path=env_path)
+
+    try:
+        result = run_command_gracefully(
+            command,
+            capture_output=True,
+            timeout=timeout,
+            env=env,
+        )
+
+        try:
+            status = TaskStatus(result.returncode)
+            message = result.stderr[:1024].decode().strip()
+        except ValueError:
+            status = TaskStatus.CHECK_FAILED
+            message = 'Check failed'
+            logger.warning(
+                f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
+                f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
+            )
+
+    except subprocess.TimeoutExpired:
+        status = TaskStatus.DOWN
+        message = f'{command_type.upper()} timeout'
+
+    return status, message
+
+
 def run_check_command(checker_path: str,
                       env_path: str,
                       host: str,
@@ -70,33 +110,14 @@ def run_check_command(checker_path: str,
         host,
     ]
 
-    env = os.environ.copy()
-    env['PATH'] = f"{env_path}:{env['PATH']}"
-
-    try:
-        check_result = run_command_gracefully(
-            check_command,
-            capture_output=True,
-            timeout=timeout,
-            env=env,
-        )
-
-        try:
-            status = TaskStatus(check_result.returncode)
-            message = check_result.stderr[:1024].decode().strip()
-        except ValueError:
-            status = TaskStatus.CHECK_FAILED
-            message = 'Check failed'
-            logger.warning(
-                f'Check of team {team_name} failed with exit code {check_result.returncode}, '
-                f'stdout: {check_result.stdout}\nstderr: {check_result.stderr}'
-            )
-
-    except subprocess.TimeoutExpired:
-        status = TaskStatus.DOWN
-        message = 'Check timeout'
-
-    return status, message
+    return run_generic_command(
+        command=check_command,
+        command_type='put',
+        env_path=env_path,
+        timeout=timeout,
+        team_name=team_name,
+        logger=logger,
+    )
 
 
 def run_put_command(checker_path: str,
@@ -116,33 +137,14 @@ def run_put_command(checker_path: str,
         str(place),
     ]
 
-    env = os.environ.copy()
-    env['PATH'] = f"{env_path}:{env['PATH']}"
-
-    try:
-        put_result = run_command_gracefully(
-            put_command,
-            capture_output=True,
-            timeout=timeout,
-            env=env,
-        )
-
-        try:
-            status = TaskStatus(put_result.returncode)
-            message = put_result.stderr[:1024].decode().strip()
-        except ValueError:
-            status = TaskStatus.CHECK_FAILED
-            message = 'Check failed'
-            logger.warning(
-                f'Put for team {team_name} failed with exit code {put_result.returncode}, '
-                f'stderr: {put_result.stderr}'
-            )
-
-    except subprocess.TimeoutExpired:
-        status = TaskStatus.DOWN
-        message = 'Put timeout'
-
-    return status, message
+    return run_generic_command(
+        command=put_command,
+        command_type='put',
+        env_path=env_path,
+        timeout=timeout,
+        team_name=team_name,
+        logger=logger,
+    )
 
 
 def run_get_command(checker_path: str,
@@ -163,27 +165,11 @@ def run_get_command(checker_path: str,
     env = os.environ.copy()
     env['PATH'] = f"{env_path}:{env['PATH']}"
 
-    try:
-        get_result = run_command_gracefully(
-            get_command,
-            capture_output=True,
-            timeout=timeout,
-            env=env,
-        )
-
-        try:
-            status = TaskStatus(get_result.returncode)
-            message = get_result.stderr[:1024].decode().strip()
-        except ValueError:
-            status = TaskStatus.CHECK_FAILED
-            message = 'Check failed'
-            logger.warning(
-                f'Get for team {team_name} failed with exit code {get_result.returncode}, '
-                f'stderr: {get_result.stderr}'
-            )
-
-    except subprocess.TimeoutExpired:
-        status = TaskStatus.DOWN
-        message = 'Get timeout'
-
-    return status, message
+    return run_generic_command(
+        command=get_command,
+        command_type='get',
+        env_path=env_path,
+        timeout=timeout,
+        team_name=team_name,
+        logger=logger
+    )

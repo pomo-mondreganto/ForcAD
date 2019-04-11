@@ -2,7 +2,7 @@ import os
 import random
 import secrets
 
-from celery import shared_task
+from celery import shared_task, chain
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
 
@@ -29,7 +29,7 @@ def test_task():
 
 
 @shared_task
-def run_checker(team_json, task_json, round):
+def check_action(team_json, task_json):
     team = models.Team.from_json(team_json)
     task = models.Task.from_json(task_json)
 
@@ -55,7 +55,18 @@ def run_checker(team_json, task_json, round):
 
     if status != TaskStatus.UP:
         storage.tasks.update_task_status(task_id=task.id, team_id=team.id, status=status, message=message)
-        return
+        return False
+
+    return True
+
+
+@shared_task
+def put_action(check_ok, team_json, task_json, round):
+    if not check_ok:
+        return False
+
+    team = models.Team.from_json(team_json)
+    task = models.Task.from_json(task_json)
 
     logger.info(f'Running PUT {task.puts} time(s) for team {team.id} task {task.id}')
 
@@ -88,16 +99,27 @@ def run_checker(team_json, task_json, round):
             ok = False
             break
 
-    if not ok:
-        return
+    return ok
+
+
+@shared_task
+def get_action(put_ok, team_json, task_json, round):
+    if not put_ok:
+        return False
+
+    team = models.Team.from_json(team_json)
+    task = models.Task.from_json(task_json)
 
     flag_lifetime = config.get_game_config()['flag_lifetime']
 
-    rounds_to_check = list(set(max(1, x) for x in range(0, flag_lifetime)))
-    rounds_to_check = random.shuffle(rounds_to_check)
+    rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
+    random.shuffle(rounds_to_check)
     rounds_to_check = rounds_to_check[:task.gets]
 
     logger.info(f'Running GET on rounds {rounds_to_check} for team {team.id} task {task.id}')
+
+    status = TaskStatus.UP
+    message = ''
 
     for get_round in rounds_to_check:
         try:
@@ -125,6 +147,17 @@ def run_checker(team_json, task_json, round):
             break
 
     storage.tasks.update_task_status(task_id=task.id, team_id=team.id, status=status, message=message)
+
+
+@shared_task
+def run_checker(team_json, task_json, round):
+    chained = chain(
+        check_action.s(team_json, task_json),
+        put_action.s(team_json, task_json, round),
+        get_action.s(team_json, task_json, round),
+    )
+
+    chained.apply_async()
 
 
 @shared_task
@@ -158,6 +191,10 @@ def process_round():
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('round', current_round - 1)
+        pipeline.execute()
+
+    if current_round > 1:
+        storage.caching.cache_teamtasks(current_round - 1)
 
     teams = storage.teams.get_teams()
     for team in teams:

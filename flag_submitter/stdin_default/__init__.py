@@ -29,8 +29,8 @@ while True:
     except exceptions.FlagSubmitException as e:
         print(e)
         continue
+    else:
+        storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
+        # TODO: rating system, points
 
-    storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
-    # TODO: rating system, points
-
-    print('Flag accepted!')
+        print('Flag accepted!')

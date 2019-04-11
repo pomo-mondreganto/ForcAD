@@ -15,10 +15,18 @@ def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
         pipeline.incr(f'team:{attacker}:task:{flag.task_id}:stolen')
         pipeline.incr(f'team:{flag.team_id}:task:{flag.task_id}:lost')
 
-    query = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
+
+    query = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
     curs.execute(query, (attacker, flag.id))
+
+    query = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s"
+    curs.execute(query, (flag.team_id,))
+
+    query = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s"
+    curs.execute(query, (attacker,))
+
     conn.commit()
     storage.get_db_pool().putconn(conn)
 
@@ -91,14 +99,14 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
     return flag
 
 
-def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
+def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.models.Flag:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('cached_flags').execute()
+        cached, = pipeline.exists('flags:cached').execute()
         if not cached:
             caching.cache_last_flags(round)
 
-        pipeline.exists(f'flag:str:{flag_str}')
-        pipeline.get(f'flag:str:{flag_str}')
+        pipeline.exists(f'flag:{field_name}:{field_value}')
+        pipeline.get(f'flag:{field_name}:{field_value}')
         flag_exists, flag_json = pipeline.execute()
 
         if not flag_exists:
@@ -107,24 +115,14 @@ def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
         flag = helpers.models.Flag.from_json(flag_json)
 
     return flag
+
+
+def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
+    return get_flag_by_field(field_name='str', field_value=flag_str, round=round)
 
 
 def get_flag_by_id(flag_id: int, round: int) -> helpers.models.Flag:
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('cached:flags').execute()
-        if not cached:
-            caching.cache_last_flags(round)
-
-        pipeline.exists(f'flag:id:{flag_id}')
-        pipeline.get(f'flag:id:{flag_id}')
-        flag_exists, flag_json = pipeline.execute()
-
-        if not flag_exists:
-            raise helpers.exceptions.FlagSubmitException('Invalid flag')
-
-        flag = helpers.models.Flag.from_json(flag_json)
-
-    return flag
+    return get_flag_by_field(field_name='id', field_value=flag_id, round=round)
 
 
 def get_random_round_flag(team_id: int, task_id: int, round: int, current_round: int) -> helpers.models.Flag:

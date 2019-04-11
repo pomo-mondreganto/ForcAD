@@ -29,8 +29,8 @@ def run():
     teams = []
 
     for team_conf in teams_config:
-        team = models.Team(id=None, **team_conf)
         team_token = secrets.token_hex(8)
+        team = models.Team(id=None, **team_conf, token=team_token)
         query = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
         curs.execute(query, (team.name, team.ip, team_token))
         team.id, = curs.fetchone()
@@ -101,6 +101,8 @@ def run():
         task_id INTEGER,
         team_id INTEGER,
         status INTEGER,
+        stolen INTEGER default 0,
+        lost INTEGER default 0,
         message varchar(1024) NOT NULL DEFAULT ''
     )'''
 

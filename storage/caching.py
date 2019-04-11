@@ -1,3 +1,5 @@
+import json
+
 from psycopg2 import extras
 
 import config
@@ -106,16 +108,32 @@ def cache_last_flags(round: int):
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete('cached_flags')
-        rflags = []
-        for flag_d in flags:
-            flag = helpers.models.Flag.from_dict(flag_d)
-            rflags.append(flag)
+        pipeline.delete('flags:cached')
+        flag_models = []
+        for flag_dict in flags:
+            flag = helpers.models.Flag.from_dict(flag_dict)
+            flag_models.append(flag)
             pipeline.delete(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}')
-        for flag in rflags:
+
+        for flag in flag_models:
             pipeline.set(f'flag_id:{flag.id}', flag.to_json())
             pipeline.set(f'flag_str:{flag.flag}', flag.to_json())
             pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
 
-        pipeline.set(f'cached_flags', 1)
+        pipeline.set(f'flags:cached', 1)
+        pipeline.execute()
+
+
+def cache_teamtasks(round):
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor(cursor_factory=extras.DictCursor)
+
+    query = "SELECT * from teamtasks"
+    curs.execute(query)
+    results = curs.fetchall()
+
+    data = json.dumps(results)
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        pipeline.set(f'teamtasks:{round}', data)
+        pipeline.set(f'teamtasks:{round}:cached', 1)
         pipeline.execute()

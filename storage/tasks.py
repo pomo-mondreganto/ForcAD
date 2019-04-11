@@ -31,3 +31,9 @@ def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskSt
         pipeline.set(f'team_{team_id}:task_{task_id}:status', status.value)
         pipeline.set(f'team_{team_id}:task_{task_id}:message', message)
         pipeline.execute()
+
+
+def get_teamtasks(round: int):
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        result = pipeline.get(f'teamtasks:{round}').execute()
+        return result,

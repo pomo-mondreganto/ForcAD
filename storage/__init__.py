@@ -2,7 +2,7 @@ import redis
 from psycopg2 import pool
 
 import config
-from storage import flags, teams, tasks
+from storage import flags, teams, tasks, game, caching
 
 _redis_storage = None
 _db_pool = None
