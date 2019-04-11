@@ -126,7 +126,7 @@ def cache_last_flags(round: int):
 
 def cache_teamtasks(round):
     conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.DictCursor)
+    curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
     query = "SELECT * from teamtasks"
     curs.execute(query)

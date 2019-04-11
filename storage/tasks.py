@@ -1,3 +1,4 @@
+import json
 from typing import List
 
 import helpers.status
@@ -35,5 +36,7 @@ def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskSt
 
 def get_teamtasks(round: int):
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        result = pipeline.get(f'teamtasks:{round}').execute()
-        return result,
+        result, = pipeline.get(f'teamtasks:{round}').execute()
+        if not result:
+            return None
+        return json.loads(result.decode())
