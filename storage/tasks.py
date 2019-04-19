@@ -20,24 +20,38 @@ def get_tasks() -> List[models.Task]:
 
 
 def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskStatus, message: str):
-    query = "UPDATE teamtasks SET status = %s, message = %s WHERE task_id = %s AND team_id = %s"
+    add = 0
+    if status == helpers.status.TaskStatus.UP:
+        add = 1
+
+    query = (
+        f"UPDATE teamtasks SET status = %s, message = %s, up_rounds = up_rounds + %s "
+        "WHERE task_id = %s AND team_id = %s"
+    )
+
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
-    curs.execute(query, (status.value, message, task_id, team_id))
+    curs.execute(
+        query,
+        (
+            status.value,
+            message,
+            add,
+            task_id,
+            team_id,
+        )
+    )
+
     conn.commit()
     storage.get_db_pool().putconn(conn)
-
-    # TODO: this might be obsolete
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.set(f'team_{team_id}:task_{task_id}:cached', 1)
-        pipeline.set(f'team_{team_id}:task_{task_id}:status', status.value)
-        pipeline.set(f'team_{team_id}:task_{task_id}:message', message)
-        pipeline.execute()
 
 
 def get_teamtasks(round: int):
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        result, = pipeline.get(f'teamtasks:{round}').execute()
-        if not result:
+        pipeline.get(f'teamtasks:{round}:cached')
+        pipeline.get(f'teamtasks:{round}')
+        cached, result = pipeline.execute()
+
+        if not cached:
             return None
         return json.loads(result.decode())

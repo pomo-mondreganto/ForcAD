@@ -103,6 +103,8 @@ def run():
         status INTEGER,
         stolen INTEGER default 0,
         lost INTEGER default 0,
+        score FLOAT default 0,
+        up_rounds INTEGER default 0,
         message varchar(1024) NOT NULL DEFAULT ''
     )'''
 

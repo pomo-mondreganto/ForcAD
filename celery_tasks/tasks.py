@@ -196,6 +196,15 @@ def process_round():
     if current_round > 1:
         storage.caching.cache_teamtasks(current_round - 1)
 
+    game_state = storage.game.construct_game_state()
+    if not game_state:
+        logger.warning(f'Game state is missing for round {current_round - 1}, skipping')
+    else:
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            pipeline.publish('scoreboard', game_state.to_json())
+            pipeline.set('game_state', game_state.to_json())
+            pipeline.execute()
+
     teams = storage.teams.get_teams()
     for team in teams:
         process_team.delay(team.to_json(), current_round)

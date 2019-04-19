@@ -22,6 +22,9 @@ class Model(object):
     def from_dict(cls, d: dict):
         return cls(**d)
 
+    def __repr__(self):
+        return str(self)
+
 
 class Team(Model):
     id: Optional[int]
@@ -44,6 +47,9 @@ class Team(Model):
             'token': self.token,
         }
         return json.dumps(d)
+
+    def __str__(self):
+        return f"Team({self.id, self.name})"
 
 
 class Task(Model):
@@ -88,11 +94,15 @@ class Task(Model):
         }
         return json.dumps(d)
 
+    def to_json_for_participants(self):
+        d = {
+            'id': self.id,
+            'name': self.name,
+        }
+        return json.dumps(d)
+
     def __str__(self):
         return f"Task({self.id, self.name})"
-
-    def __repr__(self):
-        return str(self)
 
 
 class Flag(Model):
@@ -136,5 +146,22 @@ class Flag(Model):
             f"data {self.flag_data}"
         )
 
-    def __repr__(self):
-        return str(self)
+
+class GameState(Model):
+    round: int
+    team_tasks: dict
+
+    def __init__(self, round: int, team_tasks: dict):
+        super(GameState, self).__init__()
+        self.round = round
+        self.team_tasks = team_tasks
+
+    def to_json(self):
+        d = {
+            'round': self.round,
+            'team_tasks': self.team_tasks
+        }
+        return json.dumps(d)
+
+    def __str__(self):
+        return f"GameState for round {self.round}"

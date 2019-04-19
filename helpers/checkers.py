@@ -12,7 +12,7 @@ def run_command_gracefully(*popenargs,
                            capture_output=False,
                            timeout=None,
                            check=False,
-                           terminate_timeout=1,
+                           terminate_timeout=3,
                            **kwargs):
     if input is not None:
         kwargs['stdin'] = subprocess.PIPE
@@ -21,6 +21,7 @@ def run_command_gracefully(*popenargs,
         kwargs['stdout'] = subprocess.PIPE
         kwargs['stderr'] = subprocess.PIPE
 
+    killed = False
     with subprocess.Popen(*popenargs, **kwargs) as proc:
         try:
             stdout, stderr = proc.communicate(input, timeout=timeout)
@@ -30,6 +31,7 @@ def run_command_gracefully(*popenargs,
                 stdout, stderr = proc.communicate(input, timeout=terminate_timeout)
             except subprocess.TimeoutExpired:
                 proc.kill()
+                killed = True
                 stdout, stderr = proc.communicate()
             except:
                 proc.kill()
@@ -55,7 +57,7 @@ def run_command_gracefully(*popenargs,
                 stderr=stderr
             )
 
-    return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr)
+    return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr), killed
 
 
 def get_patched_environ(env_path):
@@ -73,12 +75,18 @@ def run_generic_command(command: List,
     env = get_patched_environ(env_path=env_path)
 
     try:
-        result = run_command_gracefully(
+        result, killed = run_command_gracefully(
             command,
             capture_output=True,
             timeout=timeout,
             env=env,
         )
+
+        if killed:
+            logger.warning(
+                f'Process was forcefully killed during {command_type.upper()} '
+                f'for team {team_name}'
+            )
 
         try:
             status = TaskStatus(result.returncode)
@@ -112,7 +120,7 @@ def run_check_command(checker_path: str,
 
     return run_generic_command(
         command=check_command,
-        command_type='put',
+        command_type='check',
         env_path=env_path,
         timeout=timeout,
         team_name=team_name,
