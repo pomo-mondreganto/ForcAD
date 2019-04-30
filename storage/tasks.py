@@ -20,6 +20,20 @@ def get_tasks() -> List[models.Task]:
     return tasks
 
 
+async def get_tasks_async(loop) -> List[models.Task]:
+    """Get list of tasks registered in the database (asynchronous version)"""
+    redis = await storage.get_async_redis_pool(loop)
+    cached = await redis.exists('tasks:cached')
+    if not cached:
+        # TODO: make it asynchronous?
+        caching.cache_tasks()
+
+    tasks = await redis.smembers('tasks')
+    tasks = list(models.Task.from_json(task) for task in tasks)
+
+    return tasks
+
+
 def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskStatus, message: str):
     """ Update task status in database
 

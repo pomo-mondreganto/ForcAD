@@ -67,6 +67,11 @@
                 render_state(data.state);
             });
 
+            socket.on('flag_stolen', function (msg) {
+                let data = msg.data;
+                console.log(data);
+            });
+
             socket.on('update_scoreboard', function (msg) {
                 let data = msg.data;
                 render_state(data);

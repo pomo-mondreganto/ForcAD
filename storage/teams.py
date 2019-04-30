@@ -19,6 +19,20 @@ def get_teams() -> List[models.Team]:
     return teams
 
 
+async def get_teams_async(loop) -> List[models.Team]:
+    """Get list of teams registered in the database (asynchronous version)"""
+    redis = await storage.get_async_redis_pool(loop)
+    cached = await redis.exists('teams:cached')
+    if not cached:
+        # TODO: make it asynchronous?
+        caching.cache_teams()
+
+    teams = await redis.smembers('teams')
+    teams = list(models.Team.from_json(team) for team in teams)
+
+    return teams
+
+
 def get_team_id_by_token(token: str) -> int:
     """Get team by token
 
@@ -76,6 +90,6 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int) -> float:
     }
 
     with storage.get_redis_storage().pipeline() as pipeline:
-        pipeline.publish('flag_stolen', json.dumps(flag_data))
+        pipeline.publish('stolen_flags', json.dumps(flag_data))
 
     return attacker_delta
