@@ -16,6 +16,7 @@ logger = get_task_logger(__name__)
 
 @worker_ready.connect
 def startup(**_kwargs):
+    """Task to run on start of celery, schedules game start"""
     game_config = config.get_game_config()
 
     logger.info(f'Received game config: {game_config}')
@@ -30,6 +31,11 @@ def test_task():
 
 @shared_task
 def check_action(team_json, task_json):
+    """Run "check" checker action
+
+    :param team_json: json-dumped team
+    :param task_json: json-dumped task
+    """
     team = models.Team.from_json(team_json)
     task = models.Task.from_json(task_json)
 
@@ -62,6 +68,17 @@ def check_action(team_json, task_json):
 
 @shared_task
 def put_action(check_ok, team_json, task_json, round):
+    """Run "put" checker action
+
+        :param check_ok: boolean passed by "check" action in chain to indicate successful check
+        :param team_json: json-dumped team
+        :param task_json: json-dumped task
+        :param round: current round
+
+        If "check" action fails, put is not run.
+
+        It runs `task.puts` times, each time new flag is generated.
+    """
     if not check_ok:
         return False
 
@@ -104,6 +121,17 @@ def put_action(check_ok, team_json, task_json, round):
 
 @shared_task
 def get_action(put_ok, team_json, task_json, round):
+    """Run "get" checker action
+
+        :param put_ok: boolean passed by "put" action in chain to indicate successful check and put
+        :param team_json: json-dumped team
+        :param task_json: json-dumped task
+        :param round: current round
+
+        If "check" or "put" actions fail, get is not run.
+
+        It runs `task.gets` times, each time a flag is chosen randomly from last "flag_lifetime" rounds
+    """
     if not put_ok:
         return False
 
@@ -151,6 +179,7 @@ def get_action(put_ok, team_json, task_json, round):
 
 @shared_task
 def run_checker(team_json, task_json, round):
+    """Run check, put and get"""
     chained = chain(
         check_action.s(team_json, task_json),
         put_action.s(team_json, task_json, round),
@@ -162,6 +191,7 @@ def run_checker(team_json, task_json, round):
 
 @shared_task
 def process_team(team_json, round):
+    """Run checkers for all team tasks"""
     tasks = storage.tasks.get_tasks()
     for task in tasks:
         run_checker.delay(team_json, task.to_json(), round)
@@ -169,6 +199,11 @@ def process_team(team_json, round):
 
 @shared_task
 def process_round():
+    """Process new round
+
+        Updated current round variable, then processes all teams.
+        This function also caches previous state and notifies frontend of a new round.
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         game_running, = pipeline.get('game_running').execute()
         if not game_running:
@@ -196,7 +231,7 @@ def process_round():
     if current_round > 1:
         storage.caching.cache_teamtasks(current_round - 1)
 
-    game_state = storage.game.construct_game_state()
+    game_state = storage.game.get_game_state()
     if not game_state:
         logger.warning(f'Game state is missing for round {current_round - 1}, skipping')
     else:
@@ -212,6 +247,10 @@ def process_round():
 
 @shared_task
 def start_game():
+    """Starts game
+
+    Sets `game_running` boolean in cache
+    """
     logger.info('Starting game')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:

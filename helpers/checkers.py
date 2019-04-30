@@ -14,6 +14,20 @@ def run_command_gracefully(*popenargs,
                            check=False,
                            terminate_timeout=3,
                            **kwargs):
+    """Wrapper around Popen from subprocess, shuts the process down gracefully
+
+        First sends SIGTERM, waits for "terminate_timeout" seconds and if
+        the timeout occurs the second time, sends SIGKILL.
+
+        It's similar to "run" function from subprocess module.
+
+        :param input: see corresponding "run" parameter
+        :param capture_output: see corresponding "run" parameter
+        :param timeout: "soft" timeout, after which the SIGTERM is sent
+        :param check: see corresponding "run" parameter
+        :param terminate_timeout: the "hard" timeout to wait after the SIGTERM
+        :return: tuple of CompletedProcess instance and "killed" boolean
+    """
     if input is not None:
         kwargs['stdin'] = subprocess.PIPE
 
@@ -60,7 +74,11 @@ def run_command_gracefully(*popenargs,
     return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr), killed
 
 
-def get_patched_environ(env_path):
+def get_patched_environ(env_path: str):
+    """Add path to the environment variable
+
+        :param env_path: path to be inserted to environment
+    """
     env = os.environ.copy()
     env['PATH'] = f"{env_path}:{env['PATH']}"
     return env
@@ -71,7 +89,17 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger):
+                        logger) -> Tuple[helpers.status.TaskStatus, str]:
+    """Run generic checker command, calls "run_command_gracefully" and handles exceptions
+
+    :param command: command to run
+    :param command_type: type of command (for logging)
+    :param env_path: path to insert into environment
+    :param timeout: "soft" command timeout
+    :param team_name: team name for logging
+    :param logger: logger instance
+    :return: tuple of TaskStatus instance and message string
+    """
     env = get_patched_environ(env_path=env_path)
 
     try:
@@ -112,6 +140,16 @@ def run_check_command(checker_path: str,
                       team_name: str,
                       timeout: int,
                       logger) -> Tuple[helpers.status.TaskStatus, str]:
+    """Runs "check" command
+
+        :param checker_path: absolute checker path
+        :param env_path: path to insert into environment
+        :param host: team host
+        :param team_name: team name for logging
+        :param timeout: "soft" timeout
+        :param logger: logger instance
+        :return: tuple of TaskStatus instance and message string
+    """
     check_command = [
         checker_path,
         'check',
@@ -136,6 +174,18 @@ def run_put_command(checker_path: str,
                     team_name: str,
                     timeout: int,
                     logger) -> Tuple[helpers.status.TaskStatus, str]:
+    """Runs "put" command
+
+        :param checker_path: absolute checker path
+        :param env_path: path to insert into environment
+        :param host: team host
+        :param place: flag place for large tasks
+        :param flag: Flag model instance to put
+        :param team_name: team name for logging
+        :param timeout: "soft" timeout
+        :param logger: logger instance
+        :return: tuple of TaskStatus instance and message string
+    """
     put_command = [
         checker_path,
         'put',
@@ -162,6 +212,17 @@ def run_get_command(checker_path: str,
                     team_name: str,
                     timeout: int,
                     logger) -> Tuple[helpers.status.TaskStatus, str]:
+    """Runs "put" command
+
+        :param checker_path: absolute checker path
+        :param env_path: path to insert into environment
+        :param host: team host
+        :param flag: Flag model instance to put
+        :param team_name: team name for logging
+        :param timeout: "soft" timeout
+        :param logger: logger instance
+        :return: tuple of TaskStatus instance and message string
+    """
     get_command = [
         checker_path,
         'get',

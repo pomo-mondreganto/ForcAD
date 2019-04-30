@@ -6,6 +6,7 @@ from storage import caching
 
 
 def get_teams() -> List[models.Team]:
+    """Get list of teams registered in the database"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('teams:cached').execute()
         if not cached:
@@ -18,6 +19,11 @@ def get_teams() -> List[models.Team]:
 
 
 def get_team_id_by_token(token: str) -> int:
+    """Get team by token
+
+        :param token: token string
+        :return: team id
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('teams:cached').execute()
         if not cached:

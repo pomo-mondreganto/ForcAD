@@ -1,3 +1,5 @@
+"""Flask server to submit flags"""
+
 import json
 
 from flask import Flask, request, make_response

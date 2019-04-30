@@ -5,6 +5,7 @@ import yaml
 
 
 class Model(object):
+    """Generic model implementing basic methods to load and print"""
     def __init__(self, *_args, **_kwargs):
         pass
 
@@ -27,6 +28,7 @@ class Model(object):
 
 
 class Team(Model):
+    """Model representing a team"""
     id: Optional[int]
     name: str
     ip: str
@@ -53,6 +55,10 @@ class Team(Model):
 
 
 class Task(Model):
+    """Model representing a task
+
+        It also stores checker-specific info (path, env, number of gets, puts, flag places), etc...
+    """
     id: Optional[int]
     name: str
     checker: str
@@ -106,6 +112,10 @@ class Task(Model):
 
 
 class Flag(Model):
+    """Model representing a flag
+
+        Contains flag round, id, team, task, the value itself and additional data for the checker
+    """
     round: int
     id: Optional[int]
     team_id: int
@@ -148,6 +158,10 @@ class Flag(Model):
 
 
 class GameState(Model):
+    """Model representing game state
+
+        Stored round and dict of team tasks
+    """
     round: int
     team_tasks: dict
 

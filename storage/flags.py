@@ -10,6 +10,14 @@ from storage import caching
 
 
 def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
+    """Add stolen flag both to database and cache
+
+        :param flag: Flag model instance
+        :param attacker: team id for the attacking team
+
+        Using this function implies that the flag is validated,
+        as it doesn't check anything
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.sadd(f'team:{attacker}:stolen_flags', flag.id)
         pipeline.incr(f'team:{attacker}:task:{flag.task_id}:stolen')
@@ -32,6 +40,14 @@ def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
 
 
 def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
+    """Check that flag is valid for current round
+
+        :param flag: Flag model instance
+        :param attacker: attacker team id
+        :param round: current round
+
+        Raises an instance of FlagSubmitException on validation error
+    """
     game_config = config.get_game_config()
 
     if round - flag.round > game_config['flag_lifetime']:
@@ -75,6 +91,11 @@ def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
 
 
 def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
+    """Inserts a newly generated flag into the database and cache
+
+        :param flag: Flag model instance to be inserted
+        :return: flag with set "id" field
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         query = "INSERT INTO flags (flag, team_id, task_id, round, flag_data) VALUES (%s, %s, %s, %s, %s) RETURNING id"
 
@@ -100,6 +121,13 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
 
 
 def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.models.Flag:
+    """Get flag by generic field
+
+        :param field_name: field name to ask cache for
+        :param field_value: value of the field "field_name" to filter on
+        :param round: current round
+        :return: Flag model instance with flag.field_name == field_value
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('flags:cached').execute()
         if not cached:
@@ -118,14 +146,34 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.model
 
 
 def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
+    """Get flag by its string value
+
+        :param flag_str: flag value
+        :param round: current round
+        :return: Flag model instance
+    """
     return get_flag_by_field(field_name='str', field_value=flag_str, round=round)
 
 
 def get_flag_by_id(flag_id: int, round: int) -> helpers.models.Flag:
+    """Get flag by its id value
+
+            :param flag_id: flag id
+            :param round: current round
+            :return: Flag model instance
+    """
     return get_flag_by_field(field_name='id', field_value=flag_id, round=round)
 
 
 def get_random_round_flag(team_id: int, task_id: int, round: int, current_round: int) -> helpers.models.Flag:
+    """Get random flag for team generated for specified round and task
+
+        :param team_id: team id
+        :param task_id: task id
+        :param round: round to fetch flag for
+        :param current_round: current round
+        :return: Flag mode instance
+    """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('cached:flags').execute()
         if not cached:

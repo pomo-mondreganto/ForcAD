@@ -9,6 +9,7 @@ from helpers import models
 
 
 def cache_teams():
+    """Put "teams" table data from database to cache"""
     query = 'SELECT * from teams'
 
     conn = storage.get_db_pool().getconn()
@@ -30,6 +31,7 @@ def cache_teams():
 
 
 def cache_tasks():
+    """Put "tasks" table data from database to cache"""
     query = 'SELECT * from tasks'
 
     conn = storage.get_db_pool().getconn()
@@ -50,6 +52,11 @@ def cache_tasks():
 
 
 def cache_last_stolen(team_id: int, round: int):
+    """Put stolen flags from last "flag_lifetime" rounds to cache
+
+        :param team_id: attacker team id
+        :param round: current round
+    """
     game_config = config.get_game_config()
     query = (
         "SELECT S.flag_id from stolenflags S "
@@ -73,6 +80,11 @@ def cache_last_stolen(team_id: int, round: int):
 
 
 def cache_last_owned(team_id: int, round: int):
+    """Put owned flags from last "flag_lifetime" rounds to cache
+
+            :param team_id: flag owner team id
+            :param round: current round
+    """
     game_config = config.get_game_config()
     query = (
         "SELECT id from flags WHERE round >= %s AND team_id = %s"
@@ -94,6 +106,10 @@ def cache_last_owned(team_id: int, round: int):
 
 
 def cache_last_flags(round: int):
+    """Put all generated flags from last "flag_lifetime" rounds to cache
+
+            :param round: current round
+    """
     game_config = config.get_game_config()
     query = (
         "SELECT * from flags WHERE round >= %s"
@@ -124,7 +140,12 @@ def cache_last_flags(round: int):
         pipeline.execute()
 
 
-def cache_teamtasks(round):
+def cache_teamtasks(round: int):
+    """Put "teamtasks" table data from database to cache
+        :param round: current round
+
+        This function caches full game state for specified round
+    """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 

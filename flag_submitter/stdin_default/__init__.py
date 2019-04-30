@@ -1,3 +1,5 @@
+"""STDIN flag submitter"""
+
 import sys
 
 import storage

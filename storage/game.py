@@ -5,6 +5,7 @@ from helpers import models
 
 
 def get_current_round() -> int:
+    """Get current round"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         round, = pipeline.get('round').execute()
     try:
@@ -15,6 +16,7 @@ def get_current_round() -> int:
 
 
 async def get_current_round_async(loop) -> int:
+    """Get current round (asynchronous version)"""
     redis = await storage.get_async_redis_pool(loop)
     round = await redis.get('round')
 
@@ -25,7 +27,8 @@ async def get_current_round_async(loop) -> int:
         return -1
 
 
-def construct_game_state() -> Optional[models.GameState]:
+def get_game_state() -> Optional[models.GameState]:
+    """Get game state for current round"""
     round = get_current_round()
     if not round:
         return None
@@ -39,6 +42,7 @@ def construct_game_state() -> Optional[models.GameState]:
 
 
 async def get_game_state_async(loop) -> Optional[models.GameState]:
+    """Get game state for current round (asynchronous version)"""
     redis = await storage.get_async_redis_pool(loop)
     state = await redis.get('game_state')
     try:
