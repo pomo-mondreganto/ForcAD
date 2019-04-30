@@ -33,6 +33,6 @@ while True:
         continue
     else:
         storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
-        # TODO: rating system, points
+        attacker_delta = storage.teams.handle_attack(attacker_id=team_id, victim_id=flag.team_id, task_id=flag.task_id)
 
-        print('Flag accepted!')
+        print(f'Flag accepted! Earned {attacker_delta} flag points!')

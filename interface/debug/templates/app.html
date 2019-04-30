@@ -45,13 +45,14 @@
             let round = state.round;
             console.log('Got round', round);
             let team_tasks = state.team_tasks;
-            team_tasks.map((obj, i) => {
+            team_tasks.map(obj => {
                 let td = $(`#task-${obj.task_id}-team-${obj.team_id}`);
                 td.empty();
                 td.append(`<p>Status: ${obj.status}</p>`);
                 td.append(`<p>Flags: ${obj.stolen}/${obj.lost}</p>`);
                 td.append(`<p>Message: ${obj.message}</p>`);
                 td.append(`<p>Uptime: ${obj.up_rounds}</p>`);
+                td.append(`<p>Score: ${obj.score}</p>`)
             })
         }
 

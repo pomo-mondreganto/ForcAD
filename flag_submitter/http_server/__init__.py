@@ -44,9 +44,14 @@ def submit():
         except exceptions.FlagSubmitException as e:
             responses.append(str(e))
         else:
-            responses.append('Accepted')
             storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
-            # TODO: rating system, points
+            attacker_delta = storage.teams.handle_attack(
+                attacker_id=team_id,
+                victim_id=flag.team_id,
+                task_id=flag.task_id,
+            )
+
+            responses.append(f'Flag accepted! Earned {attacker_delta} flag points!')
 
     return get_response(status_code=200, data=responses)
 
