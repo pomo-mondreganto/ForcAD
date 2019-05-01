@@ -36,9 +36,12 @@ async def background_task(mpsc):
         except AttributeError:
             pass
         else:
-            if channel == b'stolen_flags':
+            print(message, channel, channel.name)
+            if channel.name == b'stolen_flags':
+                print('Emitting flag stolen event')
                 await sio.emit('flag_stolen', {'data': message}, namespace='/test')
-            elif channel == b'scoreboard':
+            elif channel.name == b'scoreboard':
+                print('Emitting scoreboard event')
                 await sio.emit('update_scoreboard', {'data': message}, namespace='/test')
 
 
@@ -70,14 +73,14 @@ async def test_connect(_sid, _environ):
 
 
 @app.route('/api/teams/')
-def get_teams():
+async def get_teams(_request):
     teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
     teams = [team.to_json() for team in teams]
     return json(teams)
 
 
-@app.route('/api/teams/')
-def get_tasks():
+@app.route('/api/tasks/')
+async def get_tasks(_request):
     tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
     tasks = [task.to_json() for task in tasks]
     return json(tasks)

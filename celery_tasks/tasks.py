@@ -1,4 +1,5 @@
 import os
+import pathlib
 import random
 import secrets
 
@@ -21,7 +22,12 @@ def startup(**_kwargs):
 
     logger.info(f'Received game config: {game_config}')
 
-    start_game.apply_async(args=(), eta=game_config['start_time'])
+    start_game.apply_async(
+        args=(
+            game_config['shared_directory'],
+        ),
+        eta=game_config['start_time'],
+    )
 
 
 @shared_task
@@ -164,14 +170,17 @@ def get_action(put_ok, team_json, task_json, round):
     message = ''
 
     for get_round in rounds_to_check:
-        try:
-            flag = storage.flags.get_random_round_flag(
-                team_id=team.id,
-                task_id=task.id,
-                round=get_round,
-                current_round=round
-            )
+        flag = storage.flags.get_random_round_flag(
+            team_id=team.id,
+            task_id=task.id,
+            round=get_round,
+            current_round=round
+        )
 
+        if not flag:
+            status = TaskStatus.CORRUPT
+            message = f'No flags from round {get_round}'
+        else:
             status, message = checkers.run_get_command(
                 checker_path=task.checker,
                 env_path=task.env_path,
@@ -181,9 +190,6 @@ def get_action(put_ok, team_json, task_json, round):
                 timeout=task.checker_timeout,
                 logger=logger,
             )
-        except IndexError:
-            status = TaskStatus.CORRUPT
-            message = f'No flags from round {get_round}'
 
         if status != TaskStatus.UP:
             break
@@ -224,22 +230,28 @@ def process_round():
         Updates current round variable, then processes all teams.
         This function also caches previous state and notifies frontend of a new round.
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        game_running, = pipeline.get('game_running').execute()
-        if not game_running:
-            logger.info('Game is not running, exiting')
-            return
+    game_config = config.get_game_config()
+    shared_directory = game_config['shared_directory']
+
+    game_running_file_path = os.path.join(shared_directory, 'game_running')
+
+    game_running = os.path.exists(game_running_file_path)
+    if not game_running:
+        logger.info('Game is not running, exiting')
+        return
+
+    current_round_file_path = os.path.join(shared_directory, 'round')
 
     try:
-        with open(os.path.join(config.BASE_DIR, 'volumes/shared/round')) as f:
+        with open(os.path.join(config.BASE_DIR, current_round_file_path)) as f:
             current_round = int(f.read())
 
     except FileNotFoundError or ValueError:
         current_round = 1
-        with open(os.path.join(config.BASE_DIR, 'volumes/shared/round'), 'w') as f:
+        with open(os.path.join(config.BASE_DIR, current_round_file_path), 'w') as f:
             f.write('2')
     else:
-        with open(os.path.join(config.BASE_DIR, 'volumes/shared/round'), 'w') as f:
+        with open(os.path.join(config.BASE_DIR, current_round_file_path), 'w') as f:
             f.write(f'{current_round + 1}')
 
     logger.info(f'Processing round {current_round}')
@@ -268,17 +280,17 @@ def process_round():
 
 
 @shared_task
-def start_game():
+def start_game(shared_directory):
     """Starts game
 
-    Sets `game_running` boolean in cache
+    Created `game_running` file in shared directory
     """
     logger.info('Starting game')
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        already_started, = pipeline.exists('game_running').execute()
-        if already_started:
-            logger.info('Game already started')
-            return
+    already_started = os.path.exists(os.path.join(shared_directory, 'game_running'))
+    if already_started:
+        logger.info('Game already started')
+        return
 
-        pipeline.set('game_running', 1).execute()
+    path = pathlib.Path(os.path.join(shared_directory, 'game_running'))
+    path.touch()

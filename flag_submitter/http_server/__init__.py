@@ -49,6 +49,7 @@ def submit():
                 attacker_id=team_id,
                 victim_id=flag.team_id,
                 task_id=flag.task_id,
+                round=round,
             )
 
             responses.append(f'Flag accepted! Earned {attacker_delta} flag points!')

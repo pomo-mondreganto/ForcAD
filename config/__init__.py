@@ -19,16 +19,20 @@ class AppConfig:
 
 
 def get_storage_config() -> dict:
-    return AppConfig.get_main_config()['storages_config']
+    return AppConfig.get_main_config()['storages']
 
 
 def get_game_config() -> dict:
-    return AppConfig.get_main_config()['global_config']
+    return AppConfig.get_main_config()['global']
 
 
-def get_teams_config() -> dict:
-    return AppConfig.get_main_config()['teams_config']
+def get_teams_config() -> list:
+    return AppConfig.get_main_config()['teams']
+
+
+def get_tasks_config() -> list:
+    return AppConfig.get_main_config()['tasks']
 
 
 def get_celery_config() -> dict:
-    return AppConfig.get_main_config()['celery_config']
+    return AppConfig.get_main_config()['celery']

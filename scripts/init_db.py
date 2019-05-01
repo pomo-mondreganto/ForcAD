@@ -32,7 +32,7 @@ def run():
         team.id, = curs.fetchone()
         teams.append(team)
 
-    tasks_config = config.get_game_config()['tasks']
+    tasks_config = config.get_tasks_config()
     tasks = []
 
     for task_conf in tasks_config:

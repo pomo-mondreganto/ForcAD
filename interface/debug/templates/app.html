@@ -62,6 +62,7 @@
 
             socket.on('init_scoreboard', function (msg) {
                 let data = msg.data;
+                console.log(data);
                 render_teams(data.teams);
                 render_tasks(data.tasks);
                 render_state(data.state);
@@ -74,6 +75,7 @@
 
             socket.on('update_scoreboard', function (msg) {
                 let data = msg.data;
+                console.log(data);
                 render_state(data);
             });
         })

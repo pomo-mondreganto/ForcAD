@@ -84,10 +84,10 @@ def cache_last_stolen(team_id: int, round: int):
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete(f'team_{team_id}:cached_stolen', f'team_{team_id}:stolen_flags')
+        pipeline.delete(f'team:{team_id}:cached_stolen', f'team:{team_id}:stolen_flags')
         for flag_id, in flags:
-            pipeline.sadd(f'team_{team_id}:stolen_flags', flag_id)
-        pipeline.set(f'team_{team_id}:cached_stolen', 1)
+            pipeline.sadd(f'team:{team_id}:stolen_flags', flag_id)
+        pipeline.set(f'team:{team_id}:cached_stolen', 1)
         pipeline.execute()
 
 
@@ -109,10 +109,10 @@ def cache_last_owned(team_id: int, round: int):
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete(f'team_{team_id}:owned_flags', f'team_{team_id}:cached_owned')
+        pipeline.delete(f'team:{team_id}:owned_flags', f'team:{team_id}:cached_owned')
         for flag_id, in flags:
-            pipeline.sadd(f'team_{team_id}:owned_flags', flag_id)
-        pipeline.set(f'team_{team_id}:cached_owned', 1)
+            pipeline.sadd(f'team:{team_id}:owned_flags', flag_id)
+        pipeline.set(f'team:{team_id}:cached_owned', 1)
         pipeline.execute()
 
 
@@ -140,8 +140,8 @@ def cache_last_flags(round: int):
             pipeline.delete(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}')
 
         for flag in flag_models:
-            pipeline.set(f'flag_id:{flag.id}', flag.to_json())
-            pipeline.set(f'flag_str:{flag.flag}', flag.to_json())
+            pipeline.set(f'flag:id:{flag.id}', flag.to_json())
+            pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
             pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
 
         pipeline.set(f'flags:cached', 1)
