@@ -6,6 +6,7 @@ import yaml
 
 class Model(object):
     """Generic model implementing basic methods to load and print"""
+
     def __init__(self, *_args, **_kwargs):
         pass
 
@@ -67,6 +68,7 @@ class Task(Model):
     places: int
     checker_timeout: int
     env_path: str
+    default_score: float
 
     def __init__(self,
                  id: Optional[int],
@@ -76,7 +78,8 @@ class Task(Model):
                  puts: int,
                  places: int,
                  checker_timeout: int,
-                 env_path: str):
+                 env_path: str,
+                 default_score: float = 1500.0):
         super(Task, self).__init__()
         self.id = id
         self.name = name
@@ -86,6 +89,7 @@ class Task(Model):
         self.places = places
         self.checker_timeout = checker_timeout
         self.env_path = env_path
+        self.default_score = default_score
 
     def to_json(self):
         d = {
@@ -97,6 +101,7 @@ class Task(Model):
             'places': self.places,
             'checker_timeout': self.checker_timeout,
             'env_path': self.env_path,
+            'default_score': self.default_score,
         }
         return json.dumps(d)
 

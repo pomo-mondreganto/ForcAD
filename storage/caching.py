@@ -7,19 +7,36 @@ import helpers.models
 import storage
 from helpers import models
 
+_SELECT_ALL_TEAMS_QUERY = "SELECT * FROM teams"
+
+_SELECT_ALL_TASKS_QUERY = "SELECT * FROM tasks"
+
+_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
+WITH flag_ids AS (
+    SELECT id FROM flags WHERE  round >= %s
+)
+SELECT flag_id FROM stolenflags 
+WHERE flag_id IN (SELECT id from flag_ids) AND attacker_id = %s
+"""
+
+_SELECT_LAST_TEAM_FLAGS_QUERY = "SELECT id from flags WHERE round >= %s AND team_id = %s"
+
+_SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
+
+_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s"
+
 
 def cache_teams():
     """Put "teams" table data from database to cache"""
-    query = 'SELECT * from teams'
-
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.DictCursor)
-    curs.execute(query)
+    curs.execute(_SELECT_ALL_TEAMS_QUERY)
 
     teams = curs.fetchall()
-    teams = list(models.Team.from_dict(team) for team in teams)
-
+    curs.close()
     storage.get_db_pool().putconn(conn)
+
+    teams = list(models.Team.from_dict(team) for team in teams)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.delete('teams', 'teams:cached')
@@ -32,16 +49,15 @@ def cache_teams():
 
 def cache_tasks():
     """Put "tasks" table data from database to cache"""
-    query = 'SELECT * from tasks'
-
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.DictCursor)
-    curs.execute(query)
+    curs.execute(_SELECT_ALL_TASKS_QUERY)
 
     tasks = curs.fetchall()
-    tasks = list(models.Task.from_dict(task) for task in tasks)
-
+    curs.close()
     storage.get_db_pool().putconn(conn)
+
+    tasks = list(models.Task.from_dict(task) for task in tasks)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.delete('tasks', 'tasks:cached')
@@ -52,23 +68,19 @@ def cache_tasks():
 
 
 def cache_last_stolen(team_id: int, round: int):
-    """Put stolen flags from last "flag_lifetime" rounds to cache
+    """Put stolen flags for attacker team from last "flag_lifetime" rounds to cache
 
         :param team_id: attacker team id
         :param round: current round
     """
     game_config = config.get_game_config()
-    query = (
-        "SELECT S.flag_id from stolenflags S "
-        "INNER JOIN flags F ON F.id = S.flag_id "
-        "WHERE F.round >= %s and S.attacker_id = %s"
-    )
-
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
-    curs.execute(query, (round - game_config['flag_lifetime'], team_id))
-    flags = curs.fetchall()
 
+    curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+
+    flags = curs.fetchall()
+    curs.close()
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -80,21 +92,20 @@ def cache_last_stolen(team_id: int, round: int):
 
 
 def cache_last_owned(team_id: int, round: int):
-    """Put owned flags from last "flag_lifetime" rounds to cache
+    """Put owned flags for team from last "flag_lifetime" rounds to cache
 
-            :param team_id: flag owner team id
-            :param round: current round
+        :param team_id: flag owner team id
+        :param round: current round
     """
     game_config = config.get_game_config()
-    query = (
-        "SELECT id from flags WHERE round >= %s AND team_id = %s"
-    )
 
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
-    curs.execute(query, (round - game_config['flag_lifetime'], team_id))
-    flags = curs.fetchall()
 
+    curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+
+    flags = curs.fetchall()
+    curs.close()
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -111,16 +122,13 @@ def cache_last_flags(round: int):
             :param round: current round
     """
     game_config = config.get_game_config()
-    query = (
-        "SELECT * from flags WHERE round >= %s"
-    )
-
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.DictCursor)
 
-    curs.execute(query, (round - game_config['flag_lifetime'],))
-    flags = curs.fetchall()
+    curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config['flag_lifetime'],))
 
+    flags = curs.fetchall()
+    curs.close()
     storage.get_db_pool().putconn(conn)
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -141,17 +149,19 @@ def cache_last_flags(round: int):
 
 
 def cache_teamtasks(round: int):
-    """Put "teamtasks" table data from database to cache
-        :param round: current round
+    """Put "teamtasks" table data for the specified round from database to cache
+        :param round: round to cache
 
         This function caches full game state for specified round
     """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
-    query = "SELECT * from teamtasks"
-    curs.execute(query)
+    curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
+
     results = curs.fetchall()
+    curs.close()
+    storage.get_db_pool().putconn(conn)
 
     data = json.dumps(results)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:

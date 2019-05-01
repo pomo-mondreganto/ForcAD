@@ -30,11 +30,12 @@ def test_task():
 
 
 @shared_task
-def check_action(team_json, task_json):
+def check_action(team_json, task_json, round: int):
     """Run "check" checker action
 
     :param team_json: json-dumped team
     :param task_json: json-dumped task
+    :param round: current round
     """
     team = models.Team.from_json(team_json)
     task = models.Task.from_json(task_json)
@@ -46,6 +47,7 @@ def check_action(team_json, task_json):
         team_id=team.id,
         status=TaskStatus.CHECK_FAILED,
         message='Check pending',
+        round=round,
     )
 
     logger.info(f'Running CHECK for team {team.id} task {task.id}')
@@ -60,7 +62,13 @@ def check_action(team_json, task_json):
     )
 
     if status != TaskStatus.UP:
-        storage.tasks.update_task_status(task_id=task.id, team_id=team.id, status=status, message=message)
+        storage.tasks.update_task_status(
+            task_id=task.id,
+            team_id=team.id,
+            status=status,
+            message=message,
+            round=round,
+        )
         return False
 
     return True
@@ -112,7 +120,13 @@ def put_action(check_ok, team_json, task_json, round):
             flag.flag_data = message
             storage.flags.add_flag(flag)
         else:
-            storage.tasks.update_task_status(task_id=task.id, team_id=team.id, status=status, message=message)
+            storage.tasks.update_task_status(
+                task_id=task.id,
+                team_id=team.id,
+                status=status,
+                message=message,
+                round=round,
+            )
             ok = False
             break
 
@@ -174,14 +188,20 @@ def get_action(put_ok, team_json, task_json, round):
         if status != TaskStatus.UP:
             break
 
-    storage.tasks.update_task_status(task_id=task.id, team_id=team.id, status=status, message=message)
+    storage.tasks.update_task_status(
+        task_id=task.id,
+        team_id=team.id,
+        status=status,
+        message=message,
+        round=round,
+    )
 
 
 @shared_task
 def run_checker(team_json, task_json, round):
     """Run check, put and get"""
     chained = chain(
-        check_action.s(team_json, task_json),
+        check_action.s(team_json, task_json, round),
         put_action.s(team_json, task_json, round),
         get_action.s(team_json, task_json, round),
     )
@@ -201,7 +221,7 @@ def process_team(team_json, round):
 def process_round():
     """Process new round
 
-        Updated current round variable, then processes all teams.
+        Updates current round variable, then processes all teams.
         This function also caches previous state and notifies frontend of a new round.
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -239,6 +259,8 @@ def process_round():
             pipeline.publish('scoreboard', game_state.to_json())
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
+
+    storage.tasks.initialize_teamtasks(current_round)
 
     teams = storage.teams.get_teams()
     for team in teams:

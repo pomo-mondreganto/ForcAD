@@ -5,6 +5,10 @@ import storage
 from helpers import models, rating
 from storage import caching
 
+_SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s"
+
+_UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s"
+
 
 def get_teams() -> List[models.Team]:
     """Get list of teams registered in the database"""
@@ -60,26 +64,20 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int) -> float:
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
 
-    query = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s"
-    curs.execute(query, (attacker_id, task_id))
+    curs.execute(_SELECT_SCORE_BY_TEAM_TASK_QUERY, (attacker_id, task_id))
     attacker_score, = curs.fetchone()
 
-    query = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s"
-    curs.execute(query, (victim_id, task_id))
+    curs.execute(_SELECT_SCORE_BY_TEAM_TASK_QUERY, (victim_id, task_id))
     victim_score, = curs.fetchone()
 
     rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score)
     attacker_delta, victim_delta = rs.calculate()
 
-    query = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s"
-    curs.execute(query, (attacker_score + attacker_delta, attacker_id, task_id))
-
-    query = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s"
-    curs.execute(query, (victim_score + victim_delta, victim_id, task_id))
+    curs.execute(_UPDATE_TEAMTASKS_SCORE_QUERY, (attacker_score + attacker_delta, attacker_id, task_id))
+    curs.execute(_UPDATE_TEAMTASKS_SCORE_QUERY, (victim_score + victim_delta, victim_id, task_id))
 
     conn.commit()
     curs.close()
-
     storage.get_db_pool().putconn(conn)
 
     flag_data = {

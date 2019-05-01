@@ -6,14 +6,20 @@ sys.path.insert(0, BASE_DIR)
 
 import storage
 
-conn = storage.get_db_pool().getconn()
-cursor = conn.cursor()
+_SELECT_TEAMS_NAME_TOKEN_QUERY = "SELECT name, token from teams"
 
-query = "SELECT name, token from teams"
 
-cursor.execute(query)
-result = cursor.fetchall()
+def run():
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor()
 
-print('\n'.join(f"{name}:{token}" for name, token in result))
+    curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
+    result = curs.fetchall()
 
-storage.get_db_pool().putconn(conn)
+    print('\n'.join(f"{name}:{token}" for name, token in result))
+    curs.close()
+    storage.get_db_pool().putconn(conn)
+
+
+if __name__ == '__main__':
+    run()

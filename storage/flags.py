@@ -8,6 +8,17 @@ import storage
 from helpers import models
 from storage import caching
 
+_INSERT_STOLEN_FLAG_QUERY = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
+
+_INCREMENT_LOST_FLAGS_QUERY = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s"
+
+_INCREMENT_STOLEN_FLAGS_QUERY = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s"
+
+_INSERT_FLAG_QUERY = """
+INSERT INTO flags (flag, team_id, task_id, round, flag_data) 
+VALUES (%s, %s, %s, %s, %s) RETURNING id
+"""
+
 
 def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
     """Add stolen flag both to database and cache
@@ -26,16 +37,12 @@ def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
 
-    query = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
-    curs.execute(query, (attacker, flag.id))
-
-    query = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s"
-    curs.execute(query, (flag.team_id,))
-
-    query = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s"
-    curs.execute(query, (attacker,))
+    curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker, flag.id))
+    curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id,))
+    curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker,))
 
     conn.commit()
+    curs.close()
     storage.get_db_pool().putconn(conn)
 
 
@@ -97,13 +104,21 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
         :return: flag with set "id" field
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        query = "INSERT INTO flags (flag, team_id, task_id, round, flag_data) VALUES (%s, %s, %s, %s, %s) RETURNING id"
-
         conn = storage.get_db_pool().getconn()
         curs = conn.cursor()
-        curs.execute(query, (flag.flag, flag.team_id, flag.task_id, flag.round, flag.flag_data))
+        curs.execute(
+            _INSERT_FLAG_QUERY,
+            (
+                flag.flag,
+                flag.team_id,
+                flag.task_id,
+                flag.round,
+                flag.flag_data,
+            )
+        )
         flag.id, = curs.fetchone()
         conn.commit()
+        curs.close()
         storage.get_db_pool().putconn(conn)
 
         cached, = pipeline.exists(f'team:{flag.team_id}:cached:owned').execute()

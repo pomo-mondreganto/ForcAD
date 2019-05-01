@@ -5,36 +5,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import storage
-import psycopg2
+
+SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
 
 def run():
-    def _run(_query):
-        conn = storage.get_db_pool().getconn()
-        curs = conn.cursor()
-        try:
-            curs.execute(_query)
-        except psycopg2.ProgrammingError:
-            pass
-        else:
-            conn.commit()
-        finally:
-            storage.get_db_pool().putconn(conn)
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor()
 
-    query = '''DROP TABLE teams'''
-    _run(query)
-
-    query = '''DROP TABLE flags'''
-    _run(query)
-
-    query = '''DROP TABLE stolenflags'''
-    _run(query)
-
-    query = '''DROP TABLE tasks'''
-    _run(query)
-
-    query = '''DROP TABLE teamtasks'''
-    _run(query)
+    create_query_path = os.path.join(SCRIPTS_DIR, 'drop_query.sql')
+    create_query = open(create_query_path, 'r').read()
+    curs.execute(create_query)
+    conn.commit()
+    curs.close()
 
     storage.get_redis_storage().flushall()
 

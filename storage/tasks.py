@@ -6,6 +6,21 @@ import storage
 from helpers import models
 from storage import caching
 
+_UPDATE_TEAMTASKS_STATUS_QUERY = f"""
+UPDATE teamtasks SET status = %s, message = %s, up_rounds = up_rounds + %s
+WHERE task_id = %s AND team_id = %s AND round = %s
+"""
+
+_INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
+WITH prev_table AS (
+    SELECT score, stolen, lost, up_rounds FROM teamtasks 
+    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round = %(round)s - 1
+)
+INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, up_rounds) 
+SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds 
+FROM prev_table
+"""
+
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database"""
@@ -34,11 +49,12 @@ async def get_tasks_async(loop) -> List[models.Task]:
     return tasks
 
 
-def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskStatus, message: str):
+def update_task_status(task_id: int, team_id: int, round: int, status: helpers.status.TaskStatus, message: str):
     """ Update task status in database
 
         :param task_id: task id
         :param team_id: team id
+        :param round: round to update table for
         :param status: TaskStatus instance
         :param message: custom message to show in scoreboard
     """
@@ -46,25 +62,22 @@ def update_task_status(task_id: int, team_id: int, status: helpers.status.TaskSt
     if status == helpers.status.TaskStatus.UP:
         add = 1
 
-    query = (
-        f"UPDATE teamtasks SET status = %s, message = %s, up_rounds = up_rounds + %s "
-        "WHERE task_id = %s AND team_id = %s"
-    )
-
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
     curs.execute(
-        query,
+        _UPDATE_TEAMTASKS_STATUS_QUERY,
         (
             status.value,
             message,
             add,
             task_id,
             team_id,
+            round,
         )
     )
 
     conn.commit()
+    curs.close()
     storage.get_db_pool().putconn(conn)
 
 
@@ -82,3 +95,31 @@ def get_teamtasks(round: int):
         if not cached:
             return None
         return json.loads(result.decode())
+
+
+def initialize_teamtasks(round: int):
+    """Add blank entries to "teamtasks" table for a new round
+
+        :param round: round to create entries for
+    """
+
+    teams = storage.teams.get_teams()
+    tasks = storage.tasks.get_tasks()
+
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor()
+
+    for team in teams:
+        for task in tasks:
+            curs.execute(
+                _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
+                {
+                    'task_id': task.id,
+                    'team_id': team.id,
+                    'round': round,
+                },
+            )
+
+    conn.commit()
+    curs.close()
+    storage.get_db_pool().putconn(conn)

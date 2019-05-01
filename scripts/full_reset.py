@@ -8,13 +8,19 @@ import storage
 import config
 from scripts import reset_db, init_db
 
-try:
-    os.remove(os.path.join(config.BASE_DIR, 'volumes/shared/round'))
-except FileNotFoundError:
-    pass
 
-reset_db.run()
-init_db.run()
+def run():
+    try:
+        os.remove(os.path.join(config.BASE_DIR, 'volumes/shared/round'))
+    except FileNotFoundError:
+        pass
 
-r = storage.get_redis_storage()
-r.flushall()
+    reset_db.run()
+    init_db.run()
+
+    r = storage.get_redis_storage()
+    r.flushall()
+
+
+if __name__ == '__main__':
+    run()
