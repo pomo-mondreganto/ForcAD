@@ -246,7 +246,7 @@ def process_round():
         with open(os.path.join(config.BASE_DIR, current_round_file_path)) as f:
             current_round = int(f.read())
 
-    except FileNotFoundError or ValueError:
+    except (FileNotFoundError, ValueError):
         current_round = 1
         with open(os.path.join(config.BASE_DIR, current_round_file_path), 'w') as f:
             f.write('2')
