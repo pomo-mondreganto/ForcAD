@@ -1,6 +1,8 @@
 import json
 from typing import List
 
+import redis
+
 import helpers.status
 import storage
 from helpers import models
@@ -25,11 +27,18 @@ FROM prev_table
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('tasks:cached').execute()
-        if not cached:
-            caching.cache_tasks()
+        while True:
+            try:
+                cached = pipeline.exists('tasks:cached').execute()
+                if not cached:
+                    caching.cache_tasks()
 
-        tasks, = pipeline.smembers('tasks').execute()
+                break
+            except redis.WatchError:
+                continue
+
+        # pipeline is not in multi mode now
+        tasks = pipeline.smembers('tasks')
         tasks = list(models.Task.from_json(task) for task in tasks)
 
     return tasks
@@ -37,13 +46,15 @@ def get_tasks() -> List[models.Task]:
 
 async def get_tasks_async(loop) -> List[models.Task]:
     """Get list of tasks registered in the database (asynchronous version)"""
-    redis = await storage.get_async_redis_pool(loop)
-    cached = await redis.exists('tasks:cached')
+
+    # FIXME: possible race condition, add lock on teams:cached
+    redis_aio = await storage.get_async_redis_pool(loop)
+    cached = await redis_aio.exists('tasks:cached')
     if not cached:
         # TODO: make it asynchronous?
         caching.cache_tasks()
 
-    tasks = await redis.smembers('tasks')
+    tasks = await redis_aio.smembers('tasks')
     tasks = list(models.Task.from_json(task) for task in tasks)
 
     return tasks

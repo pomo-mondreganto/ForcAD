@@ -1,6 +1,8 @@
 import json
 from typing import List, Optional
 
+import redis
+
 import storage
 from helpers import models, rating
 from storage import caching
@@ -13,11 +15,20 @@ _UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%
 def get_teams() -> List[models.Team]:
     """Get list of teams registered in the database"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('teams:cached').execute()
-        if not cached:
-            caching.cache_teams()
+        while True:
+            try:
+                pipeline.watch('teams:cached')
 
-        teams, = pipeline.smembers('teams').execute()
+                cached = pipeline.exists('teams:cached').execute()
+                if not cached:
+                    caching.cache_teams()
+
+                break
+            except redis.WatchError:
+                continue
+
+        # pipeline is not in multi mode now
+        teams = pipeline.smembers('teams')
         teams = list(models.Team.from_json(team) for team in teams)
 
     return teams
@@ -25,13 +36,15 @@ def get_teams() -> List[models.Team]:
 
 async def get_teams_async(loop) -> List[models.Team]:
     """Get list of teams registered in the database (asynchronous version)"""
-    redis = await storage.get_async_redis_pool(loop)
-    cached = await redis.exists('teams:cached')
+
+    # FIXME: possible race condition, add lock on teams:cached
+    redis_aio = await storage.get_async_redis_pool(loop)
+    cached = await redis_aio.exists('teams:cached')
     if not cached:
         # TODO: make it asynchronous?
         caching.cache_teams()
 
-    teams = await redis.smembers('teams')
+    teams = await redis_aio.smembers('teams')
     teams = list(models.Team.from_json(team) for team in teams)
 
     return teams
@@ -44,11 +57,20 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         :return: team id
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('teams:cached').execute()
-        if not cached:
-            caching.cache_teams()
+        while True:
+            try:
+                pipeline.watch('teams:cached')
 
-        team_id, = pipeline.get(f'team:token:{token}').execute()
+                cached = pipeline.exists('teams:cached').execute()
+                if not cached:
+                    caching.cache_teams()
+
+                break
+            except redis.WatchError:
+                continue
+
+        # pipeline is not in multi mode now
+        team_id = pipeline.get(f'team:token:{token}')
 
     try:
         team_id = int(team_id.decode())
