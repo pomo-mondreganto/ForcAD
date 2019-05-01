@@ -1,18 +1,20 @@
-global_config:
+global:
   round_time: 60
   flag_lifetime: 5
   start_time: 2019-04-18 15:47:00+03:00 # Don't forget the timezone
-  tasks:
-    - name: Test task
-      checker: /checker/path
-      env_path: /additional/env
-      gets: 1
-      puts: 1
-      places: 1
-      checker_timeout: 30
-      default_score: 1500
+  shared_directory: volumes/shared # just point to /tmp if you're lazy
 
-celery_config:
+tasks:
+  - name: Test task
+    checker: /checker/path
+    env_path: /additional/env
+    gets: 1
+    puts: 1
+    places: 1
+    checker_timeout: 30
+    default_score: 1500
+
+celery:
   broker_url: redis://127.0.0.1:6379/1
   backend_url: redis://127.0.0.1:6379/1
   task_serializer: json
@@ -26,7 +28,7 @@ celery_config:
 
   timezone: Europe/Moscow
 
-storages_config:
+storages:
   db:
     host: 127.0.0.1
     port: 5432
@@ -39,7 +41,7 @@ storages_config:
     port: 6379
     db: 0
 
-teams_config:
+teams:
   - name: "Test team"
     ip: "127.0.0.1"
 
