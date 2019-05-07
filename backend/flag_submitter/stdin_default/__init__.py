@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import storage
-from helpers import exceptions
+from backend.helpers import exceptions
 
 print('Welcome! Please, enter your team token:')
 token = input().strip()

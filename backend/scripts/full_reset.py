@@ -6,7 +6,8 @@ sys.path.insert(0, BASE_DIR)
 
 import storage
 import config
-from scripts import reset_db, init_db, print_tokens
+from scripts import reset_db, init_db
+from backend.scripts import print_tokens
 
 
 def run():

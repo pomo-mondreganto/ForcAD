@@ -2,7 +2,7 @@ global:
   round_time: 60
   flag_lifetime: 5
   start_time: 2019-04-18 15:47:00+03:00 # Don't forget the timezone
-  shared_directory: volumes/shared # just point to /tmp if you're lazy
+  shared_directory: /volumes/shared # just point to /tmp if you're lazy
 
 tasks:
   - name: Test task

@@ -3,9 +3,9 @@ import json
 from psycopg2 import extras
 
 import config
-import helpers.models
 import storage
-from helpers import models
+from backend import helpers
+from backend.helpers import models
 
 _SELECT_ALL_TEAMS_QUERY = "SELECT * FROM teams"
 

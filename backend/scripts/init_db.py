@@ -8,7 +8,7 @@ sys.path.insert(0, BASE_DIR)
 import storage
 import config
 
-from helpers import models
+from backend.helpers import models
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 

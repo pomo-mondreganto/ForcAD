@@ -9,8 +9,8 @@ from celery.utils.log import get_task_logger
 
 import config
 import storage
-from helpers import checkers, flags, models
-from helpers.status import TaskStatus
+from backend.helpers import checkers, flags, models
+from backend.helpers.status import TaskStatus
 
 logger = get_task_logger(__name__)
 

@@ -4,7 +4,7 @@ from typing import List, Optional
 import redis
 
 import storage
-from helpers import models, rating
+from backend.helpers import models, rating
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"

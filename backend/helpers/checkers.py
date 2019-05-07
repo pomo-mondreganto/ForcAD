@@ -2,9 +2,8 @@ import os
 import subprocess
 from typing import Tuple, List
 
-import helpers.models
-import helpers.status
-from helpers.status import TaskStatus
+from backend import helpers
+from backend.helpers.status import TaskStatus
 
 
 def run_command_gracefully(*popenargs,

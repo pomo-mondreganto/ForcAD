@@ -3,9 +3,9 @@ from typing import List
 
 import redis
 
-import helpers.status
 import storage
-from helpers import models
+from backend import helpers
+from backend.helpers import models
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = f"""

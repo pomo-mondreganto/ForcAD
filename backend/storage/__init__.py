@@ -3,7 +3,13 @@ import redis
 from psycopg2 import pool
 
 import config
-from storage import flags, teams, tasks, game, caching
+from backend.storage import (
+    game,
+    tasks,
+    flags,
+    caching,
+    teams,
+)
 
 _redis_storage = None
 _async_redis_pool = None
