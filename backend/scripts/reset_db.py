@@ -1,6 +1,8 @@
 import os
 import sys
 
+import psycopg2
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
@@ -15,9 +17,14 @@ def run():
 
     create_query_path = os.path.join(SCRIPTS_DIR, 'drop_query.sql')
     create_query = open(create_query_path, 'r').read()
-    curs.execute(create_query)
-    conn.commit()
-    curs.close()
+    try:
+        curs.execute(create_query)
+    except psycopg2.errors.UndefinedTable:
+        pass
+    else:
+        conn.commit()
+    finally:
+        curs.close()
 
     storage.get_redis_storage().flushall()
 

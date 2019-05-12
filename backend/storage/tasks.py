@@ -3,9 +3,9 @@ from typing import List
 
 import redis
 
+import helpers
 import storage
-from backend import helpers
-from backend.helpers import models
+from helpers import models
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = f"""
@@ -29,7 +29,8 @@ def get_tasks() -> List[models.Task]:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         while True:
             try:
-                cached = pipeline.exists('tasks:cached').execute()
+                pipeline.watch('tasks:cached')
+                cached = pipeline.exists('tasks:cached')
                 if not cached:
                     caching.cache_tasks()
 

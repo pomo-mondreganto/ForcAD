@@ -9,8 +9,8 @@ from celery.utils.log import get_task_logger
 
 import config
 import storage
-from backend.helpers import checkers, flags, models
-from backend.helpers.status import TaskStatus
+from helpers import checkers, flags, models
+from helpers.status import TaskStatus
 
 logger = get_task_logger(__name__)
 
@@ -267,6 +267,7 @@ def process_round():
     if not game_state:
         logger.warning(f'Game state is missing for round {current_round - 1}, skipping')
     else:
+        logger.info(f'Publishing scoreboard for round {current_round - 1}')
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
             pipeline.publish('scoreboard', game_state.to_json())
             pipeline.set('game_state', game_state.to_json())

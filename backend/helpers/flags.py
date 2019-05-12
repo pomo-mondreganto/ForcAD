@@ -2,7 +2,7 @@ import secrets
 import string
 
 import storage
-from backend.helpers import models
+from helpers import models
 
 ALPHABET = string.ascii_uppercase + string.digits
 

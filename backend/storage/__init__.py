@@ -3,7 +3,7 @@ import redis
 from psycopg2 import pool
 
 import config
-from backend.storage import (
+from storage import (
     game,
     tasks,
     flags,

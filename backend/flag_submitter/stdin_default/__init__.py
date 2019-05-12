@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import storage
-from backend.helpers import exceptions
+from helpers import exceptions
 
 print('Welcome! Please, enter your team token:')
 token = input().strip()
@@ -17,6 +17,8 @@ team_id = storage.teams.get_team_id_by_token(token)
 if not team_id:
     print('Invalid team token')
     sys.exit(0)
+
+print('Now enter your flags, one in a line:')
 
 while True:
     flag_str = input().strip()

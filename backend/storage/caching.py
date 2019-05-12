@@ -3,9 +3,9 @@ import json
 from psycopg2 import extras
 
 import config
+import helpers
 import storage
-from backend import helpers
-from backend.helpers import models
+from helpers import models
 
 _SELECT_ALL_TEAMS_QUERY = "SELECT * FROM teams"
 
@@ -158,8 +158,8 @@ def cache_teamtasks(round: int):
     curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
     curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
-
     results = curs.fetchall()
+    print(results)
     curs.close()
     storage.get_db_pool().putconn(conn)
 

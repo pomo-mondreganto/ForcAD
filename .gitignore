@@ -101,8 +101,11 @@ Temporary Items
 .idea
 celery.state.db
 celerybeat-schedule.db
-docker_volumes/shared/*
+docker_volumes/*
 
-!docker_volumes/shared/.gitkeep
+!docker_volumes/**/.gitkeep
 
 *config.yml
+checkers/*
+!checkers/.gitkeep
+!checkers/bin/.gitkeep

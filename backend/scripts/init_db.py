@@ -8,7 +8,7 @@ sys.path.insert(0, BASE_DIR)
 import storage
 import config
 
-from backend.helpers import models
+from helpers import models
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
@@ -35,7 +35,16 @@ def run():
     tasks_config = config.get_tasks_config()
     tasks = []
 
+    game_config = config.get_game_config()
+    global_env_path = game_config['env_path']
+    checkers_path = game_config['checkers_path']
+
     for task_conf in tasks_config:
+        if 'env_path' not in task_conf:
+            task_conf['env_path'] = global_env_path
+
+        task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
+
         task = models.Task(id=None, **task_conf)
         query = (
             "INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path) "

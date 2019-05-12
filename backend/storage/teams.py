@@ -4,7 +4,7 @@ from typing import List, Optional
 import redis
 
 import storage
-from backend.helpers import models, rating
+from helpers import models, rating
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
@@ -19,7 +19,7 @@ def get_teams() -> List[models.Team]:
             try:
                 pipeline.watch('teams:cached')
 
-                cached = pipeline.exists('teams:cached').execute()
+                cached = pipeline.exists('teams:cached')
                 if not cached:
                     caching.cache_teams()
 
@@ -38,6 +38,7 @@ async def get_teams_async(loop) -> List[models.Team]:
     """Get list of teams registered in the database (asynchronous version)"""
 
     # FIXME: possible race condition, add lock on teams:cached
+    # (https://github.com/aio-libs/aioredis/blob/master/tests/transaction_commands_test.py)
     redis_aio = await storage.get_async_redis_pool(loop)
     cached = await redis_aio.exists('teams:cached')
     if not cached:
@@ -61,7 +62,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
             try:
                 pipeline.watch('teams:cached')
 
-                cached = pipeline.exists('teams:cached').execute()
+                cached = pipeline.exists('teams:cached')
                 if not cached:
                     caching.cache_teams()
 

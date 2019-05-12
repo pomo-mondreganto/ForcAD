@@ -4,8 +4,8 @@ from typing import Optional
 import redis
 
 import config
+import helpers
 import storage
-from backend import helpers
 from storage import caching
 
 _INSERT_STOLEN_FLAG_QUERY = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"

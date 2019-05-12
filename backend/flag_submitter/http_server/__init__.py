@@ -1,11 +1,17 @@
 """Flask server to submit flags"""
 
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BASE_DIR)
+
 import json
 
 from flask import Flask, request, make_response
 
 import storage
-from backend.helpers import exceptions
+from helpers import exceptions
 
 app = Flask(__name__)
 
@@ -58,4 +64,4 @@ def submit():
 
 
 if __name__ == '__main__':
-    app.run(host='5000', debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
