@@ -1,12 +1,14 @@
 global:
-  round_time: 60
+  round_time: 60 # should be ~4 times greater than the highest checker timeout
   flag_lifetime: 5
   start_time: 2019-04-18 15:47:00+03:00 # Don't forget the timezone
-  shared_directory: /volumes/shared # just point to /tmp if you're lazy
+  shared_directory: /volumes/shared
+  checkers_path: /checkers/
+  env_path: /checkers/bin/ # can be specified for each task
 
 tasks:
   - name: Test task
-    checker: /checker/path
+    checker: awesomeBlog/check.py # relative to checkers_path
     env_path: /additional/env
     gets: 1
     puts: 1
@@ -15,8 +17,8 @@ tasks:
     default_score: 1500
 
 celery:
-  broker_url: redis://127.0.0.1:6379/1
-  backend_url: redis://127.0.0.1:6379/1
+  broker_url: redis://redis:6379/1
+  backend_url: redis://redis:6379/1
   task_serializer: json
   accept_content:
     - json
@@ -29,15 +31,17 @@ celery:
   timezone: Europe/Moscow
 
 storages:
+  # Use db configuration from postgres environment file
+  # (docker_config/postgres/environment.env)
   db:
-    host: 127.0.0.1
+    host: postgres
     port: 5432
-    user: postgres
-    password: postgres
+    user: user
+    password: password
     dbname: test_db
 
   redis:
-    host: 127.0.0.1
+    host: redis
     port: 6379
     db: 0
 

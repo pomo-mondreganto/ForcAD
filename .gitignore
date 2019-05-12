@@ -109,3 +109,5 @@ docker_volumes/*
 checkers/*
 !checkers/.gitkeep
 !checkers/bin/.gitkeep
+
+*.env
