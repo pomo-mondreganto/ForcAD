@@ -75,6 +75,45 @@ services:
     ports:
       - 31337:31337
 
+  celerybeat:
+    build:
+      context: .
+      dockerfile: docker_config/celerybeat/Dockerfile
+    volumes:
+      - ./docker_volumes/:/volumes/
+    env_file:
+      - ./docker_config/postgres/environment.env
+    depends_on:
+      - redis
+      - postgres
+      - celery
+
+  flower:
+    build:
+      context: .
+      dockerfile: docker_config/flower/Dockerfile
+    env_file:
+      - ./docker_config/postgres/environment.env
+      - ./docker_config/flower/environment.env
+    volumes:
+      - ./docker_volumes/:/volumes/
+    depends_on:
+      - redis
+      - postgres
+      - celery
+
+  nginx:
+    image: nginx
+    volumes:
+      - ./docker_config/nginx/conf/:/etc/nginx/conf.d/
+      - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
+    depends_on:
+      - flower
+      - http_flag_submitter
+      - web_debug
+    ports:
+      - 8080:80
+
   redis:
     image: redis
 
