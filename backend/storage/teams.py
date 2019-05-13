@@ -1,6 +1,7 @@
 import json
 from typing import List, Optional
 
+import aioredis
 import redis
 
 import storage
@@ -37,13 +38,22 @@ def get_teams() -> List[models.Team]:
 async def get_teams_async(loop) -> List[models.Team]:
     """Get list of teams registered in the database (asynchronous version)"""
 
-    # FIXME: possible race condition, add lock on teams:cached
-    # (https://github.com/aio-libs/aioredis/blob/master/tests/transaction_commands_test.py)
     redis_aio = await storage.get_async_redis_pool(loop)
-    cached = await redis_aio.exists('teams:cached')
-    if not cached:
-        # TODO: make it asynchronous?
-        caching.cache_teams()
+
+    while True:
+        try:
+            await redis_aio.watch('teams:cached')
+
+            cached = await redis_aio.exists('teams:cached')
+            if not cached:
+                # TODO: make it asynchronous?
+                caching.cache_teams()
+
+            await redis_aio.unwatch()
+        except aioredis.WatchVariableError:
+            continue
+        else:
+            break
 
     teams = await redis_aio.smembers('teams')
     teams = list(models.Team.from_json(team) for team in teams)
