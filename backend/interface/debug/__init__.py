@@ -5,9 +5,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import asyncio
+import json
 
 from sanic import Sanic
-from sanic.response import html, json
+from sanic.response import html, json as json_response
 import storage
 from aioredis.pubsub import Receiver
 
@@ -51,22 +52,24 @@ async def test_connect(_sid, _environ):
     game_state = await storage.game.get_game_state_async(loop)
 
     teams = await storage.teams.get_teams_async(loop)
-    teams = [team.to_json() for team in teams]
+    teams = [team.to_dict() for team in teams]
     tasks = await storage.tasks.get_tasks_async(loop)
-    tasks = [task.to_json_for_participants() for task in tasks]
+    tasks = [task.to_dict_for_participants() for task in tasks]
     if not game_state:
         state = ''
     else:
-        state = game_state.to_json()
+        state = game_state.to_dict()
+
+    data_to_send = {
+        'state': state,
+        'teams': teams,
+        'tasks': tasks,
+    }
 
     await sio.emit(
         'init_scoreboard',
         {
-            'data': {
-                'state': state,
-                'teams': teams,
-                'tasks': tasks,
-            }
+            'data': json.dumps(data_to_send),
         },
         namespace='/test'
     )
@@ -75,15 +78,15 @@ async def test_connect(_sid, _environ):
 @app.route('/api/teams/')
 async def get_teams(_request):
     teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
-    teams = [team.to_json() for team in teams]
-    return json(teams)
+    teams = [team.to_dict() for team in teams]
+    return json_response(teams)
 
 
 @app.route('/api/tasks/')
 async def get_tasks(_request):
     tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
-    tasks = [task.to_json() for task in tasks]
-    return json(tasks)
+    tasks = [task.to_dict_for_participants() for task in tasks]
+    return json_response(tasks)
 
 
 @app.route('/')

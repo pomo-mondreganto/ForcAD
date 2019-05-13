@@ -24,6 +24,12 @@ class Model(object):
     def from_dict(cls, d: dict):
         return cls(**d)
 
+    def to_dict(self):
+        raise NotImplemented
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
     def __repr__(self):
         return str(self)
 
@@ -42,14 +48,13 @@ class Team(Model):
         self.ip = ip
         self.token = token
 
-    def to_json(self):
-        d = {
+    def to_dict(self):
+        return {
             'id': self.id,
             'name': self.name,
             'ip': self.ip,
             'token': self.token,
         }
-        return json.dumps(d)
 
     def __str__(self):
         return f"Team({self.id, self.name})"
@@ -91,8 +96,8 @@ class Task(Model):
         self.env_path = env_path
         self.default_score = default_score
 
-    def to_json(self):
-        d = {
+    def to_dict(self):
+        return {
             'id': self.id,
             'name': self.name,
             'checker': self.checker,
@@ -103,14 +108,15 @@ class Task(Model):
             'env_path': self.env_path,
             'default_score': self.default_score,
         }
-        return json.dumps(d)
 
-    def to_json_for_participants(self):
-        d = {
+    def to_dict_for_participants(self):
+        return {
             'id': self.id,
             'name': self.name,
         }
-        return json.dumps(d)
+
+    def to_json_for_participants(self):
+        return json.dumps(self.to_dict_for_participants())
 
     def __str__(self):
         return f"Task({self.id, self.name})"
@@ -143,8 +149,8 @@ class Flag(Model):
         self.flag_data = flag_data
         self.task_id = task_id
 
-    def to_json(self):
-        d = {
+    def to_dict(self):
+        return {
             'id': self.id,
             'team_id': self.team_id,
             'task_id': self.task_id,
@@ -152,7 +158,6 @@ class Flag(Model):
             'round': self.round,
             'flag_data': self.flag_data,
         }
-        return json.dumps(d)
 
     def __str__(self):
         return (
@@ -175,12 +180,14 @@ class GameState(Model):
         self.round = round
         self.team_tasks = team_tasks
 
-    def to_json(self):
-        d = {
+    def to_dict(self):
+        return {
             'round': self.round,
             'team_tasks': self.team_tasks
         }
-        return json.dumps(d)
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __str__(self):
         return f"GameState for round {self.round}"
