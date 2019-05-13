@@ -20,6 +20,7 @@ services:
     networks:
       - lan_access
       - default
+    restart: on-failure
 
   initializer:
     build:
@@ -32,6 +33,7 @@ services:
     depends_on:
       - redis
       - postgres
+    restart: on-failure
 
   web_debug:
     build:
@@ -46,6 +48,7 @@ services:
       - postgres
     ports:
       - 5002:5002
+    restart: on-failure
 
   http_flag_submitter:
     build:
@@ -60,6 +63,7 @@ services:
       - postgres
     ports:
       - 5000:5000
+    restart: on-failure
 
   tcp_flag_submitter:
     build:
@@ -74,6 +78,7 @@ services:
       - postgres
     ports:
       - 31337:31337
+    restart: on-failure
 
   celerybeat:
     build:
@@ -87,6 +92,7 @@ services:
       - redis
       - postgres
       - celery
+    restart: on-failure
 
   flower:
     build:
@@ -101,6 +107,7 @@ services:
       - redis
       - postgres
       - celery
+    restart: on-failure
 
   nginx:
     image: nginx
@@ -113,9 +120,11 @@ services:
       - web_debug
     ports:
       - 8080:80
+    restart: on-failure
 
   redis:
     image: redis
+    restart: on-failure
 
   postgres:
     image: postgres:10.6
@@ -123,3 +132,4 @@ services:
       - ./docker_volumes/postgres/data/:/var/lib/postgresql/data/
     env_file:
       - ./docker_config/postgres/environment.env
+    restart: on-failure

@@ -8,6 +8,8 @@ certifi==2019.3.9
 chardet==3.0.4
 Click==7.0
 Flask==1.0.2
+gevent==1.4.0
+greenlet==0.4.15
 hiredis==1.0.0
 httptools==0.0.13
 idna==2.8
