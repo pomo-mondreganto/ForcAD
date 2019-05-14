@@ -5,6 +5,7 @@ global:
   shared_directory: /volumes/shared
   checkers_path: /checkers/
   env_path: /checkers/bin/ # can be specified for each task
+  default_score: 1000 # global for all tasks if not specified
 
 tasks:
   - name: Test task
@@ -14,7 +15,6 @@ tasks:
     puts: 1
     places: 1
     checker_timeout: 30
-    default_score: 1500
 
 celery:
   broker_url: redis://redis:6379/1

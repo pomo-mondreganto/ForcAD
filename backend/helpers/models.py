@@ -84,7 +84,7 @@ class Task(Model):
                  places: int,
                  checker_timeout: int,
                  env_path: str,
-                 default_score: float = 1500.0):
+                 default_score: float):
         super(Task, self).__init__()
         self.id = id
         self.name = name
