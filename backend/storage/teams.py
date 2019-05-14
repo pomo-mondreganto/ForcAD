@@ -4,6 +4,7 @@ from typing import List, Optional
 import aioredis
 import redis
 
+import config
 import storage
 from helpers import models, rating
 from storage import caching
@@ -98,6 +99,8 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
         :param victim_id: id of the victim team
         :param task_id: id of task which is attacked
         :param round: round of the attack
+
+        :return: attacker rating change
     """
 
     conn = storage.get_db_pool().getconn()
@@ -109,7 +112,12 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
     curs.execute(_SELECT_SCORE_BY_TEAM_TASK_QUERY, (victim_id, task_id, round))
     victim_score, = curs.fetchone()
 
-    rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score)
+    game_hardness = config.get_game_config().get('game_hardness')
+    if game_hardness is not None:
+        rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score, game_hardness=game_hardness)
+    else:
+        rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score)
+
     attacker_delta, victim_delta = rs.calculate()
 
     curs.execute(_UPDATE_TEAMTASKS_SCORE_QUERY, (attacker_score + attacker_delta, attacker_id, task_id, round))
