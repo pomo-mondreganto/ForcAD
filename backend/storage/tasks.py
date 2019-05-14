@@ -1,6 +1,7 @@
 import json
 from typing import List
 
+import aioredis
 import redis
 
 import helpers
@@ -48,12 +49,22 @@ def get_tasks() -> List[models.Task]:
 async def get_tasks_async(loop) -> List[models.Task]:
     """Get list of tasks registered in the database (asynchronous version)"""
 
-    # FIXME: possible race condition, add lock on teams:cached
     redis_aio = await storage.get_async_redis_pool(loop)
-    cached = await redis_aio.exists('tasks:cached')
-    if not cached:
-        # TODO: make it asynchronous?
-        caching.cache_tasks()
+
+    while True:
+        try:
+            await redis_aio.watch('tasks:cached')
+
+            cached = await redis_aio.exists('tasks:cached')
+            if not cached:
+                # TODO: make it asynchronous?
+                caching.cache_tasks()
+
+            await redis_aio.unwatch()
+        except aioredis.WatchVariableError:
+            continue
+        else:
+            break
 
     tasks = await redis_aio.smembers('tasks')
     tasks = list(models.Task.from_json(task) for task in tasks)

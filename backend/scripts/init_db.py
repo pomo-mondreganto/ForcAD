@@ -38,10 +38,14 @@ def run():
     game_config = config.get_game_config()
     global_env_path = game_config['env_path']
     checkers_path = game_config['checkers_path']
+    global_default_score = game_config['default_score']
 
     for task_conf in tasks_config:
         if 'env_path' not in task_conf:
             task_conf['env_path'] = global_env_path
+
+        if 'default_score' not in task_conf:
+            task_conf['default_score'] = global_default_score
 
         task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
 
