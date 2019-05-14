@@ -65,7 +65,6 @@ class Scoreboard extends React.Component {
     };
 
     render() {
-        console.log(this.state);
         return <Component {...this.state} />;
     }
 }
