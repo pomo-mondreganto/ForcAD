@@ -73,7 +73,7 @@ class Task(Model):
     places: int
     checker_timeout: int
     env_path: str
-    default_score: float
+    default_score: Optional[float]
 
     def __init__(self,
                  id: Optional[int],
@@ -84,7 +84,7 @@ class Task(Model):
                  places: int,
                  checker_timeout: int,
                  env_path: str,
-                 default_score: float):
+                 default_score: Optional[float] = None):
         super(Task, self).__init__()
         self.id = id
         self.name = name

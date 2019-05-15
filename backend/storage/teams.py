@@ -9,9 +9,10 @@ import storage
 from helpers import models, rating
 from storage import caching
 
+# TODO: should I consider SLA when recalculating rating?
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
 
-_UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s AND round=%s"
+_UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s AND round >= %s"
 
 
 def get_teams() -> List[models.Team]:
@@ -106,10 +107,24 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
 
-    curs.execute(_SELECT_SCORE_BY_TEAM_TASK_QUERY, (attacker_id, task_id, round))
+    curs.execute(
+        _SELECT_SCORE_BY_TEAM_TASK_QUERY,
+        (
+            attacker_id,
+            task_id,
+            round,
+        ),
+    )
     attacker_score, = curs.fetchone()
 
-    curs.execute(_SELECT_SCORE_BY_TEAM_TASK_QUERY, (victim_id, task_id, round))
+    curs.execute(
+        _SELECT_SCORE_BY_TEAM_TASK_QUERY,
+        (
+            victim_id,
+            task_id,
+            round,
+        ),
+    )
     victim_score, = curs.fetchone()
 
     game_hardness = config.get_game_config().get('game_hardness')
@@ -120,8 +135,24 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
 
     attacker_delta, victim_delta = rs.calculate()
 
-    curs.execute(_UPDATE_TEAMTASKS_SCORE_QUERY, (attacker_score + attacker_delta, attacker_id, task_id, round))
-    curs.execute(_UPDATE_TEAMTASKS_SCORE_QUERY, (victim_score + victim_delta, victim_id, task_id, round))
+    curs.execute(
+        _UPDATE_TEAMTASKS_SCORE_QUERY,
+        (
+            attacker_score + attacker_delta,
+            attacker_id,
+            task_id,
+            round,
+        ),
+    )
+    curs.execute(
+        _UPDATE_TEAMTASKS_SCORE_QUERY,
+        (
+            victim_score + victim_delta,
+            victim_id,
+            task_id,
+            round,
+        ),
+    )
 
     conn.commit()
     curs.close()
