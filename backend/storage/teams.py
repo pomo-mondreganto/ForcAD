@@ -9,7 +9,6 @@ import storage
 from helpers import models, rating
 from storage import caching
 
-# TODO: should I consider SLA when recalculating rating?
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
 
 _UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s AND round >= %s"
