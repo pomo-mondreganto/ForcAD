@@ -98,7 +98,9 @@ const TeamTaskInfoComponent = ({
             {init ? 0 : score.toFixed(2)}
         </TeamTaskInfoRow>
         <TeamTaskInfoRow>
-            <b>F: </b>
+            <b>
+                <i className="fas fa-flag" />{' '}
+            </b>
             {init || (stolen === 0 && lost === 0) ? '0' : `+${stolen}/-${lost}`}
         </TeamTaskInfoRow>
     </TeamTaskInfo>
