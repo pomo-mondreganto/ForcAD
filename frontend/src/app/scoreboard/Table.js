@@ -84,11 +84,11 @@ const TeamTaskInfoComponent = ({ stolen, lost, score, upRounds, round }) => (
     <TeamTaskInfo>
         <TeamTaskInfoRow>
             <b>SLA: </b>
-            {`${(upRounds / round).toFixed(2)}%`}
+            {`${(100.0 * upRounds / round).toFixed(2)}%`}
         </TeamTaskInfoRow>
         <TeamTaskInfoRow>
             <b>FP: </b>
-            {score}
+            {score.toFixed(2)}
         </TeamTaskInfoRow>
         <TeamTaskInfoRow>
             <b>F: </b>
@@ -126,7 +126,7 @@ const TeamRow = ({ index, name, ip, score, tasks, round }) => (
             <div>{name}</div>
             <div>{ip}</div>
         </TeamName>
-        <TeamScore>{score}</TeamScore>
+        <TeamScore>{score.toFixed(2)}</TeamScore>
         {tasks.map(
             (
                 {

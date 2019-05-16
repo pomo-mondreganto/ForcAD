@@ -22,7 +22,20 @@ class Scoreboard extends React.Component {
         };
     }
 
-    getTeamsWithScoreSorted = (teams, teamTasks) => {
+    getTeamsWithScoreSorted = (teams, teamTasks, round) => {
+        console.log(teams);
+        console.log(teams
+            .map(team => ({
+                ...team,
+                tasks: teamTasks
+                    .filter(teamTask => teamTask.team_id === team.id)
+                    .sort((a, b) => a.id < b.id),
+                score: teamTasks
+                    .filter(teamTask => teamTask.team_id === team.id)
+                    .reduce((acc, { score, up_rounds: upRounds }) => acc + score * upRounds / round, 0)
+            })));
+        console.log(teamTasks);
+        console.log(round);
         return teams
             .map(team => ({
                 ...team,
@@ -31,9 +44,9 @@ class Scoreboard extends React.Component {
                     .sort((a, b) => a.id < b.id),
                 score: teamTasks
                     .filter(teamTask => teamTask.team_id === team.id)
-                    .reduce((acc, { score }) => acc + score, 0)
+                    .reduce((acc, { score, up_rounds: upRounds }) => acc + score * upRounds / round, 0)
             }))
-            .sort((a, b) => a.score > b.score);
+            .sort((a, b) => a.score < b.score || Math.abs(a.score - b.score) < 1e-5 && a.id > b.id);
     };
 
     initSocket = () => {
@@ -51,7 +64,7 @@ class Scoreboard extends React.Component {
                 ok: true,
                 round: state.round,
                 tasks,
-                teams: this.getTeamsWithScoreSorted(teams, state.team_tasks)
+                teams: this.getTeamsWithScoreSorted(teams, state.team_tasks, state.round)
             });
         });
         this.server.on('update_scoreboard', ({ data }) => {
@@ -59,7 +72,7 @@ class Scoreboard extends React.Component {
             // console.log(json);
             this.setState(({ teams }) => ({
                 round: json.round,
-                teams: this.getTeamsWithScoreSorted(teams, json.team_tasks)
+                teams: this.getTeamsWithScoreSorted(teams, json.team_tasks, json.round)
             }));
         });
     };
