@@ -35,7 +35,7 @@ services:
       - postgres
     restart: on-failure
 
-  web_debug:
+  webapi:
     build:
       context: .
       dockerfile: docker_config/web_debug/Dockerfile
@@ -117,7 +117,7 @@ services:
     depends_on:
       - flower
       - http_flag_submitter
-      - web_debug
+      - webapi
     ports:
       - 8080:80
     restart: on-failure

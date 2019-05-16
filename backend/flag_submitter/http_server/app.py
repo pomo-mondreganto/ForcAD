@@ -1,5 +1,3 @@
-"""Flask server to submit flags"""
-
 import os
 import sys
 

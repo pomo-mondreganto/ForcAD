@@ -15,7 +15,8 @@ const serviceStatuses = {
     102: 'MUMBLE',
     103: 'CORRUPT',
     104: 'DOWN',
-    '-1337': 'CHECK FAILED'
+    '-1337': 'CHECK FAILED',
+    '-1': 'OFFLINE'
 };
 
 const serviceColors = {
@@ -23,7 +24,8 @@ const serviceColors = {
     102: '#ff9114',
     103: '#5191ff',
     104: '#ff5b5b',
-    '-1337': '#ffff00'
+    '-1337': '#ffff00',
+    '-1': '#f142f477'
 };
 
 export { serverUrl, serviceColors, serviceStatuses, statuses };

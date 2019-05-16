@@ -19,9 +19,9 @@ const Page = styled.div`
     padding-right: 5%;
 `;
 
-const Component = ({ ok, tasks, teams, round }) => {
+const Component = ({ ok, init, tasks, teams, round }) => {
     if (!ok) {
-        return null;
+        return <div>V2UgYXJlIG9mZmxpbmUh</div>;
     }
 
     return (
@@ -30,7 +30,12 @@ const Component = ({ ok, tasks, teams, round }) => {
             <NavbarComponent round={round} />
             <Page>
                 <StatusesComponent />
-                <TableComponent tasks={tasks} teams={teams} round={round} />
+                <TableComponent
+                    tasks={tasks}
+                    teams={teams}
+                    round={round}
+                    init={init}
+                />
             </Page>
         </>
     );

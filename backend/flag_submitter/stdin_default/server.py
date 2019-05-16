@@ -1,5 +1,3 @@
-"""STDIN flag submitter"""
-
 import os
 import sys
 

@@ -16,6 +16,7 @@ class Scoreboard extends React.Component {
 
         this.state = {
             ok: false,
+            init: false,
             round: 0,
             tasks: null,
             teams: null
@@ -23,19 +24,6 @@ class Scoreboard extends React.Component {
     }
 
     getTeamsWithScoreSorted = (teams, teamTasks, round) => {
-        console.log(teams);
-        console.log(teams
-            .map(team => ({
-                ...team,
-                tasks: teamTasks
-                    .filter(teamTask => teamTask.team_id === team.id)
-                    .sort((a, b) => a.id < b.id),
-                score: teamTasks
-                    .filter(teamTask => teamTask.team_id === team.id)
-                    .reduce((acc, { score, up_rounds: upRounds }) => acc + score * upRounds / round, 0)
-            })));
-        console.log(teamTasks);
-        console.log(round);
         return teams
             .map(team => ({
                 ...team,
@@ -44,9 +32,24 @@ class Scoreboard extends React.Component {
                     .sort((a, b) => a.id < b.id),
                 score: teamTasks
                     .filter(teamTask => teamTask.team_id === team.id)
-                    .reduce((acc, { score, up_rounds: upRounds }) => acc + score * upRounds / round, 0)
+                    .reduce(
+                        (acc, { score, up_rounds: upRounds }) =>
+                            acc + (score * upRounds) / round,
+                        0
+                    )
             }))
-            .sort((a, b) => a.score < b.score || Math.abs(a.score - b.score) < 1e-5 && a.id > b.id);
+            .sort(
+                (a, b) =>
+                    a.score < b.score ||
+                    (Math.abs(a.score - b.score) < 1e-5 && a.id > b.id)
+            );
+    };
+
+    mapTasksWithTeams = (teams, tasks) => {
+        return teams.map(team => ({
+            ...team,
+            tasks: tasks.map(task => ({ task_id: task.id }))
+        }));
     };
 
     initSocket = () => {
@@ -57,22 +60,29 @@ class Scoreboard extends React.Component {
         }
         this.server.on('init_scoreboard', ({ data }) => {
             const json = JSON.parse(data);
-            // console.log(json);
-            const { state, tasks, teams } = json;
+            const { tasks, teams } = json;
+
+            console.log(json);
 
             this.setState({
                 ok: true,
-                round: state.round,
+                init: true,
                 tasks,
-                teams: this.getTeamsWithScoreSorted(teams, state.team_tasks, state.round)
+                teams: this.mapTasksWithTeams(teams, tasks),
+                round: -1
             });
         });
         this.server.on('update_scoreboard', ({ data }) => {
             const json = JSON.parse(data);
-            // console.log(json);
             this.setState(({ teams }) => ({
+                ok: true,
+                init: false,
                 round: json.round,
-                teams: this.getTeamsWithScoreSorted(teams, json.team_tasks, json.round)
+                teams: this.getTeamsWithScoreSorted(
+                    teams,
+                    json.team_tasks,
+                    json.round
+                )
             }));
         });
     };

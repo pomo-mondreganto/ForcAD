@@ -3,5 +3,6 @@
 /await_start.sh
 
 cd /app/flag_submitter/http_server
+
 echo "[*] Starting http flag submitter"
-python3 __init__.py
+gunicorn --worker-class gevent --worker-connections 1024 --bind 0.0.0.0:5000 app:app
