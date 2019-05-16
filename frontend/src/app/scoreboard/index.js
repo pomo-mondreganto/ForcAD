@@ -54,19 +54,19 @@ class Scoreboard extends React.Component {
 
     initSocket = () => {
         try {
-            this.server = io(`${serverUrl}/test`, { forceNew: true });
+            this.server = io(`${serverUrl}/api/sio_interface`, {
+                forceNew: true
+            });
         } catch (e) {
             throw new Error('Server is down');
         }
         this.server.on('init_scoreboard', ({ data }) => {
             const json = JSON.parse(data);
-            const { tasks, teams } = json;
-
-            console.log(json);
+            const { state, tasks, teams } = json;
 
             this.setState({
                 ok: true,
-                init: true,
+                init: state === '',
                 tasks,
                 teams: this.mapTasksWithTeams(teams, tasks),
                 round: -1
