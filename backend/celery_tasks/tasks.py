@@ -258,6 +258,7 @@ def process_round():
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('round', current_round - 1)
+        pipeline.set('real_round', current_round)
         pipeline.execute()
 
     if current_round > 1:

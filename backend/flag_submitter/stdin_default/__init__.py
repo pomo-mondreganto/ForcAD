@@ -7,6 +7,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import storage
+import helpers
 from helpers import exceptions
 
 print('Welcome! Please, enter your team token:')
@@ -23,18 +24,13 @@ print('Now enter your flags, one in a line:')
 while True:
     flag_str = input().strip()
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        started, round = pipeline.exists('round').get('round').execute()
+    round = storage.game.get_real_round()
 
-    if not started or not round:
+    if round == -1:
         print('Game is unavailable yet')
-        continue
-
-    round = int(round.decode())
 
     try:
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
-        storage.flags.check_flag(flag=flag, attacker=team_id, round=round)
+        flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
     except exceptions.FlagSubmitException as e:
         print(e)
         continue

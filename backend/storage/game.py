@@ -5,14 +5,31 @@ from helpers import models
 
 
 def get_current_round() -> int:
-    """Get current round"""
+    """Get current round, returns -1 if round not in cache"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         round, = pipeline.get('round').execute()
+
     try:
-        round = round.decode()
-        return int(round)
+        round = int(round.decode())
     except (AttributeError, ValueError):
         return -1
+    else:
+        return round
+
+
+def get_real_round() -> int:
+    """Get real round of system (for flag submitting),
+    returns -1 if round not in cache
+    """
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        round, = pipeline.get('real_round').execute()
+
+    try:
+        round = int(round.decode())
+    except (AttributeError, ValueError):
+        return -1
+    else:
+        return round
 
 
 async def get_current_round_async(loop) -> int:

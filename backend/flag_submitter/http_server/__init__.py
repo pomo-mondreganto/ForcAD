@@ -11,6 +11,7 @@ import json
 from flask import Flask, request, make_response
 
 import storage
+import helpers
 from helpers import exceptions
 
 
@@ -54,7 +55,7 @@ def submit():
     team_token = request.headers.get('X-TeamToken')
     team_id = storage.teams.get_team_id_by_token(team_token)
 
-    round = storage.game.get_current_round()
+    round = storage.game.get_real_round()
 
     if round == -1:
         return get_response(error='Game is not available yet', status_code=403)
@@ -63,11 +64,9 @@ def submit():
         return get_response(error='Submit your flags as json in array with key "flags', status_code=400)
 
     responses = []
-    for flag in request.json['flags']:
-        flag = storage.flags.get_flag_by_str(flag_str=flag, round=round)
-
+    for flag_str in request.json['flags']:
         try:
-            storage.flags.check_flag(flag=flag, attacker=team_id, round=round)
+            flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
         except exceptions.FlagSubmitException as e:
             responses.append(str(e))
         else:
