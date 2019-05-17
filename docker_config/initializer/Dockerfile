@@ -2,7 +2,7 @@ FROM python:3.7-alpine
 
 RUN apk add gcc make musl-dev postgresql-dev
 
-ADD ./backend/requirements.txt /requirements.txt
+ADD backend/requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 ADD backend /app
@@ -11,5 +11,6 @@ ADD ./docker_config/initializer/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ADD ./docker_config/db_check.py /db_check.py
+ADD ./docker_config/check_initialized.py /check_initialized.py
 
 CMD ["/entrypoint.sh"]

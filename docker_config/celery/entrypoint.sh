@@ -3,9 +3,26 @@
 /await_start.sh
 
 cd /app
-echo "[*] Starting celery"
-celery worker -A celery_tasks \
-    -E -l info \
-#    --statedb=/volumes/celery/%n%I.state \
-    --pool=gevent \
-    --concurrency=500
+
+case $CELERY_CONTAINER_TYPE in
+    "worker")
+        echo "[*] Starting celery worker"
+        celery worker -A celery_tasks \
+        -E -l info \
+        --pool=gevent \
+        --concurrency=500
+        ;;
+    "beat")
+        echo "[*] Starting celery beat"
+        celery beat -A celery_tasks \
+            --schedule=/volumes/celery/celerybeat-schedule \
+            --pidfile=/tmp/celerybeat.pid
+        ;;
+    "flower")
+        echo "[*] Starting celery flower"
+        celery flower -A celery_tasks \
+            --basic_auth="$FLOWER_BASIC_AUTH" \
+            --url-prefix=flower \
+            --host=0.0.0.0 \
+            --port=5555
+esac

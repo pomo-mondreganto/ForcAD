@@ -7,3 +7,5 @@ DROP TABLE stolenflags;
 DROP TABLE tasks;
 
 DROP TABLE teamtasks;
+
+DROP TABLE globalconfig;

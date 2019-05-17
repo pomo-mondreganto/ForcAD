@@ -21,6 +21,9 @@ def run():
     create_query = open(create_query_path, 'r').read()
     curs.execute(create_query)
 
+    query = 'INSERT INTO globalconfig (real_round, game_running) VALUES (%s, %s)'
+    curs.execute(query, (0, 0))
+
     teams_config = config.get_teams_config()
     teams = []
 

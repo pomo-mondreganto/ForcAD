@@ -51,6 +51,13 @@ CREATE TABLE IF NOT EXISTS TeamTasks
   UNIQUE (round, task_id, team_id)
 );
 
+CREATE TABLE IF NOT EXISTS GlobalConfig
+(
+  id           SERIAL PRIMARY KEY,
+  game_running INTEGER DEFAULT 0,
+  real_round   INTEGER DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_teamtasks_team_task_ids
   ON TeamTasks (team_id, task_id, round);
 

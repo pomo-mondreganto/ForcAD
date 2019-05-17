@@ -9,8 +9,9 @@ services:
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
+    environment:
+      - CELERY_CONTAINER_TYPE=worker
     volumes:
-      - ./docker_volumes/:/volumes/
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
@@ -22,12 +23,42 @@ services:
       - default
     restart: on-failure
 
+  celerybeat:
+    build:
+      context: .
+      dockerfile: docker_config/celery/Dockerfile
+    environment:
+      - CELERY_CONTAINER_TYPE=beat
+    volumes:
+      - ./docker_volumes/:/volumes/
+    env_file:
+      - ./docker_config/postgres/environment.env
+    depends_on:
+      - redis
+      - postgres
+      - celery
+    restart: on-failure
+
+  flower:
+    build:
+      context: .
+      dockerfile: docker_config/celery/Dockerfile
+    environment:
+      - CELERY_CONTAINER_TYPE=flower
+    env_file:
+      - ./docker_config/postgres/environment.env
+      - docker_config/celery/flower_environment.env
+    depends_on:
+      - redis
+      - postgres
+      - celery
+    restart: on-failure
+
+
   initializer:
     build:
       context: .
       dockerfile: docker_config/initializer/Dockerfile
-    volumes:
-      - ./docker_volumes/:/volumes/
     env_file:
       - ./docker_config/postgres/environment.env
     depends_on:
@@ -39,8 +70,6 @@ services:
     build:
       context: .
       dockerfile: docker_config/webapi/Dockerfile
-    volumes:
-      - ./docker_volumes/:/volumes/
     env_file:
       - ./docker_config/postgres/environment.env
     depends_on:
@@ -60,8 +89,6 @@ services:
     build:
       context: .
       dockerfile: docker_config/http_flag_submitter/Dockerfile
-    volumes:
-      - ./docker_volumes/:/volumes/
     env_file:
       - ./docker_config/postgres/environment.env
     depends_on:
@@ -73,8 +100,6 @@ services:
     build:
       context: .
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile
-    volumes:
-      - ./docker_volumes/:/volumes/
     env_file:
       - ./docker_config/postgres/environment.env
     depends_on:
@@ -82,35 +107,6 @@ services:
       - postgres
     ports:
       - 31337:31337
-    restart: on-failure
-
-  celerybeat:
-    build:
-      context: .
-      dockerfile: docker_config/celerybeat/Dockerfile
-    volumes:
-      - ./docker_volumes/:/volumes/
-    env_file:
-      - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
-      - celery
-    restart: on-failure
-
-  flower:
-    build:
-      context: .
-      dockerfile: docker_config/flower/Dockerfile
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/flower/environment.env
-    volumes:
-      - ./docker_volumes/:/volumes/
-    depends_on:
-      - redis
-      - postgres
-      - celery
     restart: on-failure
 
   nginx:

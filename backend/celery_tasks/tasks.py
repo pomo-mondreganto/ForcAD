@@ -1,8 +1,7 @@
-import os
-import pathlib
 import random
 import secrets
 
+import redis
 from celery import shared_task, chain
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
@@ -23,9 +22,6 @@ def startup(**_kwargs):
     logger.info(f'Received game config: {game_config}')
 
     start_game.apply_async(
-        args=(
-            game_config['shared_directory'],
-        ),
         eta=game_config['start_time'],
     )
 
@@ -229,70 +225,69 @@ def process_round():
 
         Updates current round variable, then processes all teams.
         This function also caches previous state and notifies frontend of a new round.
+
+        Only one instance of process_round could be run!
     """
-    game_config = config.get_game_config()
-    shared_directory = game_config['shared_directory']
 
-    game_running_file_path = os.path.join(shared_directory, 'game_running')
-
-    game_running = os.path.exists(game_running_file_path)
+    game_running = storage.game.get_game_running()
     if not game_running:
         logger.info('Game is not running, exiting')
         return
 
-    current_round_file_path = os.path.join(shared_directory, 'round')
+    current_round = storage.game.get_real_round_from_db()
+    finished_round = current_round
+    new_round = current_round + 1
+    storage.game.update_real_round_in_db(new_round=new_round)
 
-    try:
-        with open(os.path.join(config.BASE_DIR, current_round_file_path)) as f:
-            current_round = int(f.read())
-
-    except (FileNotFoundError, ValueError):
-        current_round = 1
-        with open(os.path.join(config.BASE_DIR, current_round_file_path), 'w') as f:
-            f.write('2')
-    else:
-        with open(os.path.join(config.BASE_DIR, current_round_file_path), 'w') as f:
-            f.write(f'{current_round + 1}')
-
-    logger.info(f'Processing round {current_round}')
+    logger.info(f'Processing round {new_round}')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.set('round', current_round - 1)
-        pipeline.set('real_round', current_round)
+        pipeline.set('round', finished_round)
+        pipeline.set('real_round', new_round)
         pipeline.execute()
 
-    if current_round > 1:
-        storage.caching.cache_teamtasks(round=current_round - 1)
+    if new_round > 1:
+        storage.caching.cache_teamtasks(round=finished_round)
 
-    game_state = storage.game.get_game_state(round=current_round - 1)
+    game_state = storage.game.get_game_state(round=finished_round)
     if not game_state:
-        logger.warning(f'Game state is missing for round {current_round - 1}, skipping')
+        logger.warning(f'Game state is missing for round {finished_round}, skipping')
     else:
-        logger.info(f'Publishing scoreboard for round {current_round - 1}')
+        logger.info(f'Publishing scoreboard for round {finished_round}')
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
             pipeline.publish('scoreboard', game_state.to_json())
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
-    storage.tasks.initialize_teamtasks(round=current_round)
+    storage.tasks.initialize_teamtasks(round=new_round)
 
     teams = storage.teams.get_teams()
     for team in teams:
-        process_team.delay(team.to_json(), current_round)
+        process_team.delay(team.to_json(), new_round)
 
 
 @shared_task
-def start_game(shared_directory):
+def start_game():
     """Starts game
 
-    Created `game_running` file in shared directory
+    Sets `game_running` in DB
     """
     logger.info('Starting game')
 
-    already_started = os.path.exists(os.path.join(shared_directory, 'game_running'))
-    if already_started:
-        logger.info('Game already started')
-        return
+    with storage.get_redis_storage().pipeline() as pipeline:
+        while True:
+            try:
+                pipeline.watch('game_starting_lock')
+
+                already_started = storage.game.get_game_running()
+                if already_started:
+                    logger.info('Game already started')
+                    return
+                storage.game.set_game_running(1)
+
+                break
+            except redis.WatchError:
+                continue
 
     storage.caching.cache_teamtasks(round=0)
 
@@ -305,6 +300,3 @@ def start_game(shared_directory):
             pipeline.set('game_state', game_state.to_json())
             pipeline.publish('scoreboard', game_state.to_json())
             pipeline.execute()
-
-    path = pathlib.Path(os.path.join(shared_directory, 'game_running'))
-    path.touch()

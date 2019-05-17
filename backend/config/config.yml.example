@@ -2,7 +2,6 @@ global:
   round_time: 60 # should be ~4 times greater than the highest checker timeout
   flag_lifetime: 5
   start_time: 2019-04-18 15:47:00+03:00 # Don't forget the timezone
-  shared_directory: /volumes/shared
   checkers_path: /checkers/
   env_path: /checkers/bin/ # can be specified for each task
   default_score: 1000 # global for all tasks if not specified

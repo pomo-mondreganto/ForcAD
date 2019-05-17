@@ -159,7 +159,6 @@ def cache_teamtasks(round: int):
 
     curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
     results = curs.fetchall()
-    print(results)
     curs.close()
     storage.get_db_pool().putconn(conn)
 
