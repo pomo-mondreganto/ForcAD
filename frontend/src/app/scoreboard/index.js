@@ -16,7 +16,6 @@ class Scoreboard extends React.Component {
 
         this.state = {
             ok: false,
-            init: false,
             round: 0,
             tasks: null,
             teams: null
@@ -30,26 +29,24 @@ class Scoreboard extends React.Component {
                 tasks: teamTasks
                     .filter(teamTask => teamTask.team_id === team.id)
                     .sort((a, b) => a.id < b.id),
-                score: teamTasks
-                    .filter(teamTask => teamTask.team_id === team.id)
-                    .reduce(
-                        (acc, { score, up_rounds: upRounds }) =>
-                            acc + (score * upRounds) / round,
-                        0
-                    )
+                score:
+                    round === 0
+                        ? 0
+                        : teamTasks
+                            .filter(teamTask => teamTask.team_id === team.id)
+                            .reduce(
+                                (acc, { score, up_rounds: upRounds }) =>
+                                    acc + (score * upRounds) / round,
+                                0
+                            )
             }))
-            .sort(
-                (a, b) =>
-                    a.score < b.score ||
-                    (Math.abs(a.score - b.score) < 1e-5 && a.id > b.id)
-            );
-    };
-
-    mapTasksWithTeams = (teams, tasks) => {
-        return teams.map(team => ({
-            ...team,
-            tasks: tasks.map(task => ({ task_id: task.id }))
-        }));
+            .sort((a, b) => {
+                const diff = b.score - a.score;
+                if (diff !== 0) {
+                    return diff;
+                }
+                return b.id - a.id;
+            });
     };
 
     initSocket = () => {
@@ -64,27 +61,21 @@ class Scoreboard extends React.Component {
             const json = JSON.parse(data);
             const { state, tasks, teams } = json;
 
-            const init = state === '';
-
             this.setState({
                 ok: true,
-                init,
                 tasks,
-                teams: init
-                    ? this.mapTasksWithTeams(teams, tasks)
-                    : this.getTeamsWithScoreSorted(
-                        teams,
-                        state.team_tasks,
-                        state.round
-                    ),
-                round: init ? -1 : state.round
+                teams: this.getTeamsWithScoreSorted(
+                    teams,
+                    state.team_tasks,
+                    state.round
+                ),
+                round: state.round
             });
         });
         this.server.on('update_scoreboard', ({ data }) => {
             const json = JSON.parse(data);
             this.setState(({ teams }) => ({
                 ok: true,
-                init: false,
                 round: json.round,
                 teams: this.getTeamsWithScoreSorted(
                     teams,

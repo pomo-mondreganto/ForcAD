@@ -52,6 +52,9 @@ const rules = [
 
 module.exports = {
     entry: paths.entryPath,
+    output: {
+        publicPath: '/'
+    },
     module: {
         rules
     },

@@ -207,5 +207,6 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
 
     with storage.get_redis_storage().pipeline() as pipeline:
         pipeline.publish('stolen_flags', json.dumps(flag_data))
+        pipeline.execute()
 
     return attacker_delta
