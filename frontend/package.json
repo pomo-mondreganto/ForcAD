@@ -64,6 +64,7 @@
         "webpack-merge": "^4.2.1"
     },
     "dependencies": {
+        "axios": "^0.18.0",
         "core-js": "^3.0.1",
         "cross-env": "^5.2.0",
         "react": "^16.8.6",

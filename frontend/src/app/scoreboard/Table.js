@@ -85,69 +85,68 @@ const TeamTaskInfoComponent = ({
     lost = null,
     score = null,
     upRounds = null,
-    round,
-    init
+    round
 }) => (
     <TeamTaskInfo>
         <TeamTaskInfoRow>
             <b>SLA: </b>
-            {init ? '0.00%' : `${((100.0 * upRounds) / round).toFixed(2)}%`}
+            {round === 0
+                ? '0.00%'
+                : `${((100.0 * upRounds) / round).toFixed(2)}%`}
         </TeamTaskInfoRow>
         <TeamTaskInfoRow>
             <b>FP: </b>
-            {init ? 0 : score.toFixed(2)}
+            {score.toFixed(2)}
         </TeamTaskInfoRow>
         <TeamTaskInfoRow>
             <b>
                 <i className="fas fa-flag" />{' '}
             </b>
-            {init || (stolen === 0 && lost === 0) ? '0' : `+${stolen}/-${lost}`}
+            {stolen === 0 && lost === 0 ? '0' : `+${stolen}/-${lost}`}
         </TeamTaskInfoRow>
     </TeamTaskInfo>
 );
 
 const TeamTaskComponent = ({
-    status = null,
+    status,
     last,
-    message = null,
-    stolen = null,
-    lost = null,
-    score = null,
-    upRounds = null,
-    round,
-    init
+    message,
+    stolen,
+    lost,
+    score,
+    upRounds,
+    round
 }) => (
-    <TeamTask status={init ? -1 : status} last={last}>
-        <Tooltip>{init ? '' : message}</Tooltip>
+    <TeamTask status={status} last={last}>
+        <Tooltip>{message}</Tooltip>
         <TeamTaskInfoComponent
             stolen={stolen}
             lost={lost}
             score={score}
             upRounds={upRounds}
             round={round}
-            init={init}
         />
     </TeamTask>
 );
 
-const TeamRow = ({ index, name, ip, score, tasks, round, init }) => (
+const TeamRow = ({ index, name, ip, score, tasks, round }) => (
     <>
         <TeamNumber>{index + 1}</TeamNumber>
         <TeamName>
             <div>{name}</div>
             <div>{ip}</div>
         </TeamName>
-        <TeamScore>{init ? '' : score.toFixed(2)}</TeamScore>
+        <TeamScore>{score.toFixed(2)}</TeamScore>
         {tasks.map(
             (
                 {
                     task_id: taskId,
-                    message = null,
-                    status = null,
-                    stolen = null,
-                    lost = null,
-                    score: taskScore = null,
-                    up_rounds: upRounds = null
+                    message,
+                    status,
+                    stolen,
+                    lost,
+                    score: taskScore,
+                    up_rounds: upRounds
                 },
                 taskIndex
             ) => (
@@ -161,14 +160,13 @@ const TeamRow = ({ index, name, ip, score, tasks, round, init }) => (
                     score={taskScore}
                     upRounds={upRounds}
                     round={round}
-                    init={init}
                 />
             )
         )}
     </>
 );
 
-const TableComponent = ({ tasks, teams, round, init }) => (
+const TableComponent = ({ tasks, teams, round }) => (
     <Table tasks_number={tasks.length} teams_number={teams.length}>
         <TableColumnHead first>
             <b>#</b>
@@ -185,13 +183,7 @@ const TableComponent = ({ tasks, teams, round, init }) => (
             </TableColumnHead>
         ))}
         {teams.map((team, index) => (
-            <TeamRow
-                {...team}
-                index={index}
-                key={team.id}
-                round={round}
-                init={init}
-            />
+            <TeamRow {...team} index={index} key={team.id} round={round} />
         ))}
     </Table>
 );
