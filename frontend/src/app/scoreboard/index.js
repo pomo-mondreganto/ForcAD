@@ -64,12 +64,20 @@ class Scoreboard extends React.Component {
             const json = JSON.parse(data);
             const { state, tasks, teams } = json;
 
+            const init = state === '';
+
             this.setState({
                 ok: true,
-                init: state === '',
+                init,
                 tasks,
-                teams: this.mapTasksWithTeams(teams, tasks),
-                round: -1
+                teams: init
+                    ? this.mapTasksWithTeams(teams, tasks)
+                    : this.getTeamsWithScoreSorted(
+                        teams,
+                        state.team_tasks,
+                        state.round
+                    ),
+                round: init ? -1 : state.round
             });
         });
         this.server.on('update_scoreboard', ({ data }) => {
