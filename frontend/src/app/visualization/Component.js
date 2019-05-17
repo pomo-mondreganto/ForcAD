@@ -24,7 +24,7 @@ const FlagRow = styled.div`
     background: #00ff00;
 `;
 
-const Component = () => (
+const Component = ({ flags }) => (
     <>
         <GlobalStyle />
         <iframe
@@ -47,7 +47,13 @@ const Component = () => (
             marginWidth="0"
             title="pony"
         />
-        <Page>123</Page>
+        <Page>
+            {flags.map(({ attacker, victim, delta }, index) => (
+                <FlagRow
+                    key={index}
+                >{`${attacker} stole ${delta} flag points from ${victim}`}</FlagRow>
+            ))}
+        </Page>
     </>
 );
 

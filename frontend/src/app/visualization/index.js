@@ -22,8 +22,9 @@ class Visualization extends React.Component {
     }
 
     async componentDidMount() {
-        const data = await axios.get(`${serverUrl}/api/teams/`);
-        console.log(data);
+        const response = await axios.get(`${serverUrl}/api/teams/`);
+        const { data } = response;
+        this.setState({ teams: data });
     }
 
     initSocket = () => {
@@ -35,13 +36,20 @@ class Visualization extends React.Component {
             throw new Error('Server is down');
         }
 
-        // this.server.on('flag_stolen', ({ data }) => {
-        //     const json = JSON.parse(data);
-        //     console.log(json);
-        //     this.setState(({ flags }) => {
-        //         const newFlags = flags.concat([]);
-        //     });
-        // });
+        this.server.on('flag_stolen', ({ data }) => {
+            const json = JSON.parse(data);
+            this.setState(({ teams, flags }) => {
+                const newFlag = {
+                    attacker: teams.filter(
+                        team => team.id === json.attacker_id
+                    )[0].name,
+                    victim: teams.filter(team => team.id === json.victim_id)[0]
+                        .name,
+                    delta: json.attacker_delta
+                };
+                return { flags: flags.concat([newFlag]).slice(-100) };
+            });
+        });
     };
 
     render() {
