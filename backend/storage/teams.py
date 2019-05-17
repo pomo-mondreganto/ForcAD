@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import aioredis
 import redis
@@ -92,17 +92,18 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         return team_id
 
 
-def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) -> float:
-    """Recalculate team ratings and publish redis message
+def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, round: int) -> Tuple[float, float]:
+    """Recalculate team ratings and update DB
 
         :param attacker_id: id of the attacking team
         :param victim_id: id of the victim team
         :param task_id: id of task which is attacked
         :param round: round of the attack
 
-        :return: attacker rating change
-    """
+        :return: attacker & victim rating changes as tuple
 
+        Possible race condition here (two flags with one rating delta), use with locks
+    """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
 
@@ -156,6 +157,46 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
     conn.commit()
     curs.close()
     storage.get_db_pool().putconn(conn)
+
+    return attacker_delta, victim_delta
+
+
+def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) -> float:
+    """Lock team for update, call rating recalculation,
+        then publish redis message about stolen flag
+
+        :param attacker_id: id of the attacking team
+        :param victim_id: id of the victim team
+        :param task_id: id of task which is attacked
+        :param round: round of the attack
+
+        :return: attacker rating change
+    """
+
+    with storage.get_redis_storage().pipeline() as pipeline:
+        # Deadlock is our enemy
+        min_team_id = min(attacker_id, victim_id)
+        max_team_id = max(attacker_id, victim_id)
+        while True:
+            try:
+                pipeline.watch(f'team:{min_team_id}:flag_lock')
+                while True:
+                    try:
+                        pipeline.watch(f'team:{max_team_id}:flag_lock')
+
+                        attacker_delta, victim_delta = update_attack_team_ratings(
+                            attacker_id=attacker_id,
+                            victim_id=victim_id,
+                            task_id=task_id,
+                            round=round,
+                        )
+
+                        break
+                    except redis.WatchError:
+                        continue
+                break
+            except redis.WatchError:
+                continue
 
     flag_data = {
         'attacker_id': attacker_id,
