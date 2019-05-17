@@ -38,7 +38,7 @@ services:
   webapi:
     build:
       context: .
-      dockerfile: docker_config/web_debug/Dockerfile
+      dockerfile: docker_config/webapi/Dockerfile
     volumes:
       - ./docker_volumes/:/volumes/
     env_file:
@@ -46,8 +46,14 @@ services:
     depends_on:
       - redis
       - postgres
-    ports:
-      - 5002:5002
+    restart: on-failure
+
+  react_builder:
+    build:
+      context: .
+      dockerfile: docker_config/react_builder/Dockerfile
+    volumes:
+      - ./docker_volumes/react_build/:/react_build/
     restart: on-failure
 
   http_flag_submitter:
@@ -61,8 +67,6 @@ services:
     depends_on:
       - redis
       - postgres
-    ports:
-      - 5000:5000
     restart: on-failure
 
   tcp_flag_submitter:
@@ -114,6 +118,7 @@ services:
     volumes:
       - ./docker_config/nginx/conf/:/etc/nginx/conf.d/
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
+      - ./docker_volumes/react_build:/react_build
     depends_on:
       - flower
       - http_flag_submitter

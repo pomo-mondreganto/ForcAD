@@ -1,7 +1,7 @@
 import os
 import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import asyncio
@@ -40,13 +40,13 @@ async def background_task(mpsc):
             print(message, channel, channel.name)
             if channel.name == b'stolen_flags':
                 print('Emitting flag stolen event')
-                await sio.emit('flag_stolen', {'data': message}, namespace='/test')
+                await sio.emit('flag_stolen', {'data': message}, namespace='/api/sio_interface')
             elif channel.name == b'scoreboard':
                 print('Emitting scoreboard event')
-                await sio.emit('update_scoreboard', {'data': message}, namespace='/test')
+                await sio.emit('update_scoreboard', {'data': message}, namespace='/api/sio_interface')
 
 
-@sio.on('connect', namespace='/api/interface')
+@sio.on('connect', namespace='/api/sio_interface')
 async def handle_connect(_sid, _environ):
     loop = asyncio.get_event_loop()
     game_state = await storage.game.get_game_state_async(loop)
@@ -71,7 +71,7 @@ async def handle_connect(_sid, _environ):
         {
             'data': json.dumps(data_to_send),
         },
-        namespace='/api/interface'
+        namespace='/api/sio_interface'
     )
 
 
@@ -95,4 +95,4 @@ async def status(_request):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5002, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
