@@ -6,6 +6,7 @@ sys.path.insert(0, BASE_DIR)
 
 import asyncio
 import json
+from functools import wraps
 
 from sanic import Sanic
 from sanic.response import json as json_response, html
@@ -17,6 +18,16 @@ import socketio
 sio = socketio.AsyncServer(async_mode='sanic')
 app = Sanic()
 sio.attach(app)
+
+
+def cors_allow_all(func):
+    @wraps(func)
+    async def wrapper(request, *args, **kwargs):
+        response = await func(request, *args, **kwargs)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    return wrapper
 
 
 @app.listener('before_server_start')
@@ -76,6 +87,7 @@ async def handle_connect(_sid, _environ):
 
 
 @app.route('/api/teams/')
+@cors_allow_all
 async def get_teams(_request):
     teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
     teams = [team.to_dict() for team in teams]
@@ -83,6 +95,7 @@ async def get_teams(_request):
 
 
 @app.route('/api/tasks/')
+@cors_allow_all
 async def get_tasks(_request):
     tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
     tasks = [task.to_dict_for_participants() for task in tasks]
@@ -90,6 +103,7 @@ async def get_tasks(_request):
 
 
 @app.route('/api/status/')
+@cors_allow_all
 async def status(_request):
     return html("OK")
 
