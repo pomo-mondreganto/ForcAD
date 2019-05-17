@@ -21,7 +21,7 @@ const Page = styled.div`
 `;
 
 const FlagRow = styled.div`
-    background: #00ff00;
+    color: #00ff00;
 `;
 
 const Component = ({ flags }) => (
