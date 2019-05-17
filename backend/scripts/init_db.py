@@ -74,8 +74,8 @@ def run():
 
     for team in teams:
         for task in tasks:
-            query = "INSERT INTO TeamTasks (task_id, team_id, round, score) VALUES (%s, %s, %s, %s)"
-            curs.execute(query, (task.id, team.id, 0, task.default_score))
+            query = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
+            curs.execute(query, (task.id, team.id, 0, task.default_score, -1))
 
     conn.commit()
     curs.close()
