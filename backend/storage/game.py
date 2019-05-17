@@ -44,11 +44,15 @@ async def get_current_round_async(loop) -> int:
         return -1
 
 
-def get_game_state() -> Optional[models.GameState]:
-    """Get game state for current round"""
-    round = get_current_round()
-    if not round:
-        return None
+def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
+    """Get game state for current round
+
+        :param round: specify round to query manually. Otherwise, it'll be taken from cache
+    """
+    if round is None:
+        round = get_current_round()
+        if not round:
+            return None
 
     team_tasks = storage.tasks.get_teamtasks(round)
     if not team_tasks:

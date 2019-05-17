@@ -262,9 +262,9 @@ def process_round():
         pipeline.execute()
 
     if current_round > 1:
-        storage.caching.cache_teamtasks(current_round - 1)
+        storage.caching.cache_teamtasks(round=current_round - 1)
 
-    game_state = storage.game.get_game_state()
+    game_state = storage.game.get_game_state(round=current_round - 1)
     if not game_state:
         logger.warning(f'Game state is missing for round {current_round - 1}, skipping')
     else:
@@ -274,7 +274,7 @@ def process_round():
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
-    storage.tasks.initialize_teamtasks(current_round)
+    storage.tasks.initialize_teamtasks(round=current_round)
 
     teams = storage.teams.get_teams()
     for team in teams:
@@ -293,6 +293,18 @@ def start_game(shared_directory):
     if already_started:
         logger.info('Game already started')
         return
+
+    storage.caching.cache_teamtasks(round=0)
+
+    game_state = storage.game.get_game_state(round=0)
+    if not game_state:
+        logger.warning('Initial game_state missing')
+    else:
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            logger.info(f"Initializing game_state with {game_state.to_dict()}")
+            pipeline.set('game_state', game_state.to_json())
+            pipeline.publish('scoreboard', game_state.to_json())
+            pipeline.execute()
 
     path = pathlib.Path(os.path.join(shared_directory, 'game_running'))
     path.touch()
