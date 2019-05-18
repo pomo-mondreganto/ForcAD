@@ -5,7 +5,8 @@ global:
   checkers_path: /checkers/
   env_path: /checkers/bin/ # can be specified for each task
   default_score: 1000 # global for all tasks if not specified
-  game_hardness: 1300.0 # game hardness, default 1300, Recommended 500-8000
+  game_hardness: 1300.0 # game hardness, default 1300, Recommended 500-2000
+  inflation: false  # give points for attacking zero-fp teams
 
 tasks:
   - name: Test task

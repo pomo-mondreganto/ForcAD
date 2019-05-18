@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class RatingSystem:
@@ -7,29 +7,43 @@ class RatingSystem:
     victim: float  # victim score
     EPS: float = 1e-7
     game_hardness: float  # the higher the harder
+    inflation: bool  # get fp for teams with 0 score
 
     def __get_probability(self, a: float, b: float) -> float:
         """Probability that player with rating 'a' beats player with rating 'b'"""
         return 1.0 / (1.0 + math.pow(10.0, (b - a) / self.game_hardness))
 
     def __normalize(self, delta: float) -> float:
-        """Smooth out and normalize rating change"""
-        L = delta / math.log(abs(delta) + 1)
-        N = math.log(abs(L) + self.EPS) / math.log(abs(L) + 1)
+        """Smooth out and normalize deltas"""
+        L = delta / (math.log(abs(delta) + 1) + self.EPS)
+        N = math.log(abs(L) + self.EPS) / (math.log(abs(L) + 1) + self.EPS)
         return math.copysign(L * N, delta)
 
     @staticmethod
     def __get_geometrical_mean(a: float, b: float) -> float:
-        """Geometrical mean of two floats"""
+        """Get geometrical mean of two numbers"""
         return math.sqrt(a * b)
 
-    def __init__(self, attacker: float, victim: float, game_hardness: float = 1300.0):
+    def __init__(self,
+                 attacker: float,
+                 victim: float,
+                 game_hardness: Optional[float] = None,
+                 inflation: Optional[bool] = None):
         self.attacker = attacker
         self.victim = victim
-        self.game_hardness = game_hardness
+
+        if game_hardness is None:
+            self.game_hardness = 1300.0
+        else:
+            self.game_hardness = game_hardness
+
+        if inflation is None:
+            self.inflation = False
+        else:
+            self.inflation = inflation
 
     def __get_seed(self, rating: float, player_rating: float) -> float:
-        """Get player's expected rating"""
+        """Get player's expected place"""
         ret = 1
 
         ret += self.__get_probability(self.attacker, rating)
@@ -69,13 +83,27 @@ class RatingSystem:
         attacker_delta = self.__calculate_delta(self.attacker, 1)
         victim_delta = self.__calculate_delta(self.victim, 2)
 
-        sum_deltas = attacker_delta + victim_delta
-        dec = sum_deltas / 2.0
+        if not self.inflation:
+            norm = min(abs(attacker_delta), abs(victim_delta))
+            attacker_delta = math.copysign(norm, attacker_delta)
+            victim_delta = math.copysign(norm, victim_delta)
 
-        attacker_delta -= dec
-        victim_delta -= dec
+            suggested_attacker_delta = self.__normalize(attacker_delta)
+            suggested_victim_delta = self.__normalize(victim_delta)
 
-        attacker_delta = self.__normalize(attacker_delta)
-        victim_delta = self.__normalize(victim_delta)
+            attacker_delta = min(attacker_delta, suggested_attacker_delta)
+            victim_delta = max(victim_delta, suggested_victim_delta)
+        else:
+            sum_deltas = attacker_delta + victim_delta
+            dec = sum_deltas / 2.0
+
+            attacker_delta -= dec
+            victim_delta -= dec
+
+            attacker_delta = self.__normalize(attacker_delta)
+            victim_delta = self.__normalize(victim_delta)
+
+            # we don't want negative rating, as inflation is on
+            victim_delta = max(victim_delta, -self.victim)
 
         return attacker_delta, victim_delta

@@ -127,11 +127,16 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
     )
     victim_score, = curs.fetchone()
 
-    game_hardness = config.get_game_config().get('game_hardness')
-    if game_hardness is not None:
-        rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score, game_hardness=game_hardness)
-    else:
-        rs = rating.RatingSystem(attacker=attacker_score, victim=victim_score)
+    game_config = config.get_game_config()
+    game_hardness = game_config.get('game_hardness')
+    inflation = game_config.get('inflation')
+
+    rs = rating.RatingSystem(
+        attacker=attacker_score,
+        victim=victim_score,
+        game_hardness=game_hardness,
+        inflation=inflation,
+    )
 
     attacker_delta, victim_delta = rs.calculate()
 
