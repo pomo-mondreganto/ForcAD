@@ -12,6 +12,17 @@ from helpers import models
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
+_CONFIG_INITIALIZATION_QUERY = 'INSERT INTO globalconfig (real_round, game_running) VALUES (%s, %s)'
+
+_TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
+
+_TASK_INSERT_QUERY = """
+INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path) 
+VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+"""
+
+_TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
+
 
 def run():
     conn = storage.get_db_pool().getconn()
@@ -21,8 +32,7 @@ def run():
     create_query = open(create_query_path, 'r').read()
     curs.execute(create_query)
 
-    query = 'INSERT INTO globalconfig (real_round, game_running) VALUES (%s, %s)'
-    curs.execute(query, (0, 0))
+    curs.execute(_CONFIG_INITIALIZATION_QUERY, (0, 0))
 
     teams_config = config.get_teams_config()
     teams = []
@@ -30,8 +40,7 @@ def run():
     for team_conf in teams_config:
         team_token = secrets.token_hex(8)
         team = models.Team(id=None, **team_conf, token=team_token)
-        query = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
-        curs.execute(query, (team.name, team.ip, team_token))
+        curs.execute(_TEAM_INSERT_QUERY, (team.name, team.ip, team_token))
         team.id, = curs.fetchone()
         teams.append(team)
 
@@ -53,12 +62,8 @@ def run():
         task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
 
         task = models.Task(id=None, **task_conf)
-        query = (
-            "INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id"
-        )
         curs.execute(
-            query,
+            _TASK_INSERT_QUERY,
             (
                 task.name,
                 task.checker,
@@ -74,8 +79,7 @@ def run():
 
     for team in teams:
         for task in tasks:
-            query = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
-            curs.execute(query, (task.id, team.id, 0, task.default_score, -1))
+            curs.execute(_TEAMTASK_INSERT_QUERY, (task.id, team.id, 0, task.default_score, -1))
 
     conn.commit()
     curs.close()
