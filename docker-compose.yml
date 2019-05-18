@@ -126,6 +126,8 @@ services:
   redis:
     image: redis
     restart: on-failure
+    sysctls:
+      net.core.somaxconn: 1024
 
   postgres:
     image: postgres:10.6
