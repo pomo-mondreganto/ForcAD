@@ -19,8 +19,8 @@ _CONFIG_INITIALIZATION_QUERY = 'INSERT INTO globalconfig (real_round, game_runni
 _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
 
 _TASK_INSERT_QUERY = """
-INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path) 
-VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id) 
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 """
 
 _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
@@ -74,6 +74,7 @@ def run():
                 task.places,
                 task.checker_timeout,
                 task.env_path,
+                int(task.checker_returns_flag_id),
             )
         )
         task.id, = curs.fetchone()
