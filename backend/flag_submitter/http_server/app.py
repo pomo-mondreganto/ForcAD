@@ -12,7 +12,6 @@ import storage
 import helpers
 from helpers import exceptions
 
-
 app = Flask(__name__)
 app.config['APPLICATION_ROOT'] = '/flags'
 
@@ -35,10 +34,13 @@ def submit():
         return get_response(error='Game is not available yet', status_code=403)
 
     if not request.is_json or not isinstance(request.json.get('flags'), list):
-        return get_response(error='POST your flags as json in array with key "flags', status_code=400)
+        return get_response(
+            error='POST your flags as json in array with key "flags", maximum 50 allowed in on request',
+            status_code=400,
+        )
 
     responses = []
-    for flag_str in request.json['flags']:
+    for flag_str in request.json['flags'][:50]:
         try:
             flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
         except exceptions.FlagSubmitException as e:
