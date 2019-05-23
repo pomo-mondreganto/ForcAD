@@ -28,7 +28,7 @@ class Scoreboard extends React.Component {
                 ...team,
                 tasks: teamTasks
                     .filter(teamTask => teamTask.team_id === team.id)
-                    .sort((a, b) => a.id - b.id),
+                    .sort((a, b) => a.task_id - b.task_id),
                 score:
                     round === 0
                         ? 0
