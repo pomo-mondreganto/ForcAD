@@ -111,7 +111,7 @@ services:
     restart: on-failure
 
   nginx:
-    image: nginx
+    image: nginx:1.15.12-alpine
     volumes:
       - ./docker_config/nginx/conf/:/etc/nginx/conf.d/
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
@@ -125,13 +125,13 @@ services:
     restart: on-failure
 
   redis:
-    image: redis
+    image: redis:5.0.5-alpine
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024
 
   postgres:
-    image: postgres:10.6
+    image: postgres:10.8-alpine
     volumes:
       - ./docker_volumes/postgres/data/:/var/lib/postgresql/data/
     env_file:
