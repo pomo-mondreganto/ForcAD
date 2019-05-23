@@ -17,7 +17,7 @@ set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for
 3. Change default passwords (that includes `storages.db.password` for database and `flower.password` for
 `celery` visualization).
 
-4. Run `./setup_config.py` to transfer config variables
+4. Install `backend/requirements.txt` (`pip3 install -r backend/requirements.txt`) and run `./setup_config.py` to transfer config variables
 
 5. Run `docker-compose up --build` to start the system (add `-d` option to detach). 
 Wait patiently for the images to build, it could take a few minutes, but happens only once. 
