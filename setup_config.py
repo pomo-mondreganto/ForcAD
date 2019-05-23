@@ -24,11 +24,11 @@ def setup_db(config):
 
     postgres_config = [
         "# THIS FILE IS MANAGED BY 'setup_config'",
-        f'POSTGRES_HOST={postgres_host}',
-        f'POSTGRES_PORT={postgres_port}',
-        f'POSTGRES_USER={postgres_user}',
-        f'POSTGRES_PASSWORD={postgres_password}',
-        f'POSTGRES_DB={postgres_db}',
+        'POSTGRES_HOST={postgres_host}'.format(postgres_host=postgres_host),
+        'POSTGRES_PORT={postgres_port}'.format(postgres_port=postgres_port),
+        'POSTGRES_USER={postgres_user}'.format(postgres_user=postgres_user),
+        'POSTGRES_PASSWORD={postgres_password}'.format(postgres_password=postgres_password),
+        'POSTGRES_DB={postgres_db}'.format(postgres_db=postgres_db),
     ]
 
     with open(postgres_env_path, 'w') as f:
@@ -47,7 +47,10 @@ def setup_flower(config):
     flower_password = config['flower']['password']
     flower_config = [
         "# THIS FILE IS MANAGED BY 'setup_config'",
-        f'FLOWER_BASIC_AUTH={flower_username}:{flower_password}',
+        'FLOWER_BASIC_AUTH={flower_username}:{flower_password}'.format(
+            flower_username=flower_username,
+            flower_password=flower_password,
+        ),
     ]
 
     with open(flower_env_path, 'w') as f:

@@ -18,7 +18,7 @@ def run():
     curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
     result = curs.fetchall()
 
-    print('\n'.join(f"{name}:{token}" for name, token in result))
+    print('\n'.join("{name}:{token}".format(name=name, token=token) for name, token in result))
     curs.close()
     storage.get_db_pool().putconn(conn)
 
