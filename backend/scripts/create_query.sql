@@ -26,14 +26,15 @@ CREATE TABLE IF NOT EXISTS StolenFlags
 
 CREATE TABLE IF NOT EXISTS Tasks
 (
-  id              SERIAL PRIMARY KEY,
-  name            VARCHAR(255),
-  checker         VARCHAR(1024),
-  env_path        VARCHAR(1024),
-  gets            INTEGER,
-  puts            INTEGER,
-  places          INTEGER,
-  checker_timeout INTEGER
+  id                      SERIAL PRIMARY KEY,
+  name                    VARCHAR(255),
+  checker                 VARCHAR(1024),
+  env_path                VARCHAR(1024),
+  gets                    INTEGER,
+  puts                    INTEGER,
+  places                  INTEGER,
+  checker_timeout         INTEGER,
+  checker_returns_flag_id INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks

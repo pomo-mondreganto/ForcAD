@@ -1,4 +1,5 @@
 import os
+import secrets
 import subprocess
 from typing import Tuple, List
 
@@ -172,7 +173,7 @@ def run_put_command(checker_path: str,
                     flag: helpers.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> Tuple[helpers.status.TaskStatus, str]:
+                    logger) -> Tuple[Tuple[helpers.status.TaskStatus, str], str]:
     """Runs "put" command
 
         :param checker_path: absolute checker path
@@ -183,13 +184,16 @@ def run_put_command(checker_path: str,
         :param team_name: team name for logging
         :param timeout: "soft" timeout
         :param logger: logger instance
-        :return: tuple of TaskStatus instance and message string
+        :return: tuple of TaskStatus instance and message string and generated flag_id
     """
+
+    flag_id = secrets.token_hex(20)
+
     put_command = [
         checker_path,
         'put',
         host,
-        'lolkek',
+        flag_id,
         flag.flag,
         str(place),
     ]
@@ -201,7 +205,7 @@ def run_put_command(checker_path: str,
         timeout=timeout,
         team_name=team_name,
         logger=logger,
-    )
+    ), flag_id
 
 
 def run_get_command(checker_path: str,

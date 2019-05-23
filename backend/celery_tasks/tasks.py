@@ -107,7 +107,7 @@ def put_action(check_ok, team_json, task_json, round):
             round=round,
         )
 
-        status, message = checkers.run_put_command(
+        (status, message), flag_id = checkers.run_put_command(
             checker_path=task.checker,
             env_path=task.env_path,
             host=team.ip,
@@ -119,7 +119,10 @@ def put_action(check_ok, team_json, task_json, round):
         )
 
         if status == TaskStatus.UP:
-            flag.flag_data = message
+            if task.checker_returns_flag_id:
+                flag.flag_data = message
+            else:
+                flag.flag_data = flag_id
             storage.flags.add_flag(flag)
         else:
             storage.tasks.update_task_status(

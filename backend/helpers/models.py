@@ -83,6 +83,7 @@ class Task(Model):
                  puts: int,
                  places: int,
                  checker_timeout: int,
+                 checker_returns_flag_id: bool,
                  env_path: str,
                  default_score: Optional[float] = None):
         super(Task, self).__init__()
@@ -93,6 +94,7 @@ class Task(Model):
         self.puts = puts
         self.places = places
         self.checker_timeout = checker_timeout
+        self.checker_returns_flag_id = checker_returns_flag_id
         self.env_path = env_path
         self.default_score = default_score
 
@@ -105,6 +107,7 @@ class Task(Model):
             'puts': self.puts,
             'places': self.places,
             'checker_timeout': self.checker_timeout,
+            'checker_returns_flag_id': self.checker_returns_flag_id,
             'env_path': self.env_path,
             'default_score': self.default_score,
         }
