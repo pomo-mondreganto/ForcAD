@@ -1,7 +1,9 @@
 import json
-from typing import Optional
+from typing import Optional, List
 
 import yaml
+
+import helpers.status
 
 
 class Model(object):
@@ -176,9 +178,9 @@ class GameState(Model):
         Stored round and dict of team tasks
     """
     round: int
-    team_tasks: dict
+    team_tasks: List[dict]
 
-    def __init__(self, round: int, team_tasks: dict):
+    def __init__(self, round: int, team_tasks: List[dict]):
         super(GameState, self).__init__()
         self.round = round
         self.team_tasks = team_tasks
@@ -194,3 +196,30 @@ class GameState(Model):
 
     def __str__(self):
         return f"GameState for round {self.round}"
+
+
+class CheckerActionResult(Model):
+    """Model representing checker action result"""
+    private_message: str
+    public_message: str
+    command: List
+    status: helpers.status.TaskStatus
+
+    def __init__(self,
+                 private_message: str,
+                 public_message: str,
+                 command: List,
+                 status: helpers.status.TaskStatus):
+        super(CheckerActionResult, self).__init__()
+        self.private_message = private_message
+        self.public_message = public_message
+        self.command = command
+        self.status = status
+
+    def to_dict(self):
+        return {
+            'private_message': self.private_message,
+            'public_message': self.public_message,
+            'command': self.command,
+            'status': self.status.value,
+        }

@@ -111,7 +111,7 @@ def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
         if not round:
             return None
 
-    team_tasks = storage.tasks.get_teamtasks(round)
+    team_tasks = storage.tasks.get_teamtasks_for_participants(round)
     if not team_tasks:
         return None
 

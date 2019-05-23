@@ -13,7 +13,10 @@ conn = psycopg2.connect(
 curs = conn.cursor()
 
 query = 'SELECT COUNT(id) from globalconfig'
-curs.execute(query)
+try:
+    curs.execute(query)
+except psycopg2.ProgrammingError:
+    sys.exit(1)
 initialized, = curs.fetchone()
 
 # Exit with 0 if initialized

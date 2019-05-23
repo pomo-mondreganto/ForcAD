@@ -76,6 +76,7 @@ services:
       - redis
       - postgres
     restart: on-failure
+    tty: true
 
   react_builder:
     build:

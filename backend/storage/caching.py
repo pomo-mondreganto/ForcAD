@@ -23,7 +23,8 @@ _SELECT_LAST_TEAM_FLAGS_QUERY = "SELECT id from flags WHERE round >= %s AND team
 
 _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
 
-_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s"
+_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s ORDER BY id"
+_SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY = "SELECT * from teamtasks WHERE team_id = %s AND round <= %s ORDER BY id"
 
 
 def cache_teams():
@@ -166,4 +167,32 @@ def cache_teamtasks(round: int):
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set(f'teamtasks:{round}', data)
         pipeline.set(f'teamtasks:{round}:cached', 1)
+        pipeline.execute()
+
+
+def cache_teamtasks_for_team(team_id: int, current_round: int):
+    """Put "teamtasks" for specified team table data for the specified round from database to cache
+
+        :param team_id: team id
+        :param current_round: round to cache
+
+    """
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor(cursor_factory=extras.RealDictCursor)
+
+    curs.execute(
+        _SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY,
+        (
+            team_id,
+            current_round,
+        )
+    )
+    results = curs.fetchall()
+    curs.close()
+    storage.get_db_pool().putconn(conn)
+
+    data = json.dumps(results)
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
+        pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1)
         pipeline.execute()

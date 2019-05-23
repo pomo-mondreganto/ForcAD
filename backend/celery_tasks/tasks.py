@@ -44,17 +44,23 @@ def check_action(team_json, task_json, round: int):
 
     logger.info(f'Running checker for team {team.id} task {task.id}')
 
+    tmp_verdict = models.CheckerActionResult(
+        status=TaskStatus.CHECK_FAILED,
+        private_message='Check pending',
+        public_message='',
+        command=[],
+    )
+
     storage.tasks.update_task_status(
         task_id=task.id,
         team_id=team.id,
-        status=TaskStatus.CHECK_FAILED,
-        message='Check pending',
+        checker_verdict=tmp_verdict,
         round=round,
     )
 
     logger.info(f'Running CHECK for team {team.id} task {task.id}')
 
-    status, message = checkers.run_check_command(
+    checker_verdict = checkers.run_check_command(
         checker_path=task.checker,
         env_path=task.env_path,
         host=team.ip,
@@ -63,12 +69,11 @@ def check_action(team_json, task_json, round: int):
         timeout=task.checker_timeout,
     )
 
-    if status != TaskStatus.UP:
+    if checker_verdict.status != TaskStatus.UP:
         storage.tasks.update_task_status(
             task_id=task.id,
             team_id=team.id,
-            status=status,
-            message=message,
+            checker_verdict=checker_verdict,
             round=round,
         )
         return False
@@ -107,7 +112,7 @@ def put_action(check_ok, team_json, task_json, round):
             round=round,
         )
 
-        (status, message), flag_id = checkers.run_put_command(
+        checker_verdict, flag_id = checkers.run_put_command(
             checker_path=task.checker,
             env_path=task.env_path,
             host=team.ip,
@@ -118,9 +123,9 @@ def put_action(check_ok, team_json, task_json, round):
             logger=logger,
         )
 
-        if status == TaskStatus.UP:
+        if checker_verdict.status == TaskStatus.UP:
             if task.checker_returns_flag_id:
-                flag.flag_data = message
+                flag.flag_data = checker_verdict.private_message
             else:
                 flag.flag_data = flag_id
             storage.flags.add_flag(flag)
@@ -128,8 +133,7 @@ def put_action(check_ok, team_json, task_json, round):
             storage.tasks.update_task_status(
                 task_id=task.id,
                 team_id=team.id,
-                status=status,
-                message=message,
+                checker_verdict=checker_verdict,
                 round=round,
             )
             ok = False
@@ -165,22 +169,27 @@ def get_action(put_ok, team_json, task_json, round):
 
     logger.info(f'Running GET on rounds {rounds_to_check} for team {team.id} task {task.id}')
 
-    status = TaskStatus.UP
-    message = ''
+    checker_verdict = models.CheckerActionResult(
+        status=TaskStatus.UP,
+        public_message='',
+        private_message='',
+        command=[],
+    )
 
     for get_round in rounds_to_check:
         flag = storage.flags.get_random_round_flag(
             team_id=team.id,
             task_id=task.id,
             round=get_round,
-            current_round=round
+            current_round=round,
         )
 
         if not flag:
-            status = TaskStatus.CORRUPT
-            message = f'No flags from round {get_round}'
+            checker_verdict.status = TaskStatus.CORRUPT
+            checker_verdict.private_message = f'No flags from round {get_round}'
+            checker_verdict.public_message = f'Could not get flag'
         else:
-            status, message = checkers.run_get_command(
+            checker_verdict = checkers.run_get_command(
                 checker_path=task.checker,
                 env_path=task.env_path,
                 host=team.ip,
@@ -190,14 +199,13 @@ def get_action(put_ok, team_json, task_json, round):
                 logger=logger,
             )
 
-        if status != TaskStatus.UP:
+        if checker_verdict.status != TaskStatus.UP:
             break
 
     storage.tasks.update_task_status(
         task_id=task.id,
         team_id=team.id,
-        status=status,
-        message=message,
+        checker_verdict=checker_verdict,
         round=round,
     )
 

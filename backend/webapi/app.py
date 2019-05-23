@@ -102,6 +102,14 @@ async def get_tasks(_request):
     return json_response(tasks)
 
 
+@app.route('/api/teams/<team_id:int>/')
+@cors_allow_all
+async def get_team_history(_request, team_id):
+    round = storage.game.get_current_round()
+    teamtasks = storage.tasks.get_teamtasks_of_team_for_participants(team_id=team_id, current_round=round)
+    return json_response(teamtasks)
+
+
 @app.route('/api/status/')
 @cors_allow_all
 async def status(_request):

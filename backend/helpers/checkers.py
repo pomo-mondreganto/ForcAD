@@ -89,7 +89,7 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger) -> Tuple[helpers.status.TaskStatus, str]:
+                        logger) -> helpers.models.CheckerActionResult:
     """Run generic checker command, calls "run_command_gracefully" and handles exceptions
 
     :param command: command to run
@@ -98,7 +98,7 @@ def run_generic_command(command: List,
     :param timeout: "soft" command timeout
     :param team_name: team name for logging
     :param logger: logger instance
-    :return: tuple of TaskStatus instance and message string
+    :return: CheckerActionResult instance
     """
     env = get_patched_environ(env_path=env_path)
 
@@ -118,10 +118,17 @@ def run_generic_command(command: List,
 
         try:
             status = TaskStatus(result.returncode)
-            message = result.stderr[:1024].decode().strip()
+            public_message = result.stdout[:1024].decode().strip()
+            private_message = result.stderr[:1024].decode().strip()
+            if status == TaskStatus.CHECK_FAILED:
+                logger.warning(
+                    f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
+                    f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
+                )
         except ValueError:
             status = TaskStatus.CHECK_FAILED
-            message = 'Check failed'
+            public_message = 'Check failed'
+            private_message = 'Check failed'
             logger.warning(
                 f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
                 f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
@@ -129,9 +136,17 @@ def run_generic_command(command: List,
 
     except subprocess.TimeoutExpired:
         status = TaskStatus.DOWN
-        message = f'{command_type.upper()} timeout'
+        private_message = f'{command_type.upper()} timeout'
+        public_message = 'Timeout'
 
-    return status, message
+    result = helpers.models.CheckerActionResult(
+        public_message=public_message,
+        private_message=private_message,
+        command=command,
+        status=status
+    )
+
+    return result
 
 
 def run_check_command(checker_path: str,
@@ -139,7 +154,7 @@ def run_check_command(checker_path: str,
                       host: str,
                       team_name: str,
                       timeout: int,
-                      logger) -> Tuple[helpers.status.TaskStatus, str]:
+                      logger) -> helpers.models.CheckerActionResult:
     """Runs "check" command
 
         :param checker_path: absolute checker path
@@ -148,7 +163,7 @@ def run_check_command(checker_path: str,
         :param team_name: team name for logging
         :param timeout: "soft" timeout
         :param logger: logger instance
-        :return: tuple of TaskStatus instance and message string
+        :return: CheckerActionResult instance
     """
     check_command = [
         checker_path,
@@ -173,7 +188,7 @@ def run_put_command(checker_path: str,
                     flag: helpers.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> Tuple[Tuple[helpers.status.TaskStatus, str], str]:
+                    logger) -> Tuple[helpers.models.CheckerActionResult, str]:
     """Runs "put" command
 
         :param checker_path: absolute checker path
@@ -184,7 +199,7 @@ def run_put_command(checker_path: str,
         :param team_name: team name for logging
         :param timeout: "soft" timeout
         :param logger: logger instance
-        :return: tuple of TaskStatus instance and message string and generated flag_id
+        :return: tuple of CheckerActionResult instance and generated flag_id
     """
 
     flag_id = secrets.token_hex(20)
@@ -214,7 +229,7 @@ def run_get_command(checker_path: str,
                     flag: helpers.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> Tuple[helpers.status.TaskStatus, str]:
+                    logger) -> helpers.models.CheckerActionResult:
     """Runs "put" command
 
         :param checker_path: absolute checker path
@@ -224,7 +239,7 @@ def run_get_command(checker_path: str,
         :param team_name: team name for logging
         :param timeout: "soft" timeout
         :param logger: logger instance
-        :return: tuple of TaskStatus instance and message string
+        :return: CheckerActionResult instance
     """
     get_command = [
         checker_path,

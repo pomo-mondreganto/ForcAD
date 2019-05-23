@@ -39,16 +39,18 @@ CREATE TABLE IF NOT EXISTS Tasks
 
 CREATE TABLE IF NOT EXISTS TeamTasks
 (
-  id        SERIAL PRIMARY KEY,
-  round     INTEGER,
-  task_id   INTEGER,
-  team_id   INTEGER,
-  status    INTEGER,
-  stolen    INTEGER                DEFAULT 0,
-  lost      INTEGER                DEFAULT 0,
-  score     FLOAT                  DEFAULT 0,
-  up_rounds INTEGER                DEFAULT 0,
-  message   VARCHAR(1024) NOT NULL DEFAULT '',
+  id              SERIAL PRIMARY KEY,
+  round           INTEGER,
+  task_id         INTEGER,
+  team_id         INTEGER,
+  status          INTEGER,
+  stolen          INTEGER                DEFAULT 0,
+  lost            INTEGER                DEFAULT 0,
+  score           FLOAT                  DEFAULT 0,
+  up_rounds       INTEGER                DEFAULT 0,
+  public_message  VARCHAR(1024) NOT NULL DEFAULT '',
+  private_message VARCHAR(1024) NOT NULL DEFAULT '',
+  command         VARCHAR(1024) NOT NULL DEFAULT '[]',
   UNIQUE (round, task_id, team_id)
 );
 

@@ -27,7 +27,9 @@ ADD backend /app
 ADD ./docker_config/celery/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-RUN adduser -S celery
-USER celery
+#RUN adduser -S celery
+#USER celery
+
+USER nobody
 
 CMD ["/entrypoint.sh"]
