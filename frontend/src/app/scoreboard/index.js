@@ -33,12 +33,12 @@ class Scoreboard extends React.Component {
                     round === 0
                         ? 0
                         : teamTasks
-                            .filter(teamTask => teamTask.team_id === team.id)
-                            .reduce(
-                                (acc, { score, up_rounds: upRounds }) =>
-                                    acc + (score * upRounds) / round,
-                                0
-                            )
+                              .filter(teamTask => teamTask.team_id === team.id)
+                              .reduce(
+                                  (acc, { score, up_rounds: upRounds }) =>
+                                      acc + (score * upRounds) / round,
+                                  0
+                              )
             }))
             .sort((a, b) => {
                 const diff = b.score - a.score;
@@ -63,7 +63,7 @@ class Scoreboard extends React.Component {
 
             this.setState({
                 ok: true,
-                tasks,
+                tasks: tasks.sort((a, b) => a.id < b.id),
                 teams: this.getTeamsWithScoreSorted(
                     teams,
                     state.team_tasks,
