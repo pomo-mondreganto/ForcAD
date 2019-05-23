@@ -32,6 +32,10 @@ celery:
 
   timezone: Europe/Moscow
 
+flower:
+  username: system_admin
+  password: password
+
 storages:
   # Use db configuration from postgres environment file
   # (docker_config/postgres/environment.env)
