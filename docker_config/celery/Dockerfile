@@ -15,10 +15,13 @@ RUN chmod +x /await_start.sh
 
 ########## CUSTOMIZE ##########
 
+# RUN apk add chromium chromium-chromedriver
+RUN apk add capstone bash libffi-dev openssl-dev git
+
 ADD ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
 
-RUN apk add chromium chromium-chromedriver
+ENV PWNLIB_NOTERM=true
 
 ########## END CUSTOMIZE ##########
 
