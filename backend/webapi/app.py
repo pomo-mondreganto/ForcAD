@@ -102,6 +102,7 @@ async def get_tasks(_request):
     return json_response(tasks)
 
 
+# noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
 @cors_allow_all
 async def get_team_history(_request, team_id):
