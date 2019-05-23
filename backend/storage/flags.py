@@ -215,8 +215,8 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         while True:
             try:
-                pipeline.watch('cached:flags')
-                cached = pipeline.exists('cached:flags')
+                pipeline.watch('flags:cached')
+                cached = pipeline.exists('flags:cached')
                 if not cached:
                     caching.cache_last_flags(current_round)
 

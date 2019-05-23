@@ -120,7 +120,7 @@ def cache_last_owned(team_id: int, round: int):
 def cache_last_flags(round: int):
     """Put all generated flags from last "flag_lifetime" rounds to cache
 
-            :param round: current round
+        :param round: current round
     """
     game_config = config.get_game_config()
     conn = storage.get_db_pool().getconn()
