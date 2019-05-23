@@ -138,6 +138,7 @@ class Flag(Model):
     task_id: int
     flag: str
     flag_data: Optional[str]
+    vuln_number: Optional[int]
 
     def __init__(self,
                  id: Optional[int],
@@ -145,7 +146,8 @@ class Flag(Model):
                  task_id: int,
                  flag: str,
                  round: int,
-                 flag_data: Optional[str]):
+                 flag_data: Optional[str],
+                 vuln_number: Optional[int]):
         super(Flag, self).__init__()
         self.id = id
         self.team_id = team_id
@@ -153,6 +155,7 @@ class Flag(Model):
         self.round = round
         self.flag_data = flag_data
         self.task_id = task_id
+        self.vuln_number = vuln_number
 
     def to_dict(self):
         return {
@@ -162,13 +165,14 @@ class Flag(Model):
             'flag': self.flag,
             'round': self.round,
             'flag_data': self.flag_data,
+            'vuln_number': self.vuln_number,
         }
 
     def __str__(self):
         return (
             f"Flag({self.id}, task {self.task_id}) "
             f"{self.flag} of team {self.team_id} on round {self.round}, "
-            f"data {self.flag_data}"
+            f"data {self.flag_data}, vuln {self.vuln_number}"
         )
 
 

@@ -25,6 +25,7 @@ def generate_flag(service: str, team_id: int, task_id: int, round: int) -> model
         flag=flag_text,
         round=round,
         flag_data=None,
+        vuln_number=None,
     )
 
 

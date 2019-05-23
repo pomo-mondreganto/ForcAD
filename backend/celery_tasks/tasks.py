@@ -128,6 +128,7 @@ def put_action(check_ok, team_json, task_json, round):
                 flag.flag_data = checker_verdict.private_message
             else:
                 flag.flag_data = flag_id
+            flag.vuln_number = place
             storage.flags.add_flag(flag)
         else:
             storage.tasks.update_task_status(

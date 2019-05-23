@@ -8,12 +8,13 @@ CREATE TABLE IF NOT EXISTS Teams
 
 CREATE TABLE IF NOT EXISTS Flags
 (
-  id        SERIAL PRIMARY KEY,
-  flag      VARCHAR(32) UNIQUE NOT NULL DEFAULT '',
-  team_id   INTEGER            NOT NULL,
-  task_id   INTEGER            NOT NULL,
-  round     INTEGER            NOT NULL,
-  flag_data VARCHAR(255)       NOT NULL
+  id          SERIAL PRIMARY KEY,
+  flag        VARCHAR(32) UNIQUE NOT NULL DEFAULT '',
+  team_id     INTEGER            NOT NULL,
+  task_id     INTEGER            NOT NULL,
+  round       INTEGER            NOT NULL,
+  flag_data   VARCHAR(255)       NOT NULL,
+  vuln_number INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS StolenFlags

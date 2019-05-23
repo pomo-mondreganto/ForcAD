@@ -15,8 +15,8 @@ _INCREMENT_LOST_FLAGS_QUERY = "UPDATE teamtasks SET lost = lost + 1 WHERE team_i
 _INCREMENT_STOLEN_FLAGS_QUERY = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s"
 
 _INSERT_FLAG_QUERY = """
-INSERT INTO flags (flag, team_id, task_id, round, flag_data) 
-VALUES (%s, %s, %s, %s, %s) RETURNING id
+INSERT INTO flags (flag, team_id, task_id, round, flag_data, vuln_number) 
+VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
 """
 
 
@@ -115,6 +115,7 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
                 flag.task_id,
                 flag.round,
                 flag.flag_data,
+                flag.vuln_number,
             )
         )
         flag.id, = curs.fetchone()

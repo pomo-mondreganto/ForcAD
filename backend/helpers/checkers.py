@@ -247,6 +247,7 @@ def run_get_command(checker_path: str,
         host,
         flag.flag_data,
         flag.flag,
+        str(flag.vuln_number),
     ]
 
     env = os.environ.copy()
