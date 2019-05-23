@@ -107,7 +107,7 @@ between them, I recommend setting `round_time` at least 4 times greater than the
 - `checker_returns_flag_id`: whether the checker returns new `flag_id` for the `GET` action for this flag, or the 
 passed `flag_id` should be used when getting flag (see more in checker writing section)
 
-- `env_path`: path or a combination of paths to be appended to `PATH` env variable (e.g. path to chromedriver). 
+- `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there. 
 
 ## Writing a checker
