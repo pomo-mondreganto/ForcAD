@@ -20,7 +20,10 @@ if not team_id:
 print('Now enter your flags, one in a line:')
 
 while True:
-    flag_str = input().strip()
+    try:
+        flag_str = input().strip()
+    except EOFError:
+        break
 
     round = storage.game.get_real_round()
 
