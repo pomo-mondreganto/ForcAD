@@ -1,6 +1,7 @@
 import React from 'react';
 
 import styled from 'styled-components';
+import Tooltip from './Tooltip';
 import { serviceColors } from 'config';
 
 const TableCell = styled.div`
@@ -49,22 +50,6 @@ const TeamTask = styled(TableCell)`
     ${props => (props.last ? 'border-right: 1px solid #c6cad1;' : '')}
     position: relative;
     align-content: stretch;
-`;
-
-const Tooltip = styled.div`
-    opacity: 0;
-    background-color: #333333;
-    color: #f3f3f3;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-
-    display: grid;
-    align-content: center;
-
-    &:hover {
-        opacity: 1;
-    }
 `;
 
 const TeamTaskInfo = styled.div`
@@ -118,7 +103,7 @@ const TeamTaskComponent = ({
     round
 }) => (
     <TeamTask status={status} last={last}>
-        <Tooltip>{message}</Tooltip>
+        <Tooltip message={message} />
         <TeamTaskInfoComponent
             stolen={stolen}
             lost={lost}

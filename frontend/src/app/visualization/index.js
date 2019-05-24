@@ -47,7 +47,9 @@ class Visualization extends React.Component {
                         .name,
                     delta: json.attacker_delta
                 };
-                return { flags: flags.concat([newFlag]).slice(-100) };
+                return {
+                    flags: [newFlag].concat(flags).slice(0, 100)
+                };
             });
         });
     };
