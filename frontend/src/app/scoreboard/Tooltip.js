@@ -37,7 +37,6 @@ class TooltipContainer extends React.Component {
 
     handleClick = () => {
         const { show } = this.state;
-        console.log('.' + show);
         this.setState({
             show: !show
         });
@@ -46,8 +45,6 @@ class TooltipContainer extends React.Component {
     render() {
         const { message } = this.props;
         const { show } = this.state;
-        console.log('!' + message);
-        console.log('?' + show);
         return (
             <>
                 <Tooltip show={show}>{message}</Tooltip>
