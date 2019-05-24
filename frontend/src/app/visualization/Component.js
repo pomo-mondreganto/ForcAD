@@ -12,6 +12,7 @@ const GlobalStyle = createGlobalStyle`
 
 const Page = styled.div`
     background: #000000;
+    min-height: 100vh;
 `;
 
 const FlagRow = styled.div`
