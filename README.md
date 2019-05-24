@@ -74,7 +74,7 @@ is required as it's a local connection).
 Platform has a somewhat-flexible rating system. Basically, rating system if a class that is initialized by 2 floats: 
 current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
 victim rating changes respectively. Having read that, you can easily replace default rating system in 
-`backend/helpers/rating.py` by your own brand-new one. Anyway, default rating system is based on Elo rating and performs 
+[backend/helpers/rating.py](backend/helpers/rating.py) by your own brand-new one. Anyway, default rating system is based on Elo rating and performs 
 quite well in practice. **game_hardness** and **inflation** configuration variables can be set in `global` 
 block in `config.yml`, the first one sets how much points team is earning for an attack (the greater the hardness, the 
 bigger the rating change is), and the second one states is there's an "inflation" of points: whether a team earns points
@@ -84,7 +84,7 @@ Default value for `game_hardness` in both versions (with and w/o inflation) is `
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
 corresponding service name. You can change flag generation in function `generate_flag` in 
-[backend/helpers/flags.py](#backend/helpers/flags.py)
+[backend/helpers/flags.py](backend/helpers/flags.py)
 
 Each flag is valid (and can be checked by checker) `flag_lifetime` rounds (global config variable).    
 
@@ -177,9 +177,10 @@ first vuln if the supplied place is 1 and to the second vuln otherwise.
 
 #### Modifying checker container
 
-As checkers run in `celery` container, open `docker_config/celery/Dockerfile` and install all necessary packages
-to the image. Any modification can be made in `CUSTOMIZE` block. With enough confidence, even the base image of celery 
-container could be changed (`python3.7` needs to be installed anyway).
+As checkers run in `celery` container, open [docker_config/celery/Dockerfile](docker_config/celery/Dockerfile) 
+and install all necessary packages to the image. Any modification can be made in `CUSTOMIZE` block. 
+With enough confidence, even the base image of celery container could be changed 
+(`python3.7` needs to be installed anyway).
 
 ## Running without docker 
 
