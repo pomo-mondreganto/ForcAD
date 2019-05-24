@@ -12,12 +12,14 @@ The name is pronounced as "forkad".
 (or copy `backend/config/config.yml.example` to `backend/config/config.yml`, if the latter is missing).
 
 2. Add teams and tasks to corresponding config sections following the example's format, 
-set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for recommendations see `checker_timeout` variable).
+set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for recommendations see 
+[checker_timeout](#checkers) variable).
 
 3. Change default passwords (that includes `storages.db.password` for database and `flower.password` for
 `celery` visualization).
 
-4. Install `backend/requirements.txt` (`pip3 install -r backend/requirements.txt`) and run `./setup_config.py` to transfer config variables
+4. Install `setup_requirements.txt` (`pip3 install -r setup_requirements.txt`) and run `./setup_config.py` 
+to transfer config variables
 
 5. Run `docker-compose up --build` to start the system (add `-d` option to detach). 
 Wait patiently for the images to build, it could take a few minutes, but happens only once. 
@@ -62,10 +64,12 @@ from which they're served by nginx
 
 - **Nginx** acts as a routing proxy, that unites frontend, api, flower and http flag submitter
 
-- **Initializer** also starts on `docker-compose up`, waits for database to start (all other containers wait for 
+- **Initializer** also starts on `docker-compose up`, waits for the database to start (all other containers wait for 
 the initializer to finish its job) then drops old tables and initializes database. From that point,
-changing team or task config is useless, as they're copied to database already. If changes required, connect to 
-postgres container directly and run `psql` command (read the reference). 
+changing team or task config is useless, as they're copied to database already. If changes are required, connect to 
+the postgres container directly and run `psql` command (read the reference). For default database name and user 
+(`system_db` and `system_admin`) use `docker-compose exec postgres psql -U system_admin system_db` (no password 
+is required as it's a local connection). 
 
 Platform has a somewhat-flexible rating system. Basically, rating system if a class that is initialized by 2 floats: 
 current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
@@ -74,7 +78,7 @@ victim rating changes respectively. Having read that, you can easily replace def
 quite well in practice. **game_hardness** and **inflation** configuration variables can be set in `global` 
 block in `config.yml`, the first one sets how much points team is earning for an attack (the greater the hardness, the 
 bigger the rating change is), and the second one states is there's an "inflation" of points: whether a team earns points
-by attacking zero-rating victim. Current rating system with inflation results in quite a dynamic and *fast* gameplay.
+by attacking zero-rating victim. Current rating system with inflation results in quite a dynamic and fast gameplay.
 Default value for `game_hardness` in both versions (with and w/o inflation) is `1300`, recommended range is 
 `[500, 10000]` (try to emulate it first).
 
@@ -120,7 +124,7 @@ Checker should terminate with one of the five return codes:
 
 - **101**: `OK` code, everything works
 - **102**: `MUMBLE`, service's not working correctly
-- **103**: `CORRUPT`, service's working correctly, but didn't return flags from previous rounds
+- **103**: `CORRUPT`, service's working correctly, but didn't return flags from previous rounds (returned by `GET` only)
 - **104**: `DOWN`, could not connect normally
 - **-1337**: `CHECKER_ERROR`, unexpected error in checker
 
@@ -139,13 +143,15 @@ Example invocation: `/checkers/task/check.py check 127.0.0.1`
 
 -----
 
-- `PUT`: puts a flag to the team's service. `PUT` is *not* run if `CHECK` failed
+- `PUT`: puts a flag to the team's service.
 
 Example invocation: `/checkers/task/check.py put 127.0.0.1 <flag_id> <flag> <vuln_number>`
 
 If the checker returns `flag_id` (see checker config), it should write some data 
 which helps to access flag later (username, password, etc) to `stdout`. Otherwise, it ought to use `flag_id` as some "seed" 
 to generate such data (on the next invocation `flag_id` will be the same if `checker_returns_flag_id` is set to `false`).
+
+`PUT` is **not** run if `CHECK` failed
 
 ------
 
@@ -161,7 +167,21 @@ This action should check if the flag can be acquired correctly.
 
 Be aware that to test task locally, LAN IP (not `127.0.0.1`) needs to be specified for the team.
 
+See [this link](https://github.com/HackerDom/ructf-2017/wiki/Интерфейс-«проверяющая-система-чекеры») to read more about 
+writing checkers for Hackerdom checksystem. Vulns' frequencies (e.g. put 1 flag for the first vuln for each 
+3 flags of the second) are not supported yet, but can be easily emulated with task place count and checker. 
+For example, for the above configuration (1:3) specify 4 places for the task, and then in checker `PUT` flag for the 
+first vuln if the supplied place is 1 and to the second vuln otherwise.    
+
 #### Modifying checker container
 
 As checkers run in `celery` container, open `docker_config/celery/Dockerfile` and install all necessary packages
-to the image. Any modification can be made in `CUSTOMIZE` block.
+to the image. Any modification can be made in `CUSTOMIZE` block. With enough confidence, even the base image of celery 
+container could be changed (`python3.7` needs to be installed anyway).
+
+## Running without docker 
+
+Starting system without docker  is quite easy too: just run all the needed parts of the system 
+(see Usage section for details) and provide correct values for `redis` and `postgres` machine hosts.
+
+Python version `3.7` (and higher) is required (may work with `3.6.7+`, but it hasn't been tested at all).
