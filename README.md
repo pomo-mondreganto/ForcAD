@@ -83,7 +83,8 @@ Default value for `game_hardness` in both versions (with and w/o inflation) is `
 `[500, 10000]` (try to emulate it first).
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
-corresponding service name. You can change flag generation in function `generate_flag` in `backend/helpers/flags.py`
+corresponding service name. You can change flag generation in function `generate_flag` in 
+[backend/helpers/flags.py](#backend/helpers/flags.py)
 
 Each flag is valid (and can be checked by checker) `flag_lifetime` rounds (global config variable).    
 
@@ -100,7 +101,8 @@ Checker-related configuration variables:
 
 - `gets`: number of flags to put for each team for each round
 
-- `puts`: number of flags to check from the last `flag_lifetime` rounds (see global config for lifetime description). 
+- `puts`: number of flags to check from the last `flag_lifetime` rounds 
+(see [Configuration and usage](#configuration-and-usage) for lifetime description). 
 
 - `places`: large tasks may contain a lot of possible places for a flag, that is the number. 
 It'll be passed to checker (the range is `[1, places]`).
@@ -109,7 +111,7 @@ It'll be passed to checker (the range is `[1, places]`).
 between them, I recommend setting `round_time` at least 4 times greater than the maximum checker timeout. 
 
 - `checker_returns_flag_id`: whether the checker returns new `flag_id` for the `GET` action for this flag, or the 
-passed `flag_id` should be used when getting flag (see more in checker writing section)
+passed `flag_id` should be used when getting flag (see more in [checker writing](#writing-a-checker) section)
 
 - `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there. 
@@ -147,7 +149,7 @@ Example invocation: `/checkers/task/check.py check 127.0.0.1`
 
 Example invocation: `/checkers/task/check.py put 127.0.0.1 <flag_id> <flag> <vuln_number>`
 
-If the checker returns `flag_id` (see checker config), it should write some data 
+If the checker returns `flag_id` (see [checker config](#checkers)), it should write some data 
 which helps to access flag later (username, password, etc) to `stdout`. Otherwise, it ought to use `flag_id` as some "seed" 
 to generate such data (on the next invocation `flag_id` will be the same if `checker_returns_flag_id` is set to `false`).
 
@@ -182,6 +184,7 @@ container could be changed (`python3.7` needs to be installed anyway).
 ## Running without docker 
 
 Starting system without docker  is quite easy too: just run all the needed parts of the system 
-(see Usage section for details) and provide correct values for `redis` and `postgres` machine hosts.
+(see [Confiuration and usage](#configuration-and-usage) section for details) and provide correct values 
+for `redis` and `postgres` machine hosts.
 
 Python version `3.7` (and higher) is required (may work with `3.6.7+`, but it hasn't been tested at all).
