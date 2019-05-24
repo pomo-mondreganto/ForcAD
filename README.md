@@ -34,7 +34,7 @@ Due to some limitations of docker proxy, teams are identified by unique randomly
 (look for them in the logs of `initializer` container or print using the following command after the system started: 
 `docker-compose exec webapi python3 /app/scripts/print_tokens.py`). 
 You can either share all tokens with all teams (as submitting flags for other teams is not really profitable), 
-or send tokens privately.
+or send tokens privately. Tokens have one upside: all requests can be mascaraded.
 
 Platform consists of several modules: 
 
@@ -71,22 +71,23 @@ the postgres container directly and run `psql` command (read the reference). For
 (`system_db` and `system_admin`) use `docker-compose exec postgres psql -U system_admin system_db` (no password 
 is required as it's a local connection). 
 
-Platform has a somewhat-flexible rating system. Basically, rating system if a class that is initialized by 2 floats: 
+Platform has a somewhat-flexible rating system. Basically, rating system is a class that's initialized by 2 floats: 
 current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
 victim rating changes respectively. Having read that, you can easily replace default rating system in 
-[backend/helpers/rating.py](backend/helpers/rating.py) by your own brand-new one. Anyway, default rating system is based on Elo rating and performs 
-quite well in practice. **game_hardness** and **inflation** configuration variables can be set in `global` 
-block in `config.yml`, the first one sets how much points team is earning for an attack (the greater the hardness, the 
+[backend/helpers/rating.py](backend/helpers/rating.py) by your own brand-new one. Default rating system is based on Elo 
+rating and performs quite well in practice. **game_hardness** and **inflation** configuration variables can be set in `global` 
+block in `config.yml`, the first one sets how much points team is earning for an attack (the higher the hardness, the 
 bigger the rating change is), and the second one states is there's an "inflation" of points: whether a team earns points
 by attacking zero-rating victim. Current rating system with inflation results in quite a dynamic and fast gameplay.
 Default value for `game_hardness` in both versions (with and w/o inflation) is `1300`, recommended range is 
-`[500, 10000]` (try to emulate it first).
+`[500, 10000]` (try to emulate it first). Initial score for task can also be configured in global settings (that'll be
+the default value) and for each task independently.
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
 corresponding service name. You can change flag generation in function `generate_flag` in 
 [backend/helpers/flags.py](backend/helpers/flags.py)
 
-Each flag is valid (and can be checked by checker) `flag_lifetime` rounds (global config variable).    
+Each flag is valid (and can be checked by checker) for `flag_lifetime` rounds (global config variable).    
 
 ## Checkers
 
@@ -132,8 +133,9 @@ Checker should terminate with one of the five return codes:
 
 All other return codes are considered to be `CHECKER_ERROR`.
 
-In case of unsuccessful invocation `stdout` output will be shown on scoreboard, `stderr` output is considered be debug info
-and is stored in database. Also, in case of `CHECKER_ERROR` `celery` container prints warning to console with detailed logs. 
+In case of unsuccessful invocation `stdout` output will be shown on scoreboard, `stderr` output is considered to 
+be the debug info and is stored in database. Also, in case of `CHECKER_ERROR` `celery` container prints warning 
+to console with detailed logs. 
 
 Checker must implement three main actions: 
 
