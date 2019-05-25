@@ -10,9 +10,9 @@ from storage import caching
 
 _INSERT_STOLEN_FLAG_QUERY = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
 
-_INCREMENT_LOST_FLAGS_QUERY = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s"
+_INCREMENT_LOST_FLAGS_QUERY = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s AND task_id = %s"
 
-_INCREMENT_STOLEN_FLAGS_QUERY = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s"
+_INCREMENT_STOLEN_FLAGS_QUERY = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s AND task_id=%s"
 
 _INSERT_FLAG_QUERY = """
 INSERT INTO flags (flag, team_id, task_id, round, flag_data, vuln_number) 
@@ -39,8 +39,8 @@ def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
     curs = conn.cursor()
 
     curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker, flag.id))
-    curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id,))
-    curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker,))
+    curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id, flag.task_id))
+    curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker, flag.task_id))
 
     conn.commit()
     curs.close()
