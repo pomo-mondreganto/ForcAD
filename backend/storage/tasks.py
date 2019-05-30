@@ -16,13 +16,15 @@ WHERE task_id = %s AND team_id = %s AND round = %s
 """
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
+BEGIN;
 WITH prev_table AS (
     SELECT score, stolen, lost, up_rounds FROM teamtasks 
-    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round = %(round)s - 1
+    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round = %(round)s - 1 FOR UPDATE
 )
 INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, up_rounds) 
 SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds 
-FROM prev_table
+FROM prev_table;
+COMMIT;
 """
 
 
