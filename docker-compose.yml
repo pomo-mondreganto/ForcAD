@@ -29,8 +29,6 @@ services:
       dockerfile: docker_config/celery/Dockerfile
     environment:
       - CELERY_CONTAINER_TYPE=beat
-    volumes:
-      - ./docker_volumes/:/volumes/
     env_file:
       - ./docker_config/postgres/environment.env
     depends_on:

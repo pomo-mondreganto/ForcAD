@@ -15,8 +15,8 @@ case $CELERY_CONTAINER_TYPE in
     "beat")
         echo "[*] Starting celery beat"
         celery beat -A celery_tasks \
-            --schedule=/volumes/celery/celerybeat-schedule \
-            --pidfile=/tmp/celerybeat.pid
+            --pidfile=/tmp/celerybeat.pid \
+#            --schedule=/volumes/celery/celerybeat-schedule
         ;;
     "flower")
         echo "[*] Starting celery flower"
