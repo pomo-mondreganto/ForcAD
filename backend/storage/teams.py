@@ -68,20 +68,24 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         :param token: token string
         :return: team id
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        while True:
-            try:
-                pipeline.watch('teams:cached')
 
-                cached = pipeline.exists('teams:cached')
-                if not cached:
-                    caching.cache_teams()
+    # Pipeline is NOT in multi mode
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        cached = pipeline.exists('teams:cached')
+        if not cached:
+            while True:
+                try:
+                    pipeline.watch('teams:cached')
 
-                break
-            except redis.WatchError:
-                continue
+                    cached = pipeline.exists('teams:cached')
+                    if not cached:
+                        caching.cache_teams()
 
-        # pipeline is not in multi mode now
+                    break
+                except redis.WatchError:
+                    continue
+            pipeline.unwatch()
+
         team_id = pipeline.get(f'team:token:{token}')
 
     try:

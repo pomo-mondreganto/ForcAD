@@ -25,6 +25,18 @@ def startup(**_kwargs):
         eta=game_config['start_time'],
     )
 
+    storage.caching.cache_teamtasks(round=0)
+
+    game_state = storage.game.get_game_state(round=0)
+    if not game_state:
+        logger.warning('Initial game_state missing')
+    else:
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            logger.info(f"Initializing game_state with {game_state.to_dict()}")
+            pipeline.set('game_state', game_state.to_json())
+            pipeline.publish('scoreboard', game_state.to_json())
+            pipeline.execute()
+
 
 @shared_task
 def test_task():

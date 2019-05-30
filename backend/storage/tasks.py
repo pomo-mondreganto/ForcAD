@@ -16,15 +16,15 @@ WHERE task_id = %s AND team_id = %s AND round = %s
 """
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
-BEGIN;
 WITH prev_table AS (
     SELECT score, stolen, lost, up_rounds FROM teamtasks 
-    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round = %(round)s - 1 FOR UPDATE
+    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
+    ORDER BY round DESC LIMIT 1 
+    FOR UPDATE
 )
 INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, up_rounds) 
 SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds 
 FROM prev_table;
-COMMIT;
 """
 
 
@@ -155,19 +155,26 @@ def get_teamtasks_for_participants(round: int) -> Optional[List[dict]]:
 def get_teamtasks_of_team(team_id: int, current_round: int) -> Optional[List[dict]]:
     """Fetch teamtasks history for a team, cache if necessary"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        while True:
-            try:
-                pipeline.watch(f'teamtasks:team:{team_id}:round:{current_round}:cached')
+        cached, result = pipeline.exists(
+            f'teamtasks:team:{team_id}:round:{current_round}:cached',
+        ).get(
+            f'teamtasks:team:{team_id}:round:{current_round}',
+        ).execute()
 
-                cached = pipeline.exists(f'teamtasks:team:{team_id}:round:{current_round}:cached')
-                if not cached:
-                    caching.cache_teamtasks_for_team(team_id=team_id, current_round=current_round)
+        if not cached:
+            while True:
+                try:
+                    pipeline.watch(f'teamtasks:team:{team_id}:round:{current_round}:cached')
 
-                result = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}')
+                    cached = pipeline.exists(f'teamtasks:team:{team_id}:round:{current_round}:cached')
+                    if not cached:
+                        caching.cache_teamtasks_for_team(team_id=team_id, current_round=current_round)
 
-                break
-            except redis.WatchError:
-                continue
+                    result = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}')
+
+                    break
+                except redis.WatchError:
+                    continue
 
     try:
         result = result.decode()
