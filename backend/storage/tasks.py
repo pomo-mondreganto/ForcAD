@@ -75,7 +75,7 @@ async def get_tasks_async(loop) -> List[models.Task]:
     return tasks
 
 
-def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: helpers.models.CheckerActionResult):
+def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
     """ Update task status in database
 
         :param task_id: task id

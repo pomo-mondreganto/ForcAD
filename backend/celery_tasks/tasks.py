@@ -56,7 +56,7 @@ def check_action(team_json, task_json, round: int):
 
     logger.info(f'Running checker for team {team.id} task {task.id}')
 
-    tmp_verdict = models.CheckerActionResult(
+    tmp_verdict = models.CheckerVerdict(
         status=TaskStatus.CHECK_FAILED,
         private_message='Check pending',
         public_message='',
@@ -185,7 +185,7 @@ def get_action(put_ok, team_json, task_json, round):
 
     logger.info(f'Running GET on rounds {rounds_to_check} for team {team.id} task {task.id}')
 
-    checker_verdict = models.CheckerActionResult(
+    checker_verdict = models.CheckerVerdict(
         status=TaskStatus.UP,
         public_message='',
         private_message='',

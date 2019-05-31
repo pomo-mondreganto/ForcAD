@@ -89,7 +89,7 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger) -> helpers.models.CheckerActionResult:
+                        logger) -> helpers.models.CheckerVerdict:
     """Run generic checker command, calls "run_command_gracefully" and handles exceptions
 
     :param command: command to run
@@ -139,7 +139,7 @@ def run_generic_command(command: List,
         private_message = f'{command_type.upper()} timeout'
         public_message = 'Timeout'
 
-    result = helpers.models.CheckerActionResult(
+    result = helpers.models.CheckerVerdict(
         public_message=public_message,
         private_message=private_message,
         command=command,
@@ -154,7 +154,7 @@ def run_check_command(checker_path: str,
                       host: str,
                       team_name: str,
                       timeout: int,
-                      logger) -> helpers.models.CheckerActionResult:
+                      logger) -> helpers.models.CheckerVerdict:
     """Runs "check" command
 
         :param checker_path: absolute checker path
@@ -188,7 +188,7 @@ def run_put_command(checker_path: str,
                     flag: helpers.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> Tuple[helpers.models.CheckerActionResult, str]:
+                    logger) -> Tuple[helpers.models.CheckerVerdict, str]:
     """Runs "put" command
 
         :param checker_path: absolute checker path
@@ -229,7 +229,7 @@ def run_get_command(checker_path: str,
                     flag: helpers.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> helpers.models.CheckerActionResult:
+                    logger) -> helpers.models.CheckerVerdict:
     """Runs "put" command
 
         :param checker_path: absolute checker path

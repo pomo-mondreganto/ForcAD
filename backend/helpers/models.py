@@ -202,7 +202,7 @@ class GameState(Model):
         return f"GameState for round {self.round}"
 
 
-class CheckerActionResult(Model):
+class CheckerVerdict(Model):
     """Model representing checker action result"""
     private_message: str
     public_message: str
@@ -214,7 +214,7 @@ class CheckerActionResult(Model):
                  public_message: str,
                  command: List,
                  status: helpers.status.TaskStatus):
-        super(CheckerActionResult, self).__init__()
+        super(CheckerVerdict, self).__init__()
         self.private_message = private_message
         self.public_message = public_message
         self.command = command
