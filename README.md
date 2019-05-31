@@ -129,7 +129,7 @@ Checker should terminate with one of the five return codes:
 - **102**: `MUMBLE`, service's not working correctly
 - **103**: `CORRUPT`, service's working correctly, but didn't return flags from previous rounds (returned by `GET` only)
 - **104**: `DOWN`, could not connect normally
-- **-1337**: `CHECKER_ERROR`, unexpected error in checker
+- **110**: `CHECKER_ERROR`, unexpected error in checker
 
 All other return codes are considered to be `CHECKER_ERROR`.
 

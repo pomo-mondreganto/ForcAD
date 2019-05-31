@@ -7,4 +7,4 @@ class TaskStatus(enum.Enum):
     MUMBLE = 102
     CORRUPT = 103
     DOWN = 104
-    CHECK_FAILED = -1337
+    CHECK_FAILED = 110
