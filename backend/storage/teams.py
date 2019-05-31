@@ -69,9 +69,8 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         :return: team id
     """
 
-    # Pipeline is NOT in multi mode
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        cached = pipeline.exists('teams:cached')
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        cached, = pipeline.exists('teams:cached').execute()
         if not cached:
             while True:
                 try:
@@ -84,9 +83,9 @@ def get_team_id_by_token(token: str) -> Optional[int]:
                     break
                 except redis.WatchError:
                     continue
-            pipeline.unwatch()
+            pipeline.multi()
 
-        team_id = pipeline.get(f'team:token:{token}')
+        team_id, = pipeline.get(f'team:token:{token}').execute()
 
     try:
         team_id = int(team_id.decode())

@@ -92,7 +92,6 @@ def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
                 except redis.WatchError:
                     continue
 
-            pipeline.unwatch()
             pipeline.multi()
 
         pipeline.sismember(f'team:{flag.team_id}:owned_flags', flag.id)
@@ -146,7 +145,6 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
             except redis.WatchError:
                 continue
 
-        pipeline.unwatch()
         pipeline.multi()
 
         pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
@@ -183,7 +181,6 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.model
                 finally:
                     pipeline.reset()
 
-            pipeline.unwatch()
             pipeline.multi()
 
         pipeline.exists(f'flag:{field_name}:{field_value}')
@@ -228,8 +225,7 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
         :return: Flag mode instance or None if no flag from rounds exist
     """
 
-    # Pipeline is NOT in multi mode
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached = pipeline.exists('flags:cached')
         if not cached:
             while True:
@@ -243,12 +239,11 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
                 except redis.WatchError:
                     continue
 
-            pipeline.unwatch()
+            pipeline.multi()
 
-        flags = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}')
+        flags, = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
         try:
             flag_id = int(secrets.choice(list(flags)).decode())
         except (ValueError, IndexError, AttributeError):
             return None
-
     return get_flag_by_id(flag_id, current_round)

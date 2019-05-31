@@ -25,17 +25,19 @@ def startup(**_kwargs):
         eta=game_config['start_time'],
     )
 
-    storage.caching.cache_teamtasks(round=0)
+    round = storage.game.get_current_round()
+    if not round:
+        storage.caching.cache_teamtasks(round=0)
 
-    game_state = storage.game.get_game_state(round=0)
-    if not game_state:
-        logger.warning('Initial game_state missing')
-    else:
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-            logger.info(f"Initializing game_state with {game_state.to_dict()}")
-            pipeline.set('game_state', game_state.to_json())
-            pipeline.publish('scoreboard', game_state.to_json())
-            pipeline.execute()
+        game_state = storage.game.get_game_state(round=0)
+        if not game_state:
+            logger.warning('Initial game_state missing')
+        else:
+            with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+                logger.info(f"Initializing game_state with {game_state.to_dict()}")
+                pipeline.set('game_state', game_state.to_json())
+                pipeline.publish('scoreboard', game_state.to_json())
+                pipeline.execute()
 
 
 @shared_task
@@ -199,6 +201,8 @@ def get_action(put_ok, team_json, task_json, round):
             round=get_round,
             current_round=round,
         )
+
+        print('Got a flag: ', flag)
 
         if not flag:
             checker_verdict.status = TaskStatus.CORRUPT
