@@ -1,8 +1,7 @@
 version: '2.4'
 
-networks:
-  lan_access:
-    driver: bridge
+volumes:
+  react_build:
 
 services:
   celery:
@@ -15,12 +14,6 @@ services:
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
-    networks:
-      - lan_access
-      - default
     restart: on-failure
 
   celerybeat:
@@ -31,10 +24,6 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
-      - celery
     restart: on-failure
 
   flower:
@@ -46,10 +35,6 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - docker_config/celery/flower_environment.env
-    depends_on:
-      - redis
-      - postgres
-      - celery
     restart: on-failure
 
 
@@ -59,9 +44,6 @@ services:
       dockerfile: docker_config/initializer/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
     restart: on-failure
 
   webapi:
@@ -70,9 +52,6 @@ services:
       dockerfile: docker_config/webapi/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
     restart: on-failure
     tty: true
 
@@ -81,7 +60,7 @@ services:
       context: .
       dockerfile: docker_config/react_builder/Dockerfile
     volumes:
-      - ./docker_volumes/react_build/:/react_build/
+      - react_build:/react_build/
     restart: on-failure
 
   http_flag_submitter:
@@ -90,9 +69,6 @@ services:
       dockerfile: docker_config/http_flag_submitter/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
     restart: on-failure
 
   tcp_flag_submitter:
@@ -101,9 +77,6 @@ services:
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
-    depends_on:
-      - redis
-      - postgres
     ports:
       - 31337:31337
     restart: on-failure
@@ -114,11 +87,7 @@ services:
     volumes:
       - ./docker_config/nginx/conf/:/etc/nginx/conf.d/
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
-      - ./docker_volumes/react_build:/react_build
-    depends_on:
-      - flower
-      - http_flag_submitter
-      - webapi
+      - react_build:/react_build
     ports:
       - 8080:80
     restart: on-failure

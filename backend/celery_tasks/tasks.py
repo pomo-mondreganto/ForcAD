@@ -143,9 +143,6 @@ def put_action(check_ok, team_json, task_json, round):
             else:
                 flag.flag_data = flag_id
             flag.vuln_number = place
-            logger.warning(task.to_json())
-            logger.warning(task.checker_returns_flag_id)
-            logger.warning(flag.flag_data)
             storage.flags.add_flag(flag)
         else:
             storage.tasks.update_task_status(
@@ -202,8 +199,6 @@ def get_action(put_ok, team_json, task_json, round):
             current_round=round,
         )
 
-        print('Got a flag: ', flag)
-
         if not flag:
             checker_verdict.status = TaskStatus.CORRUPT
             checker_verdict.private_message = f'No flags from round {get_round}'
@@ -228,6 +223,8 @@ def get_action(put_ok, team_json, task_json, round):
         checker_verdict=checker_verdict,
         round=round,
     )
+
+    return checker_verdict.status == TaskStatus.UP
 
 
 @shared_task
