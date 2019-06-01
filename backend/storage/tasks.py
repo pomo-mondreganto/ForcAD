@@ -217,7 +217,7 @@ def initialize_teamtasks(round: int):
                     'round': round,
                 },
             )
+            conn.commit()
 
-    conn.commit()
     curs.close()
     storage.get_db_pool().putconn(conn)
