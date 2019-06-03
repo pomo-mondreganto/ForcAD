@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, BASE_DIR)
@@ -19,11 +20,17 @@ if not team_id:
 
 print('Now enter your flags, one in a line:')
 
+flags_submitted = 0
+flags_correct = 0
+overall_time = 0.0
+
 while True:
     try:
         flag_str = input().strip()
     except EOFError:
         break
+
+    start_time = time.time()
 
     round = storage.game.get_real_round()
 
@@ -34,7 +41,6 @@ while True:
         flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
     except exceptions.FlagSubmitException as e:
         print(e)
-        continue
     else:
         storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
         attacker_delta = storage.teams.handle_attack(
@@ -43,5 +49,14 @@ while True:
             task_id=flag.task_id,
             round=round,
         )
-
+        flags_correct += 1
         print(f'Flag accepted! Earned {attacker_delta} flag points!')
+
+    flags_submitted += 1
+    end_time = time.time()
+    overall_time += end_time - start_time
+
+average = overall_time / flags_submitted
+
+print(f'Submitted a total of {flags_submitted} flags, {flags_correct} correct flags')
+print(f'Overall time processing flags is {overall_time:.5f} seconds, average is {average * 1000:.3f}ms per flag')

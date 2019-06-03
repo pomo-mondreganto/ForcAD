@@ -4,7 +4,7 @@
 
 cd /app
 
-case $CELERY_CONTAINER_TYPE in
+case ${CELERY_CONTAINER_TYPE} in
     "worker")
         echo "[*] Starting celery worker"
         celery worker -A celery_tasks \

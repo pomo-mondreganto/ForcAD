@@ -21,6 +21,8 @@ RUN apk add capstone bash libffi-dev openssl-dev git
 ADD ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
 
+ADD ./checkers /checkers
+
 ENV PWNLIB_NOTERM=true
 
 ########## END CUSTOMIZE ##########

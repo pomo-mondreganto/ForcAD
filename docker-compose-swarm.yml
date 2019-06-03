@@ -1,22 +1,23 @@
-version: '2.4'
+version: '3.7'
 
 volumes:
   react_build:
+  database:
 
 services:
   celery:
+    image: ${FORCAD_REGISTRY}/celery:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
     environment:
       - CELERY_CONTAINER_TYPE=worker
-    volumes:
-      - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
     restart: on-failure
 
   celerybeat:
+    image: ${FORCAD_REGISTRY}/celerybeat:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
@@ -27,6 +28,7 @@ services:
     restart: on-failure
 
   flower:
+    image: ${FORCAD_REGISTRY}/flower:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
@@ -39,6 +41,7 @@ services:
 
 
   initializer:
+    image: ${FORCAD_REGISTRY}/initializer:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/initializer/Dockerfile
@@ -47,6 +50,7 @@ services:
     restart: on-failure
 
   webapi:
+    image: ${FORCAD_REGISTRY}/webapi:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/webapi/Dockerfile
@@ -56,14 +60,20 @@ services:
     tty: true
 
   react_builder:
+    image: ${FORCAD_REGISTRY}/react_builder:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/react_builder/Dockerfile
     volumes:
       - react_build:/react_build/
     restart: on-failure
+    deploy:
+      placement:
+        constraints:
+          - node.labels.external == 1
 
   http_flag_submitter:
+    image: ${FORCAD_REGISTRY}/http_flag_submitter:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/http_flag_submitter/Dockerfile
@@ -72,6 +82,7 @@ services:
     restart: on-failure
 
   tcp_flag_submitter:
+    image: ${FORCAD_REGISTRY}/tcp_flag_submitter:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile
@@ -83,6 +94,7 @@ services:
     tty: true
 
   nginx:
+    image: ${FORCAD_REGISTRY}/nginx:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
@@ -91,17 +103,25 @@ services:
     ports:
       - 8080:80
     restart: on-failure
+    deploy:
+      placement:
+        constraints:
+          - node.labels.external == 1
 
   redis:
     image: redis:5.0.5-alpine
     restart: on-failure
     sysctls:
-      net.core.somaxconn: 1024
+      - net.core.somaxconn=1024
 
   postgres:
     image: postgres:10.8-alpine
     volumes:
-      - ./docker_volumes/postgres/data/:/var/lib/postgresql/data/
+      - database:/var/lib/postgresql/data/
     env_file:
       - ./docker_config/postgres/environment.env
     restart: on-failure
+    deploy:
+      placement:
+        constraints:
+          - node.labels.db == 1

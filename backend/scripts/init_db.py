@@ -31,7 +31,7 @@ def run():
     curs = conn.cursor()
 
     create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
-    create_query = open(create_query_path, 'r').read()
+    create_query = open(create_query_path).read()
     curs.execute(create_query)
 
     curs.execute(_CONFIG_INITIALIZATION_QUERY, (0, 0))

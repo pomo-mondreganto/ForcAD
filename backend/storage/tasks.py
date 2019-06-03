@@ -35,15 +35,17 @@ def get_tasks() -> List[models.Task]:
             try:
                 pipeline.watch('tasks:cached')
                 cached = pipeline.exists('tasks:cached')
-                if not cached:
-                    caching.cache_tasks()
 
+                pipeline.multi()
+                if not cached:
+                    caching.cache_tasks(pipeline)
+
+                pipeline.execute()
                 break
             except redis.WatchError:
                 continue
 
-        # pipeline is not in multi mode now
-        tasks = pipeline.smembers('tasks')
+        tasks, = pipeline.smembers('tasks').execute()
         tasks = list(models.Task.from_json(task) for task in tasks)
 
     return tasks
@@ -57,14 +59,15 @@ async def get_tasks_async(loop) -> List[models.Task]:
     while True:
         try:
             await redis_aio.watch('tasks:cached')
-
             cached = await redis_aio.exists('tasks:cached')
-            if not cached:
-                # TODO: make it asynchronous?
-                caching.cache_tasks()
 
+            tr = redis_aio.multi_exec()
+            if not cached:
+                await caching.cache_tasks_async(tr)
+
+            await tr.execute()
             await redis_aio.unwatch()
-        except aioredis.WatchVariableError:
+        except (aioredis.MultiExecError, aioredis.WatchVariableError):
             continue
         else:
             break
@@ -167,14 +170,20 @@ def get_teamtasks_of_team(team_id: int, current_round: int) -> Optional[List[dic
                     pipeline.watch(f'teamtasks:team:{team_id}:round:{current_round}:cached')
 
                     cached = pipeline.exists(f'teamtasks:team:{team_id}:round:{current_round}:cached')
+
+                    pipeline.multi()
+
                     if not cached:
-                        caching.cache_teamtasks_for_team(team_id=team_id, current_round=current_round)
-
-                    result = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}')
-
+                        caching.cache_teamtasks_for_team(
+                            team_id=team_id,
+                            current_round=current_round,
+                            pipeline=pipeline,
+                        )
+                    pipeline.execute()
                     break
                 except redis.WatchError:
                     continue
+            result, = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}').execute()
 
     try:
         result = result.decode()

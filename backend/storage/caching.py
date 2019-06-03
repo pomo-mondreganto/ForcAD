@@ -27,8 +27,11 @@ _SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s ORD
 _SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY = "SELECT * from teamtasks WHERE team_id = %s AND round <= %s ORDER BY id"
 
 
-def cache_teams():
-    """Put "teams" table data from database to cache"""
+def cache_teams(pipeline):
+    """Put "teams" table data from database to cache
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards
+    """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.DictCursor)
     curs.execute(_SELECT_ALL_TEAMS_QUERY)
@@ -39,17 +42,23 @@ def cache_teams():
 
     teams = list(models.Team.from_dict(team) for team in teams)
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete('teams', 'teams:cached')
-        for team in teams:
-            pipeline.sadd('teams', team.to_json())
-            pipeline.set(f'team:token:{team.token}', team.id)
-        pipeline.set('teams:cached', 1)
-        pipeline.execute()
+    pipeline.delete('teams', 'teams:cached')
+    pipeline.sadd('teams', *[team.to_json() for team in teams])
+    for team in teams:
+        pipeline.set(f'team:token:{team.token}', team.id)
+    pipeline.set('teams:cached', 1)
 
 
-def cache_tasks():
-    """Put "tasks" table data from database to cache"""
+async def cache_teams_async(redis):
+    """Async version of cache_teams"""
+    return cache_teams(redis)
+
+
+def cache_tasks(pipeline):
+    """Put "tasks" table data from database to cache
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards
+    """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.DictCursor)
     curs.execute(_SELECT_ALL_TASKS_QUERY)
@@ -59,20 +68,23 @@ def cache_tasks():
     storage.get_db_pool().putconn(conn)
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
-
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete('tasks', 'tasks:cached')
-        for task in tasks:
-            pipeline.sadd('tasks', task.to_json())
-        pipeline.set('tasks:cached', 1)
-        pipeline.execute()
+    pipeline.delete('tasks', 'tasks:cached')
+    pipeline.sadd('tasks', *[task.to_json() for task in tasks])
+    pipeline.set('tasks:cached', 1)
 
 
-def cache_last_stolen(team_id: int, round: int):
+async def cache_tasks_async(redis):
+    """Async version of cache_tasks"""
+    return cache_tasks(redis)
+
+
+def cache_last_stolen(team_id: int, round: int, pipeline):
     """Put stolen flags for attacker team from last "flag_lifetime" rounds to cache
 
         :param team_id: attacker team id
         :param round: current round
+        :param pipeline: redis connection to add command to
+    Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = config.get_game_config()
     conn = storage.get_db_pool().getconn()
@@ -84,19 +96,19 @@ def cache_last_stolen(team_id: int, round: int):
     curs.close()
     storage.get_db_pool().putconn(conn)
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete(f'team:{team_id}:cached_stolen', f'team:{team_id}:stolen_flags')
-        for flag_id, in flags:
-            pipeline.sadd(f'team:{team_id}:stolen_flags', flag_id)
-        pipeline.set(f'team:{team_id}:cached_stolen', 1)
-        pipeline.execute()
+    pipeline.delete(f'team:{team_id}:cached_stolen', f'team:{team_id}:stolen_flags')
+    pipeline.sadd(f'team:{team_id}:stolen_flags', *[flag_id for flag_id, in flags])
+    pipeline.set(f'team:{team_id}:cached_stolen', 1)
 
 
-def cache_last_owned(team_id: int, round: int):
+def cache_last_owned(team_id: int, round: int, pipeline):
     """Put owned flags for team from last "flag_lifetime" rounds to cache
 
         :param team_id: flag owner team id
         :param round: current round
+        :param pipeline: redis connection to add command to
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = config.get_game_config()
 
@@ -109,18 +121,18 @@ def cache_last_owned(team_id: int, round: int):
     curs.close()
     storage.get_db_pool().putconn(conn)
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete(f'team:{team_id}:owned_flags', f'team:{team_id}:cached_owned')
-        for flag_id, in flags:
-            pipeline.sadd(f'team:{team_id}:owned_flags', flag_id)
-        pipeline.set(f'team:{team_id}:cached_owned', 1)
-        pipeline.execute()
+    pipeline.delete(f'team:{team_id}:owned_flags', f'team:{team_id}:cached_owned')
+    pipeline.sadd(f'team:{team_id}:owned_flags', *[flag_id for flag_id, in flags])
+    pipeline.set(f'team:{team_id}:cached_owned', 1)
 
 
-def cache_last_flags(round: int):
+def cache_last_flags(round: int, pipeline):
     """Put all generated flags from last "flag_lifetime" rounds to cache
 
         :param round: current round
+        :param pipeline: redis connection to add command to
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = config.get_game_config()
     conn = storage.get_db_pool().getconn()
@@ -132,28 +144,27 @@ def cache_last_flags(round: int):
     curs.close()
     storage.get_db_pool().putconn(conn)
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.delete('flags:cached')
-        flag_models = []
-        for flag_dict in flags:
-            flag = helpers.models.Flag.from_dict(flag_dict)
-            flag_models.append(flag)
-            pipeline.delete(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}')
+    pipeline.delete('flags:cached')
+    flag_models = []
+    for flag_dict in flags:
+        flag = helpers.models.Flag.from_dict(flag_dict)
+        flag_models.append(flag)
 
-        for flag in flag_models:
-            pipeline.set(f'flag:id:{flag.id}', flag.to_json())
-            pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
-            pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
+    pipeline.delete(*[f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}' for flag in flag_models])
 
-        pipeline.set(f'flags:cached', 1)
-        pipeline.execute()
+    for flag in flag_models:
+        pipeline.set(f'flag:id:{flag.id}', flag.to_json())
+        pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
+        pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
+
+    pipeline.set('flags:cached', 1)
 
 
 def cache_teamtasks(round: int):
     """Put "teamtasks" table data for the specified round from database to cache
         :param round: round to cache
 
-        This function caches full game state for specified round
+    This function caches full game state for specified round
     """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.RealDictCursor)
@@ -170,12 +181,12 @@ def cache_teamtasks(round: int):
         pipeline.execute()
 
 
-def cache_teamtasks_for_team(team_id: int, current_round: int):
+def cache_teamtasks_for_team(team_id: int, current_round: int, pipeline):
     """Put "teamtasks" for specified team table data for the specified round from database to cache
 
         :param team_id: team id
         :param current_round: round to cache
-
+        :param pipeline: redis connection to add command to
     """
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor(cursor_factory=extras.RealDictCursor)
@@ -192,7 +203,5 @@ def cache_teamtasks_for_team(team_id: int, current_round: int):
     storage.get_db_pool().putconn(conn)
 
     data = json.dumps(results)
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
-        pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1)
-        pipeline.execute()
+    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
+    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1)

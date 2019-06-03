@@ -1,14 +1,14 @@
 import random
 import secrets
 
-import redis
+import uuid
 from celery import shared_task, chain
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
 
 import config
 import storage
-from helpers import checkers, flags, models
+from helpers import checkers, flags, models, exceptions
 from helpers.status import TaskStatus
 
 logger = get_task_logger(__name__)
@@ -25,7 +25,7 @@ def startup(**_kwargs):
         eta=game_config['start_time'],
     )
 
-    round = storage.game.get_current_round()
+    round = storage.game.get_real_round()
     if not round:
         storage.caching.cache_teamtasks(round=0)
 
@@ -302,10 +302,19 @@ def start_game():
     """
     logger.info('Starting game')
 
-    with storage.get_redis_storage().pipeline() as pipeline:
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         while True:
             try:
-                pipeline.watch('game_starting_lock')
+                nonce = uuid.uuid4().bytes
+                unlocked, = pipeline.set(
+                    f'game_starting_lock',
+                    nonce,
+                    nx=True,
+                    px=10000
+                ).execute()
+
+                if not unlocked:
+                    raise exceptions.GameLockedException
 
                 already_started = storage.game.get_game_running()
                 if already_started:
@@ -313,8 +322,9 @@ def start_game():
                     return
                 storage.game.set_game_running(1)
 
+                pipeline.delete('game_starting_lock')
                 break
-            except redis.WatchError:
+            except exceptions.GameLockedException:
                 continue
 
     storage.caching.cache_teamtasks(round=0)

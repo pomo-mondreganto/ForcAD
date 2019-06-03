@@ -3,6 +3,8 @@
 import os
 import sys
 
+import time
+import redis
 import psycopg2
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +20,7 @@ def run():
     curs = conn.cursor()
 
     create_query_path = os.path.join(SCRIPTS_DIR, 'drop_query.sql')
-    create_query = open(create_query_path, 'r').read()
+    create_query = open(create_query_path).read()
     try:
         curs.execute(create_query)
     except psycopg2.errors.UndefinedTable:
@@ -28,7 +30,14 @@ def run():
     finally:
         curs.close()
 
-    storage.get_redis_storage().flushall()
+    while True:
+        try:
+            storage.get_redis_storage().flushall()
+        except (redis.exceptions.ConnectionError, redis.exceptions.BusyLoadingError):
+            print('[*] Redis isn\'t running, waiting...')
+            time.sleep(5)
+        else:
+            break
 
 
 if __name__ == '__main__':

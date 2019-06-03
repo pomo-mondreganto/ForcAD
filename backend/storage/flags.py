@@ -82,17 +82,18 @@ def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
                     cached_stolen = pipeline.exists(f'team:{attacker}:cached:stolen')
                     cached_owned = pipeline.exists(f'team:{flag.team_id}:cached:owned')
 
+                    pipeline.multi()
+
                     if not cached_stolen:
-                        caching.cache_last_stolen(attacker, round)
+                        caching.cache_last_stolen(attacker, round, pipeline)
 
                     if not cached_owned:
-                        caching.cache_last_owned(flag.team_id, round)
+                        caching.cache_last_owned(flag.team_id, round, pipeline)
 
+                    pipeline.execute()
                     break
                 except redis.WatchError:
                     continue
-
-            pipeline.multi()
 
         pipeline.sismember(f'team:{flag.team_id}:owned_flags', flag.id)
         pipeline.sismember(f'team:{attacker}:stolen_flags', flag.id)
@@ -112,40 +113,42 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
         :param flag: Flag model instance to be inserted
         :return: flag with set "id" field
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        conn = storage.get_db_pool().getconn()
-        curs = conn.cursor()
-        curs.execute(
-            _INSERT_FLAG_QUERY,
-            (
-                flag.flag,
-                flag.team_id,
-                flag.task_id,
-                flag.round,
-                flag.flag_data,
-                flag.vuln_number,
-            )
-        )
-        flag.id, = curs.fetchone()
-        conn.commit()
-        curs.close()
-        storage.get_db_pool().putconn(conn)
 
+    conn = storage.get_db_pool().getconn()
+    curs = conn.cursor()
+    curs.execute(
+        _INSERT_FLAG_QUERY,
+        (
+            flag.flag,
+            flag.team_id,
+            flag.task_id,
+            flag.round,
+            flag.flag_data,
+            flag.vuln_number,
+        )
+    )
+    flag.id, = curs.fetchone()
+    conn.commit()
+    curs.close()
+    storage.get_db_pool().putconn(conn)
+
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         while True:
             try:
                 pipeline.watch(f'team:{flag.team_id}:cached:owned')
                 cached = pipeline.exists(f'team:{flag.team_id}:cached:owned')
 
+                pipeline.multi()
+
                 if not cached:
-                    caching.cache_last_owned(flag.team_id, flag.round)
+                    caching.cache_last_owned(flag.team_id, flag.round, pipeline)
                 else:
                     pipeline.sadd(f'team:{flag.team_id}:owned_flags', flag.id)
 
+                pipeline.execute()
                 break
             except redis.WatchError:
                 continue
-
-        pipeline.multi()
 
         pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
         pipeline.set(f'flag:id:{flag.id}', flag.to_json())
@@ -172,16 +175,15 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.model
                     pipeline.watch('flags:cached')
                     cached = pipeline.exists('flags:cached')
 
-                    if not cached:
-                        caching.cache_last_flags(round)
+                    pipeline.multi()
 
+                    if not cached:
+                        caching.cache_last_flags(round, pipeline)
+
+                    pipeline.execute()
                     break
                 except redis.WatchError:
                     continue
-                finally:
-                    pipeline.reset()
-
-            pipeline.multi()
 
         pipeline.exists(f'flag:{field_name}:{field_value}')
         pipeline.get(f'flag:{field_name}:{field_value}')
@@ -226,20 +228,22 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     """
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached = pipeline.exists('flags:cached')
+        cached, = pipeline.exists('flags:cached').execute()
         if not cached:
             while True:
                 try:
                     pipeline.watch('flags:cached')
                     cached = pipeline.exists('flags:cached')
-                    if not cached:
-                        caching.cache_last_flags(current_round)
 
+                    pipeline.multi()
+
+                    if not cached:
+                        caching.cache_last_flags(current_round, pipeline)
+
+                    pipeline.execute()
                     break
                 except redis.WatchError:
                     continue
-
-            pipeline.multi()
 
         flags, = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
         try:

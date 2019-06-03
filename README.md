@@ -187,7 +187,7 @@ With enough confidence, even the base image of celery container could be changed
 ## Running without docker 
 
 Starting system without docker  is quite easy too: just run all the needed parts of the system 
-(see [Confiuration and usage](#configuration-and-usage) section for details) and provide correct values 
+(see [Configuration and usage](#configuration-and-usage) section for details) and provide correct values 
 for `redis` and `postgres` machine hosts.
 
 Python version `3.7` (and higher) is required (may work with `3.6.7+`, but it hasn't been tested at all).

@@ -47,7 +47,7 @@ async def get_async_redis_pool(loop):
             address=address,
             db=db,
             minsize=5,
-            maxsize=10,
+            maxsize=15,
             loop=loop,
         )
     return _async_redis_pool

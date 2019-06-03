@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import List, Optional, Tuple
 
 import aioredis
@@ -6,7 +7,7 @@ import redis
 
 import config
 import storage
-from helpers import models, rating
+from helpers import models, rating, exceptions
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
@@ -20,17 +21,18 @@ def get_teams() -> List[models.Team]:
         while True:
             try:
                 pipeline.watch('teams:cached')
-
                 cached = pipeline.exists('teams:cached')
-                if not cached:
-                    caching.cache_teams()
 
+                pipeline.multi()
+                if not cached:
+                    caching.cache_teams(pipeline)
+
+                pipeline.execute()
                 break
             except redis.WatchError:
                 continue
 
-        # pipeline is not in multi mode now
-        teams = pipeline.smembers('teams')
+        teams, = pipeline.smembers('teams').execute()
         teams = list(models.Team.from_json(team) for team in teams)
 
     return teams
@@ -46,15 +48,16 @@ async def get_teams_async(loop) -> List[models.Team]:
             await redis_aio.watch('teams:cached')
 
             cached = await redis_aio.exists('teams:cached')
-            if not cached:
-                # TODO: make it asynchronous?
-                caching.cache_teams()
 
+            tr = redis_aio.multi_exec()
+            if not cached:
+                await caching.cache_teams_async(tr)
+
+            await tr.execute()
             await redis_aio.unwatch()
-        except aioredis.WatchVariableError:
-            continue
-        else:
             break
+        except (aioredis.MultiExecError, aioredis.WatchVariableError):
+            continue
 
     teams = await redis_aio.smembers('teams')
     teams = list(models.Team.from_json(team) for team in teams)
@@ -75,15 +78,16 @@ def get_team_id_by_token(token: str) -> Optional[int]:
             while True:
                 try:
                     pipeline.watch('teams:cached')
-
                     cached = pipeline.exists('teams:cached')
-                    if not cached:
-                        caching.cache_teams()
 
+                    pipeline.multi()
+                    if not cached:
+                        caching.cache_teams(pipeline)
+
+                    pipeline.execute()
                     break
                 except redis.WatchError:
                     continue
-            pipeline.multi()
 
         team_id, = pipeline.get(f'team:token:{token}').execute()
 
@@ -181,16 +185,36 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
         :return: attacker rating change
     """
 
-    with storage.get_redis_storage().pipeline() as pipeline:
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         # Deadlock is our enemy
         min_team_id = min(attacker_id, victim_id)
         max_team_id = max(attacker_id, victim_id)
         while True:
             try:
-                pipeline.watch(f'team:{min_team_id}:flag_lock')
+                nonce = uuid.uuid4().bytes
+                # Lock team for 10 seconds
+                unlocked, = pipeline.set(
+                    f'team:{min_team_id}:locked',
+                    nonce,
+                    nx=True,
+                    px=10000
+                ).execute()
+
+                if not unlocked:
+                    raise exceptions.TeamLockedException()
+
                 while True:
                     try:
-                        pipeline.watch(f'team:{max_team_id}:flag_lock')
+                        nonce = uuid.uuid4().bytes
+                        unlocked, = pipeline.set(
+                            f'team:{max_team_id}:locked',
+                            nonce,
+                            nx=True,
+                            px=10000
+                        ).execute()
+
+                        if not unlocked:
+                            raise exceptions.TeamLockedException()
 
                         attacker_delta, victim_delta = update_attack_team_ratings(
                             attacker_id=attacker_id,
@@ -199,21 +223,23 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             round=round,
                         )
 
+                        pipeline.delete(f'team:{max_team_id}:lock').execute()
                         break
-                    except redis.WatchError:
+                    except exceptions.TeamLockedException:
                         continue
+
+                pipeline.delete(f'team:{max_team_id}:lock').execute()
                 break
-            except redis.WatchError:
+            except exceptions.TeamLockedException:
                 continue
 
-    flag_data = {
-        'attacker_id': attacker_id,
-        'victim_id': victim_id,
-        'attacker_delta': attacker_delta,
-        'victim_delta': victim_delta,
-    }
+        flag_data = {
+            'attacker_id': attacker_id,
+            'victim_id': victim_id,
+            'attacker_delta': attacker_delta,
+            'victim_delta': victim_delta,
+        }
 
-    with storage.get_redis_storage().pipeline() as pipeline:
         pipeline.publish('stolen_flags', json.dumps(flag_data))
         pipeline.execute()
 
