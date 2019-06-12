@@ -6,7 +6,7 @@ volumes:
 
 services:
   celery:
-    image: ${FORCAD_REGISTRY}/celery:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_celery:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
@@ -17,7 +17,7 @@ services:
     restart: on-failure
 
   celerybeat:
-    image: ${FORCAD_REGISTRY}/celerybeat:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_celerybeat:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
@@ -28,7 +28,7 @@ services:
     restart: on-failure
 
   flower:
-    image: ${FORCAD_REGISTRY}/flower:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_flower:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
@@ -41,7 +41,7 @@ services:
 
 
   initializer:
-    image: ${FORCAD_REGISTRY}/initializer:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_initializer:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/initializer/Dockerfile
@@ -50,7 +50,7 @@ services:
     restart: on-failure
 
   webapi:
-    image: ${FORCAD_REGISTRY}/webapi:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_webapi:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/webapi/Dockerfile
@@ -60,7 +60,7 @@ services:
     tty: true
 
   react_builder:
-    image: ${FORCAD_REGISTRY}/react_builder:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_react_builder:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/react_builder/Dockerfile
@@ -73,7 +73,7 @@ services:
           - node.labels.external == 1
 
   http_flag_submitter:
-    image: ${FORCAD_REGISTRY}/http_flag_submitter:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_http_flag_submitter:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/http_flag_submitter/Dockerfile
@@ -82,7 +82,7 @@ services:
     restart: on-failure
 
   tcp_flag_submitter:
-    image: ${FORCAD_REGISTRY}/tcp_flag_submitter:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_tcp_flag_submitter:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile
@@ -94,7 +94,7 @@ services:
     tty: true
 
   nginx:
-    image: ${FORCAD_REGISTRY}/nginx:${FORCAD_ARCH_TAG}
+    image: ${FORCAD_REGISTRY}/forcad_nginx:${FORCAD_ARCH_TAG}
     build:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
