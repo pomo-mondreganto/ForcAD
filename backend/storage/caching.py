@@ -43,7 +43,8 @@ def cache_teams(pipeline):
     teams = list(models.Team.from_dict(team) for team in teams)
 
     pipeline.delete('teams', 'teams:cached')
-    pipeline.sadd('teams', *[team.to_json() for team in teams])
+    if teams:
+        pipeline.sadd('teams', *[team.to_json() for team in teams])
     for team in teams:
         pipeline.set(f'team:token:{team.token}', team.id)
     pipeline.set('teams:cached', 1)
@@ -69,7 +70,8 @@ def cache_tasks(pipeline):
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
     pipeline.delete('tasks', 'tasks:cached')
-    pipeline.sadd('tasks', *[task.to_json() for task in tasks])
+    if tasks:
+        pipeline.sadd('tasks', *[task.to_json() for task in tasks])
     pipeline.set('tasks:cached', 1)
 
 
@@ -97,7 +99,8 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
     storage.get_db_pool().putconn(conn)
 
     pipeline.delete(f'team:{team_id}:cached_stolen', f'team:{team_id}:stolen_flags')
-    pipeline.sadd(f'team:{team_id}:stolen_flags', *[flag_id for flag_id, in flags])
+    if flags:
+        pipeline.sadd(f'team:{team_id}:stolen_flags', *[flag_id for flag_id, in flags])
     pipeline.set(f'team:{team_id}:cached_stolen', 1)
 
 
@@ -122,7 +125,8 @@ def cache_last_owned(team_id: int, round: int, pipeline):
     storage.get_db_pool().putconn(conn)
 
     pipeline.delete(f'team:{team_id}:owned_flags', f'team:{team_id}:cached_owned')
-    pipeline.sadd(f'team:{team_id}:owned_flags', *[flag_id for flag_id, in flags])
+    if flags:
+        pipeline.sadd(f'team:{team_id}:owned_flags', *[flag_id for flag_id, in flags])
     pipeline.set(f'team:{team_id}:cached_owned', 1)
 
 
@@ -150,7 +154,8 @@ def cache_last_flags(round: int, pipeline):
         flag = helpers.models.Flag.from_dict(flag_dict)
         flag_models.append(flag)
 
-    pipeline.delete(*[f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}' for flag in flag_models])
+    if flag_models:
+        pipeline.delete(*[f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}' for flag in flag_models])
 
     for flag in flag_models:
         pipeline.set(f'flag:id:{flag.id}', flag.to_json())
