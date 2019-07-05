@@ -98,10 +98,10 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
     curs.close()
     storage.get_db_pool().putconn(conn)
 
-    pipeline.delete(f'team:{team_id}:cached_stolen', f'team:{team_id}:stolen_flags')
+    pipeline.delete(f'team:{team_id}:cached:stolen', f'team:{team_id}:stolen_flags')
     if flags:
         pipeline.sadd(f'team:{team_id}:stolen_flags', *[flag_id for flag_id, in flags])
-    pipeline.set(f'team:{team_id}:cached_stolen', 1)
+    pipeline.set(f'team:{team_id}:cached:stolen', 1)
 
 
 def cache_last_owned(team_id: int, round: int, pipeline):
@@ -124,10 +124,10 @@ def cache_last_owned(team_id: int, round: int, pipeline):
     curs.close()
     storage.get_db_pool().putconn(conn)
 
-    pipeline.delete(f'team:{team_id}:owned_flags', f'team:{team_id}:cached_owned')
+    pipeline.delete(f'team:{team_id}:cached:owned', f'team:{team_id}:owned_flags')
     if flags:
         pipeline.sadd(f'team:{team_id}:owned_flags', *[flag_id for flag_id, in flags])
-    pipeline.set(f'team:{team_id}:cached_owned', 1)
+    pipeline.set(f'team:{team_id}:cached:owned', 1)
 
 
 def cache_last_flags(round: int, pipeline):
