@@ -192,12 +192,12 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
         while True:
             try:
                 nonce = uuid.uuid4().bytes
-                # Lock team for 10 seconds
+                # Lock team for 5 seconds
                 unlocked, = pipeline.set(
                     f'team:{min_team_id}:locked',
                     nonce,
                     nx=True,
-                    px=10000
+                    px=5000,
                 ).execute()
 
                 if not unlocked:
@@ -210,7 +210,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             f'team:{max_team_id}:locked',
                             nonce,
                             nx=True,
-                            px=10000
+                            px=5000,
                         ).execute()
 
                         if not unlocked:
@@ -223,12 +223,12 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             round=round,
                         )
 
-                        pipeline.delete(f'team:{max_team_id}:lock').execute()
+                        pipeline.delete(f'team:{max_team_id}:locked').execute()
                         break
                     except exceptions.TeamLockedException:
                         continue
 
-                pipeline.delete(f'team:{max_team_id}:lock').execute()
+                pipeline.delete(f'team:{max_team_id}:locked').execute()
                 break
             except exceptions.TeamLockedException:
                 continue
