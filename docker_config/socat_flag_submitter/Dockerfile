@@ -15,9 +15,11 @@ RUN chmod +x /await_start.sh
 
 ###### SHARED PART END ######
 
+RUN apk add socat
+
 ADD backend /app
 
-ADD ./docker_config/http_flag_submitter/entrypoint.sh /entrypoint.sh
+ADD ./docker_config/socat_flag_submitter/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

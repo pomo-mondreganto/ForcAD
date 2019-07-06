@@ -71,6 +71,17 @@ services:
       - ./docker_config/postgres/environment.env
     restart: on-failure
 
+  socat_flag_submitter:
+    build:
+      context: .
+      dockerfile: docker_config/socat_flag_submitter/Dockerfile
+    env_file:
+      - ./docker_config/postgres/environment.env
+    ports:
+      - 31338:31338
+    restart: on-failure
+    tty: true
+
   tcp_flag_submitter:
     build:
       context: .

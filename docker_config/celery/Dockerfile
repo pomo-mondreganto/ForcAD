@@ -1,5 +1,7 @@
 FROM python:3.7-alpine
 
+ENV PYTHONUNBUFFERED=1
+
 RUN apk add gcc make musl-dev postgresql-dev
 
 ADD backend/requirements.txt /requirements.txt

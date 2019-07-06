@@ -81,11 +81,11 @@ services:
       - ./docker_config/postgres/environment.env
     restart: on-failure
 
-  tcp_flag_submitter:
+  socat_flag_submitter:
     image: ${FORCAD_REGISTRY}/forcad_tcp_flag_submitter:${FORCAD_ARCH_TAG}
     build:
       context: .
-      dockerfile: docker_config/tcp_flag_submitter/Dockerfile
+      dockerfile: docker_config/socat_flag_submitter/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
     ports:

@@ -2,6 +2,6 @@
 
 /await_start.sh
 
-cd /app/flag_submitter/stdin_default
-echo "[*] Starting stdin (socat) flag submitter"
-socat TCP4-LISTEN:31337,reuseaddr,fork EXEC:"python3 server.py"
+cd /app/flag_submitter/tcp_server
+echo "[*] Starting tcp flag submitter"
+python3 server.py
