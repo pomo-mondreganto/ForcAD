@@ -185,7 +185,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
         :return: attacker rating change
     """
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         # Deadlock is our enemy
         min_team_id = min(attacker_id, victim_id)
         max_team_id = max(attacker_id, victim_id)
@@ -198,7 +198,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                     nonce,
                     nx=True,
                     px=5000,
-                ).execute()
+                )
 
                 if not unlocked:
                     raise exceptions.TeamLockedException()
@@ -211,7 +211,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             nonce,
                             nx=True,
                             px=5000,
-                        ).execute()
+                        )
 
                         if not unlocked:
                             raise exceptions.TeamLockedException()
@@ -223,12 +223,12 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             round=round,
                         )
 
-                        pipeline.delete(f'team:{max_team_id}:locked').execute()
+                        pipeline.delete(f'team:{max_team_id}:locked')
                         break
                     except exceptions.TeamLockedException:
                         continue
 
-                pipeline.delete(f'team:{max_team_id}:locked').execute()
+                pipeline.delete(f'team:{min_team_id}:locked')
                 break
             except exceptions.TeamLockedException:
                 continue

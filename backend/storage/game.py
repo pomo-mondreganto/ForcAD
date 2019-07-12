@@ -14,8 +14,8 @@ _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
 
 def get_current_round() -> int:
     """Get current round, returns -1 if round not in cache"""
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        round, = pipeline.get('round').execute()
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        round, = pipeline.get('round')
 
     try:
         round = int(round.decode())
@@ -29,8 +29,8 @@ def get_real_round() -> int:
     """Get real round of system (for flag submitting),
     returns -1 if round not in cache
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        round, = pipeline.get('real_round').execute()
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        round, = pipeline.get('real_round')
 
     try:
         round = int(round.decode())
