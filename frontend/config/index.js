@@ -12,8 +12,8 @@ const statuses = [101, 102, 103, 104, 110];
 
 const serviceStatuses = {
     101: 'UP',
-    102: 'MUMBLE',
-    103: 'CORRUPT',
+    102: 'CORRUPT',
+    103: 'MUMBLE',
     104: 'DOWN',
     '110': 'CHECK FAILED',
     '-1': 'OFFLINE'
@@ -21,8 +21,8 @@ const serviceStatuses = {
 
 const serviceColors = {
     101: '#7dfc74',
-    102: '#ff9114',
-    103: '#5191ff',
+    102: '#5191ff',
+    103: '#ff9114',
     104: '#ff5b5b',
     '110': '#ffff00',
     '-1': '#f142f477'

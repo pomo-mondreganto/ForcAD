@@ -126,8 +126,8 @@ Actions and arguments are passed to checker as command-line arguments, first one
 Checker should terminate with one of the five return codes: 
 
 - **101**: `OK` code, everything works
-- **102**: `MUMBLE`, service's not working correctly
-- **103**: `CORRUPT`, service's working correctly, but didn't return flags from previous rounds (returned by `GET` only)
+- **102**: `CORRUPT`, service's working correctly, but didn't return flags from previous rounds (returned by `GET` only)
+- **103**: `MUMBLE`, service's not working correctly
 - **104**: `DOWN`, could not connect normally
 - **110**: `CHECKER_ERROR`, unexpected error in checker
 
