@@ -7,7 +7,8 @@ import redis
 
 import config
 import storage
-from helpers import models, rating, exceptions
+# import rating_system
+from helpers import models, exceptions, rating_system
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
@@ -138,7 +139,10 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
     game_hardness = game_config.get('game_hardness')
     inflation = game_config.get('inflation')
 
-    rs = rating.RatingSystem(
+    # import threading
+    # threading.stack_size(1024 * 1024)
+
+    rs = rating_system.RatingSystem(
         attacker=attacker_score,
         victim=victim_score,
         game_hardness=game_hardness,
@@ -198,7 +202,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                     nonce,
                     nx=True,
                     px=5000,
-                )
+                ).execute()
 
                 if not unlocked:
                     raise exceptions.TeamLockedException()
@@ -211,7 +215,7 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             nonce,
                             nx=True,
                             px=5000,
-                        )
+                        ).execute()
 
                         if not unlocked:
                             raise exceptions.TeamLockedException()
@@ -223,12 +227,12 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
                             round=round,
                         )
 
-                        pipeline.delete(f'team:{max_team_id}:locked')
+                        pipeline.delete(f'team:{max_team_id}:locked').execute()
                         break
                     except exceptions.TeamLockedException:
                         continue
 
-                pipeline.delete(f'team:{min_team_id}:locked')
+                pipeline.delete(f'team:{min_team_id}:locked').execute()
                 break
             except exceptions.TeamLockedException:
                 continue
@@ -240,7 +244,6 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
             'victim_delta': victim_delta,
         }
 
-        pipeline.publish('stolen_flags', json.dumps(flag_data))
-        pipeline.execute()
+        pipeline.publish('stolen_flags', json.dumps(flag_data)).execute()
 
     return attacker_delta

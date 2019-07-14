@@ -42,3 +42,5 @@ checkers/*
 # FuseBox cache
 # DynamoDB Local files
 # End of https://www.gitignore.io/api/node
+
+backend/rs_implementation/build

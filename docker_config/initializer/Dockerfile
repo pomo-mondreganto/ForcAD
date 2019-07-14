@@ -9,6 +9,12 @@ RUN pip install -r /requirements.txt
 
 ADD backend /app
 
+#ADD backend/rs_implementation /rs_implementation
+#WORKDIR /rs_implementation
+#RUN python3 setup.py build
+#RUN python3 setup.py install
+#WORKDIR /
+
 ADD ./docker_config/initializer/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

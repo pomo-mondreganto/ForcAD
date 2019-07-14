@@ -87,7 +87,7 @@ class SocketServer:
 
             round = storage.game.get_real_round()
             if round == -1:
-                self.write_to_sock(sock, b'Invalid team token\n')
+                self.write_to_sock(sock, b'Game is unavailable\n')
                 self.set_sock_break(sock)
                 return
 
