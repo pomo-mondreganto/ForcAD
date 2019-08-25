@@ -74,8 +74,8 @@ static PyModuleDef rating_system = {
 
 static int
 RatingSystem_init(RatingSystem *self, PyObject *args, PyObject *kwargs) {
-    static char *kwargs_list[] = {"attacker", "victim", "game_hardness", "inflation"};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dddb", kwargs_list,
+    static char *kwargs_list[] = {"attacker", "victim", "game_hardness", "inflation", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|$dddb", kwargs_list,
                                       &self->attacker, &self->victim,
                                       &self->game_hardness, &self->inflation)) {
         return -1;
