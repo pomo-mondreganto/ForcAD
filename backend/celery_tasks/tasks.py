@@ -26,7 +26,7 @@ def startup(**_kwargs):
     )
 
     round = storage.game.get_real_round()
-    if not round:
+    if not round or round == -1:
         storage.caching.cache_teamtasks(round=0)
 
         game_state = storage.game.get_game_state(round=0)
