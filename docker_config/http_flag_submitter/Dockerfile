@@ -7,11 +7,11 @@ RUN apk add gcc make musl-dev postgresql-dev
 ADD backend/requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-#ADD backend/rs_implementation /rs_implementation
-#WORKDIR /rs_implementation
-#RUN python3 setup.py build
-#RUN python3 setup.py install
-#WORKDIR /
+ADD backend/rs_implementation /rs_implementation
+WORKDIR /rs_implementation
+RUN python3 setup.py build
+RUN python3 setup.py install
+WORKDIR /
 
 ADD ./docker_config/await_start.sh /await_start.sh
 ADD ./docker_config/db_check.py /db_check.py

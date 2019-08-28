@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS Flags
     team_id     INTEGER            NOT NULL,
     task_id     INTEGER            NOT NULL,
     round       INTEGER            NOT NULL,
-    flag_data   VARCHAR(255)       NOT NULL,
+    flag_data   VARCHAR(512)       NOT NULL,
     vuln_number INTEGER
 );
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     score           FLOAT                  DEFAULT 0,
     up_rounds       INTEGER                DEFAULT 0,
     public_message  VARCHAR(1024) NOT NULL DEFAULT '',
-    private_message VARCHAR(1024) NOT NULL DEFAULT '',
+    private_message TEXT          NOT NULL DEFAULT '',
     command         VARCHAR(1024) NOT NULL DEFAULT '[]',
     UNIQUE (round, task_id, team_id)
 );

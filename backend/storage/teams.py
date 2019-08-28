@@ -7,8 +7,9 @@ import redis
 
 import config
 import storage
-# import rating_system
-from helpers import models, exceptions, rating_system
+import rating_system
+# from helpers import rating_system
+from helpers import models, exceptions
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
