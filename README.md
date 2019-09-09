@@ -1,5 +1,7 @@
 # ForcAD
 
+![Front page](static/front_page.jpg)
+
 Pure-python distributable Attack-Defence CTF platform, created to be easily set up.
 
 The name is pronounced as "forkad".
