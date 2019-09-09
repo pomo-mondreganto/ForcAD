@@ -1,14 +1,13 @@
 import random
 import secrets
 
-import uuid
 from celery import shared_task, chain
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
 
 import config
 import storage
-from helpers import checkers, flags, models, exceptions
+from helpers import checkers, flags, models, locking
 from helpers.status import TaskStatus
 
 logger = get_task_logger(__name__)
@@ -266,6 +265,7 @@ def process_round():
     finished_round = current_round
     new_round = current_round + 1
     storage.game.update_real_round_in_db(new_round=new_round)
+    storage.tasks.initialize_teamtasks(round=new_round)
 
     logger.info(f'Processing round {new_round}')
 
@@ -287,8 +287,6 @@ def process_round():
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
-    storage.tasks.initialize_teamtasks(round=new_round)
-
     teams = storage.teams.get_teams()
     for team in teams:
         process_team.delay(team.to_json(), new_round)
@@ -303,29 +301,12 @@ def start_game():
     logger.info('Starting game')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        while True:
-            try:
-                nonce = uuid.uuid4().bytes
-                unlocked, = pipeline.set(
-                    f'game_starting_lock',
-                    nonce,
-                    nx=True,
-                    px=10000
-                ).execute()
-
-                if not unlocked:
-                    raise exceptions.GameLockedException
-
-                already_started = storage.game.get_game_running()
-                if already_started:
-                    logger.info('Game already started')
-                    return
-                storage.game.set_game_running(1)
-
-                pipeline.delete('game_starting_lock')
-                break
-            except exceptions.GameLockedException:
-                continue
+        with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
+            already_started = storage.game.get_game_running()
+            if already_started:
+                logger.info('Game already started')
+                return
+            storage.game.set_game_running(1)
 
     storage.caching.cache_teamtasks(round=0)
 

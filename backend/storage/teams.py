@@ -1,15 +1,14 @@
 import json
-import uuid
 from typing import List, Optional, Tuple
 
 import aioredis
+import rating_system
 import redis
 
 import config
 import storage
-import rating_system
 # from helpers import rating_system
-from helpers import models, exceptions
+from helpers import models, locking
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
@@ -194,49 +193,15 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
         # Deadlock is our enemy
         min_team_id = min(attacker_id, victim_id)
         max_team_id = max(attacker_id, victim_id)
-        while True:
-            try:
-                nonce = uuid.uuid4().bytes
-                # Lock team for 5 seconds
-                unlocked, = pipeline.set(
-                    f'team:{min_team_id}:locked',
-                    nonce,
-                    nx=True,
-                    px=5000,
-                ).execute()
 
-                if not unlocked:
-                    raise exceptions.TeamLockedException()
-
-                while True:
-                    try:
-                        nonce = uuid.uuid4().bytes
-                        unlocked, = pipeline.set(
-                            f'team:{max_team_id}:locked',
-                            nonce,
-                            nx=True,
-                            px=5000,
-                        ).execute()
-
-                        if not unlocked:
-                            raise exceptions.TeamLockedException()
-
-                        attacker_delta, victim_delta = update_attack_team_ratings(
-                            attacker_id=attacker_id,
-                            victim_id=victim_id,
-                            task_id=task_id,
-                            round=round,
-                        )
-
-                        pipeline.delete(f'team:{max_team_id}:locked').execute()
-                        break
-                    except exceptions.TeamLockedException:
-                        continue
-
-                pipeline.delete(f'team:{min_team_id}:locked').execute()
-                break
-            except exceptions.TeamLockedException:
-                continue
+        with locking.acquire_redis_lock(pipeline, f'team:{min_team_id}:locked'):
+            with locking.acquire_redis_lock(pipeline, f'team:{max_team_id}:locked'):
+                attacker_delta, victim_delta = update_attack_team_ratings(
+                    attacker_id=attacker_id,
+                    victim_id=victim_id,
+                    task_id=task_id,
+                    round=round,
+                )
 
         flag_data = {
             'attacker_id': attacker_id,
