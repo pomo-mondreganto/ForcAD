@@ -1,4 +1,4 @@
-import uuid
+import os
 from contextlib import contextmanager
 
 from helpers import exceptions
@@ -9,7 +9,7 @@ def acquire_redis_lock(pipeline, name, timeout=5000):
     try:
         while True:
             try:
-                nonce = uuid.uuid4().bytes
+                nonce = os.urandom(10)
                 unlocked = pipeline.set(name, nonce, nx=True, px=timeout)
                 if pipeline.transaction:
                     unlocked, = unlocked.execute()
