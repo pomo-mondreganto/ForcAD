@@ -90,15 +90,28 @@ def reset_game(*_args, **_kwargs):
     )
 
 
+def scale_celery(instances, *_args, **_kwargs):
+    if instances is None:
+        print('Please, specify number of instances (-i N)')
+        exit(1)
+
+    subprocess.check_output(
+        ['docker-compose', 'up', '--scale', f'celery={instances}', '-d'],
+        cwd=BASE_DIR,
+    )
+
+
 COMMANDS = {
     'setup': setup_config,
     'print_tokens': print_tokens,
     'reset': reset_game,
+    'scale_celery': scale_celery,
 }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     parser.add_argument('command', choices=COMMANDS.keys(), help='Command to run')
+    parser.add_argument('-i', '--instances', type=int, metavar='N', help='Number of celery instances for scale_celery')
     args = parser.parse_args()
 
     try:
