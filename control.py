@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
+import shutil
+import subprocess
 
 import yaml
 
@@ -23,7 +26,7 @@ def setup_db(config):
     postgres_db = db_config['dbname']
 
     postgres_config = [
-        "# THIS FILE IS MANAGED BY 'setup_config'",
+        "# THIS FILE IS MANAGED BY 'control.py'",
         'POSTGRES_HOST={postgres_host}'.format(postgres_host=postgres_host),
         'POSTGRES_PORT={postgres_port}'.format(postgres_port=postgres_port),
         'POSTGRES_USER={postgres_user}'.format(postgres_user=postgres_user),
@@ -46,7 +49,7 @@ def setup_flower(config):
     flower_username = config['flower']['username']
     flower_password = config['flower']['password']
     flower_config = [
-        "# THIS FILE IS MANAGED BY 'setup_config'",
+        "# THIS FILE IS MANAGED BY 'control.py'",
         'FLOWER_BASIC_AUTH={flower_username}:{flower_password}'.format(
             flower_username=flower_username,
             flower_password=flower_password,
@@ -57,12 +60,48 @@ def setup_flower(config):
         f.write('\n'.join(flower_config))
 
 
-def run():
+def setup_config(*_args, **_kwargs):
     conf_path = os.path.join(CONFIG_DIR, 'config.yml')
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
     setup_db(config)
     setup_flower(config)
 
 
+def print_tokens(*_args, **_kwargs):
+    res = subprocess.check_output(
+        ['docker-compose', 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
+        cwd=BASE_DIR,
+    )
+
+    print(res.decode().strip())
+
+
+def print_file_exception_info(_func, path, _exc_info):
+    print(f'File {path} not found')
+
+
+def reset_game(*_args, **_kwargs):
+    data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
+    shutil.rmtree(data_path, onerror=print_file_exception_info)
+
+    subprocess.check_output(
+        ['docker-compose', 'down', '-v', '--remove-orphans'],
+        cwd=BASE_DIR,
+    )
+
+
+COMMANDS = {
+    'setup': setup_config,
+    'print_tokens': print_tokens,
+    'reset': reset_game,
+}
+
 if __name__ == '__main__':
-    run()
+    parser = argparse.ArgumentParser(description='Control ForcAD')
+    parser.add_argument('command', choices=COMMANDS.keys(), help='Command to run')
+    args = parser.parse_args()
+
+    try:
+        COMMANDS[args.command](**vars(args))
+    except Exception as e:
+        print('Got exception:', e)

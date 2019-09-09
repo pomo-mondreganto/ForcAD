@@ -5,3 +5,7 @@
 
 backend/rs_implementation/build
 frontend/node_modules
+
+control.py
+control_requirements.txt
+README.md

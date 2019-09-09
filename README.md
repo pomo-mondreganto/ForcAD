@@ -20,7 +20,7 @@ set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for
 3. Change default passwords (that includes `storages.db.password` for database and `flower.password` for
 `celery` visualization).
 
-4. Install `setup_requirements.txt` (`pip3 install -r setup_requirements.txt`) and run `./setup_config.py` 
+4. Install `control_requirements.txt` (`pip3 install -r control_requirements.txt`) and run `./control.py setup` 
 to transfer config variables
 
 5. Run `docker-compose up --build` to start the system (add `-d` option to detach). 
@@ -28,15 +28,15 @@ Wait patiently for the images to build, it could take a few minutes, but happens
 
 That's all! Now you should be able to access scoreboard at `http://0.0.0.0:8080/`.
 
-###### Before each new game run `./reset_game.sh` to delete old database and temporary files (and docker networks).
+###### Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks).
 
 ## Configuration and usage
 
 Due to some limitations of docker proxy, teams are identified by unique randomly generated on startup tokens 
 (look for them in the logs of `initializer` container or print using the following command after the system started: 
-`docker-compose exec webapi python3 /app/scripts/print_tokens.py`). 
+`./control.py print_tokens`). 
 You can either share all tokens with all teams (as submitting flags for other teams is not really profitable), 
-or send tokens privately. Tokens have one upside: all requests can be mascaraded.
+or send tokens privately. Tokens have one upside: all requests can be masqueraded.
 
 Platform consists of several modules: 
 
