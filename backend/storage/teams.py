@@ -7,7 +7,6 @@ import redis
 
 import config
 import storage
-# from helpers import rating_system
 from helpers import models, locking
 from storage import caching
 
@@ -138,9 +137,6 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
     game_config = config.get_game_config()
     game_hardness = game_config.get('game_hardness')
     inflation = game_config.get('inflation')
-
-    # import threading
-    # threading.stack_size(1024 * 1024)
 
     rs = rating_system.RatingSystem(
         attacker=attacker_score,
