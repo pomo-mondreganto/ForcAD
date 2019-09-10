@@ -3,7 +3,7 @@ from typing import Optional, List
 
 import yaml
 
-import helpers.status
+import helplib.status
 
 
 class Model(object):
@@ -207,13 +207,13 @@ class CheckerVerdict(Model):
     private_message: str
     public_message: str
     command: List
-    status: helpers.status.TaskStatus
+    status: helplib.status.TaskStatus
 
     def __init__(self,
                  private_message: str,
                  public_message: str,
                  command: List,
-                 status: helpers.status.TaskStatus):
+                 status: helplib.status.TaskStatus):
         super(CheckerVerdict, self).__init__()
         self.private_message = private_message
         self.public_message = public_message

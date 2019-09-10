@@ -4,7 +4,7 @@ from typing import Optional
 import redis
 
 import config
-import helpers
+import helplib
 import storage
 from storage import caching
 
@@ -20,7 +20,7 @@ VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
 """
 
 
-def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
+def add_stolen_flag(flag: helplib.models.Flag, attacker: int):
     """Add stolen flag both to database and cache
 
         :param flag: Flag model instance
@@ -47,7 +47,7 @@ def add_stolen_flag(flag: helpers.models.Flag, attacker: int):
     storage.get_db_pool().putconn(conn)
 
 
-def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
+def check_flag(flag: helplib.models.Flag, attacker: int, round: int):
     """Check that flag is valid for current round
 
         :param flag: Flag model instance
@@ -59,10 +59,10 @@ def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
     game_config = config.get_game_config()
 
     if round - flag.round > game_config['flag_lifetime']:
-        raise helpers.exceptions.FlagSubmitException('Flag is too old')
+        raise helplib.exceptions.FlagSubmitException('Flag is too old')
 
     if flag.team_id == attacker:
-        raise helpers.exceptions.FlagSubmitException('Flag is your own')
+        raise helplib.exceptions.FlagSubmitException('Flag is your own')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached_stolen, cached_owned = pipeline.exists(
@@ -101,13 +101,13 @@ def check_flag(flag: helpers.models.Flag, attacker: int, round: int):
         is_owned, is_stolen = pipeline.execute()
 
         if not is_owned:
-            raise helpers.exceptions.FlagSubmitException('Flag is invalid or too old')
+            raise helplib.exceptions.FlagSubmitException('Flag is invalid or too old')
 
         if is_stolen:
-            raise helpers.exceptions.FlagSubmitException('Flag already stolen')
+            raise helplib.exceptions.FlagSubmitException('Flag already stolen')
 
 
-def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
+def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     """Inserts a newly generated flag into the database and cache
 
         :param flag: Flag model instance to be inserted
@@ -158,7 +158,7 @@ def add_flag(flag: helpers.models.Flag) -> helpers.models.Flag:
     return flag
 
 
-def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.models.Flag:
+def get_flag_by_field(field_name: str, field_value, round: int) -> helplib.models.Flag:
     """Get flag by generic field
 
         :param field_name: field name to ask cache for
@@ -190,14 +190,14 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helpers.model
         flag_exists, flag_json = pipeline.execute()
 
     if not flag_exists:
-        raise helpers.exceptions.FlagSubmitException('Invalid flag')
+        raise helplib.exceptions.FlagSubmitException('Invalid flag')
 
-    flag = helpers.models.Flag.from_json(flag_json)
+    flag = helplib.models.Flag.from_json(flag_json)
 
     return flag
 
 
-def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
+def get_flag_by_str(flag_str: str, round: int) -> helplib.models.Flag:
     """Get flag by its string value
 
         :param flag_str: flag value
@@ -207,7 +207,7 @@ def get_flag_by_str(flag_str: str, round: int) -> helpers.models.Flag:
     return get_flag_by_field(field_name='str', field_value=flag_str, round=round)
 
 
-def get_flag_by_id(flag_id: int, round: int) -> helpers.models.Flag:
+def get_flag_by_id(flag_id: int, round: int) -> helplib.models.Flag:
     """Get flag by its id value
 
             :param flag_id: flag id
@@ -217,7 +217,7 @@ def get_flag_by_id(flag_id: int, round: int) -> helpers.models.Flag:
     return get_flag_by_field(field_name='id', field_value=flag_id, round=round)
 
 
-def get_random_round_flag(team_id: int, task_id: int, round: int, current_round: int) -> Optional[helpers.models.Flag]:
+def get_random_round_flag(team_id: int, task_id: int, round: int, current_round: int) -> Optional[helplib.models.Flag]:
     """Get random flag for team generated for specified round and task
 
         :param team_id: team id

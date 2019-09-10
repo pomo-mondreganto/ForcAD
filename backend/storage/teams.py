@@ -7,7 +7,7 @@ import redis
 
 import config
 import storage
-from helpers import models, locking
+from helplib import models, locking
 from storage import caching
 
 _SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"

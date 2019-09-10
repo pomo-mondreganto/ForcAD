@@ -3,8 +3,8 @@ import secrets
 import subprocess
 from typing import Tuple, List
 
-import helpers
-from helpers.status import TaskStatus
+import helplib
+from helplib.status import TaskStatus
 
 
 def run_command_gracefully(*popenargs,
@@ -89,7 +89,7 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger) -> helpers.models.CheckerVerdict:
+                        logger) -> helplib.models.CheckerVerdict:
     """Run generic checker command, calls "run_command_gracefully" and handles exceptions
 
     :param command: command to run
@@ -139,7 +139,7 @@ def run_generic_command(command: List,
         private_message = f'{command_type.upper()} timeout'
         public_message = 'Timeout'
 
-    result = helpers.models.CheckerVerdict(
+    result = helplib.models.CheckerVerdict(
         public_message=public_message,
         private_message=private_message,
         command=command,
@@ -154,7 +154,7 @@ def run_check_command(checker_path: str,
                       host: str,
                       team_name: str,
                       timeout: int,
-                      logger) -> helpers.models.CheckerVerdict:
+                      logger) -> helplib.models.CheckerVerdict:
     """Runs "check" command
 
         :param checker_path: absolute checker path
@@ -185,10 +185,10 @@ def run_put_command(checker_path: str,
                     env_path: str,
                     host: str,
                     place: int,
-                    flag: helpers.models.Flag,
+                    flag: helplib.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> Tuple[helpers.models.CheckerVerdict, str]:
+                    logger) -> Tuple[helplib.models.CheckerVerdict, str]:
     """Runs "put" command
 
         :param checker_path: absolute checker path
@@ -226,10 +226,10 @@ def run_put_command(checker_path: str,
 def run_get_command(checker_path: str,
                     env_path: str,
                     host: str,
-                    flag: helpers.models.Flag,
+                    flag: helplib.models.Flag,
                     team_name: str,
                     timeout: int,
-                    logger) -> helpers.models.CheckerVerdict:
+                    logger) -> helplib.models.CheckerVerdict:
     """Runs "put" command
 
         :param checker_path: absolute checker path

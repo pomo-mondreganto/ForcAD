@@ -9,8 +9,8 @@ import json
 from flask import Flask, request, make_response
 
 import storage
-import helpers
-from helpers import exceptions
+import helplib
+from helplib import exceptions
 
 app = Flask(__name__)
 app.config['APPLICATION_ROOT'] = '/flags'
@@ -42,7 +42,7 @@ def submit():
     responses = []
     for flag_str in request.json['flags'][:50]:
         try:
-            flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
+            flag = helplib.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
         except exceptions.FlagSubmitException as e:
             responses.append(str(e))
         else:

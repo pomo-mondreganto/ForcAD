@@ -4,9 +4,9 @@ from typing import List, Optional
 import aioredis
 import redis
 
-import helpers
+import helplib
 import storage
-from helpers import models
+from helplib import models
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = f"""
@@ -87,7 +87,7 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
-    if checker_verdict.status == helpers.status.TaskStatus.UP:
+    if checker_verdict.status == helplib.status.TaskStatus.UP:
         add = 1
 
     conn = storage.get_db_pool().getconn()

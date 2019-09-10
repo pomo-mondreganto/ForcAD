@@ -7,8 +7,8 @@ from celery.utils.log import get_task_logger
 
 import config
 import storage
-from helpers import checkers, flags, models, locking
-from helpers.status import TaskStatus
+from helplib import checkers, flags, models, locking
+from helplib.status import TaskStatus
 
 logger = get_task_logger(__name__)
 

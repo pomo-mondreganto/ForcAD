@@ -3,9 +3,9 @@ import json
 from psycopg2 import extras
 
 import config
-import helpers
+import helplib
 import storage
-from helpers import models
+from helplib import models
 
 _SELECT_ALL_TEAMS_QUERY = "SELECT * FROM teams"
 
@@ -151,7 +151,7 @@ def cache_last_flags(round: int, pipeline):
     pipeline.delete('flags:cached')
     flag_models = []
     for flag_dict in flags:
-        flag = helpers.models.Flag.from_dict(flag_dict)
+        flag = helplib.models.Flag.from_dict(flag_dict)
         flag_models.append(flag)
 
     if flag_models:

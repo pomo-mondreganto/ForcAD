@@ -6,8 +6,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import storage
-import helpers
-from helpers import exceptions
+import helplib
+from helplib import exceptions
 
 print('Welcome! Please, enter your team token:')
 token = input().strip()
@@ -38,7 +38,7 @@ while True:
         print('Game is unavailable yet')
 
     try:
-        flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
+        flag = helplib.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
     except exceptions.FlagSubmitException as e:
         print(e)
     else:

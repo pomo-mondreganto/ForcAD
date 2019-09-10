@@ -10,8 +10,8 @@ import queue
 from typing import Tuple, ByteString, Optional
 
 import storage
-import helpers
-from helpers import exceptions
+import helplib
+from helplib import exceptions
 
 BACKLOG = 5
 MAX_BUFFER_SIZE = 1000
@@ -93,7 +93,7 @@ class SocketServer:
 
             team_id = self.get_sock_team_id(sock)
             try:
-                flag = helpers.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
+                flag = helplib.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
             except exceptions.FlagSubmitException as e:
                 self.write_to_sock(sock, str(e).encode() + b'\n')
             else:
