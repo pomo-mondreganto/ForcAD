@@ -118,3 +118,4 @@ if __name__ == '__main__':
         COMMANDS[args.command](**vars(args))
     except Exception as e:
         print('Got exception:', e)
+        exit(1)
