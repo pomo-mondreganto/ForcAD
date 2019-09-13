@@ -63,14 +63,6 @@ services:
       - react_build:/react_build/
     restart: on-failure
 
-  http_flag_submitter:
-    build:
-      context: .
-      dockerfile: docker_config/http_flag_submitter/Dockerfile
-    env_file:
-      - ./docker_config/postgres/environment.env
-    restart: on-failure
-
   socat_flag_submitter:
     build:
       context: .

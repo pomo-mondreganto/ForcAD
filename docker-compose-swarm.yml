@@ -72,15 +72,6 @@ services:
         constraints:
           - node.labels.external == 1
 
-  http_flag_submitter:
-    image: ${FORCAD_REGISTRY}/forcad_http_flag_submitter:${FORCAD_ARCH_TAG}
-    build:
-      context: .
-      dockerfile: docker_config/http_flag_submitter/Dockerfile
-    env_file:
-      - ./docker_config/postgres/environment.env
-    restart: on-failure
-
   socat_flag_submitter:
     image: ${FORCAD_REGISTRY}/forcad_tcp_flag_submitter:${FORCAD_ARCH_TAG}
     build:

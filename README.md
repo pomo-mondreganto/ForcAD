@@ -40,10 +40,6 @@ or send tokens privately. Tokens have one upside: all requests can be masquerade
 
 Platform consists of several modules: 
 
-- **HTTP flag submitter**. Accepts maximum 50 flags per request as array (json format) 
-on `/flags` URL (the same port with scoreboard, 8000 by default).
-`X-TeamToken` header with team token needs to be passed. 
-
 - **TCP flag submitter** (over socat). For each connection send team token in the first line, then flags, each in a new line. 
 
 - **Celerybeat** sends round start events to `celery`
@@ -64,7 +60,7 @@ run 5 instances of `celery`).
 - **React builder** starts on `docker-compose up`, builds frontend sources and copies them to the volume 
 from which they're served by nginx
 
-- **Nginx** acts as a routing proxy, that unites frontend, api, flower and http flag submitter
+- **Nginx** acts as a routing proxy, that unites frontend, api and flower
 
 - **Initializer** also starts on `docker-compose up`, waits for the database to start (all other containers wait for 
 the initializer to finish its job) then drops old tables and initializes database. From that point,
