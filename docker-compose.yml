@@ -101,6 +101,7 @@ services:
       - react_build:/react_build
     ports:
       - 8080:80
+      - 80:80
     restart: on-failure
 
   redis:
