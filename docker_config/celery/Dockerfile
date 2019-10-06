@@ -23,7 +23,7 @@ RUN chmod +x /await_start.sh
 
 ########## CUSTOMIZE ##########
 
-RUN apk add chromium chromium-chromedriver
+#RUN apk add chromium chromium-chromedriver
 RUN apk add capstone bash libffi-dev openssl-dev git
 
 ADD ./checkers/requirements.txt /checker_requirements.txt
