@@ -90,6 +90,13 @@ def reset_game(*_args, **_kwargs):
     )
 
 
+def start_game(*_args, **_kwargs):
+    subprocess.check_output(
+        ['docker-compose', 'up', '--build', '--d'],
+        cwd=BASE_DIR,
+    )
+
+
 def scale_celery(instances, *_args, **_kwargs):
     if instances is None:
         print('Please, specify number of instances (-i N)')
@@ -105,6 +112,7 @@ COMMANDS = {
     'setup': setup_config,
     'print_tokens': print_tokens,
     'reset': reset_game,
+    'start': start_game,
     'scale_celery': scale_celery,
 }
 
