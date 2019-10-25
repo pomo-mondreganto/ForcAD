@@ -201,7 +201,7 @@ def get_action(put_ok, team_json, task_json, round):
         if not flag:
             checker_verdict.status = TaskStatus.CORRUPT
             checker_verdict.private_message = f'No flags from round {get_round}'
-            checker_verdict.public_message = f'Could not get flag'
+            checker_verdict.public_message = f'Could not get flag from round {get_round}'
         else:
             checker_verdict = checkers.run_get_command(
                 checker_path=task.checker,
