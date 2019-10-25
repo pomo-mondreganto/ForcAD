@@ -92,7 +92,7 @@ def reset_game(*_args, **_kwargs):
 
 def start_game(*_args, **_kwargs):
     subprocess.check_output(
-        ['docker-compose', 'up', '--build', '--d'],
+        ['docker-compose', 'up', '--build', '-d'],
         cwd=BASE_DIR,
     )
 
