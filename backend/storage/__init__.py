@@ -1,6 +1,8 @@
+from contextlib import contextmanager
+
 import aioredis
 import redis
-from psycopg2 import pool
+from psycopg2 import pool, extras
 
 import config
 from storage import (
@@ -24,6 +26,21 @@ def get_db_pool():
         _db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
 
     return _db_pool
+
+
+@contextmanager
+def db_cursor(dict_cursor=False):
+    db_pool = get_db_pool()
+    conn = db_pool.getconn()
+    if dict_cursor:
+        curs = conn.cursor(cursor_factory=extras.RealDictCursor)
+    else:
+        curs = conn.cursor()
+    try:
+        yield conn, curs
+    finally:
+        curs.close()
+        db_pool.putconn(conn)
 
 
 def get_redis_storage():

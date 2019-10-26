@@ -1,7 +1,5 @@
 import json
 
-from psycopg2 import extras
-
 import config
 import helplib
 import storage
@@ -32,13 +30,9 @@ def cache_teams(pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.DictCursor)
-    curs.execute(_SELECT_ALL_TEAMS_QUERY)
-
-    teams = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_SELECT_ALL_TEAMS_QUERY)
+        teams = curs.fetchall()
 
     teams = list(models.Team.from_dict(team) for team in teams)
 
@@ -60,13 +54,9 @@ def cache_tasks(pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.DictCursor)
-    curs.execute(_SELECT_ALL_TASKS_QUERY)
-
-    tasks = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_SELECT_ALL_TASKS_QUERY)
+        tasks = curs.fetchall()
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
     pipeline.delete('tasks', 'tasks:cached')
@@ -89,14 +79,10 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = config.get_game_config()
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
 
-    curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
-
-    flags = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=False) as (conn, curs):
+        curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+        flags = curs.fetchall()
 
     pipeline.delete(f'team:{team_id}:cached:stolen', f'team:{team_id}:stolen_flags')
     if flags:
@@ -115,14 +101,9 @@ def cache_last_owned(team_id: int, round: int, pipeline):
     """
     game_config = config.get_game_config()
 
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-
-    curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
-
-    flags = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=False) as (conn, curs):
+        curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+        flags = curs.fetchall()
 
     pipeline.delete(f'team:{team_id}:cached:owned', f'team:{team_id}:owned_flags')
     if flags:
@@ -139,14 +120,10 @@ def cache_last_flags(round: int, pipeline):
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = config.get_game_config()
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.DictCursor)
 
-    curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config['flag_lifetime'],))
-
-    flags = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config['flag_lifetime'],))
+        flags = curs.fetchall()
 
     pipeline.delete('flags:cached')
     flag_models = []
@@ -171,13 +148,9 @@ def cache_teamtasks(round: int):
 
     This function caches full game state for specified round
     """
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.RealDictCursor)
-
-    curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
-    results = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
+        results = curs.fetchall()
 
     data = json.dumps(results)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -193,19 +166,15 @@ def cache_teamtasks_for_team(team_id: int, current_round: int, pipeline):
         :param current_round: round to cache
         :param pipeline: redis connection to add command to
     """
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor(cursor_factory=extras.RealDictCursor)
-
-    curs.execute(
-        _SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY,
-        (
-            team_id,
-            current_round,
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(
+            _SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY,
+            (
+                team_id,
+                current_round,
+            )
         )
-    )
-    results = curs.fetchall()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        results = curs.fetchall()
 
     data = json.dumps(results)
     pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
