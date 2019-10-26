@@ -43,48 +43,33 @@ def get_real_round() -> int:
 def get_real_round_from_db() -> int:
     """Get real round from database
         Fully persistent to use with game management"""
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(_CURRENT_REAL_ROUND_QUERY)
-    round, = curs.fetchone()
-
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_CURRENT_REAL_ROUND_QUERY)
+        round, = curs.fetchone()
 
     return round
 
 
 def update_real_round_in_db(new_round: int):
     """Update real round stored in DB"""
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(_UPDATE_REAL_ROUND_QUERY, (new_round,))
 
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_UPDATE_REAL_ROUND_QUERY, (new_round,))
+        conn.commit()
 
 
 def set_game_running(new_value: int):
     """Update game_running value in db"""
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
-
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
+        conn.commit()
 
 
 def get_game_running() -> int:
     """Update game_running value in db"""
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(_GET_GAME_RUNNING_QUERY)
-    game_running, = curs.fetchone()
-
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_GET_GAME_RUNNING_QUERY)
+        game_running, = curs.fetchone()
 
     return game_running
 

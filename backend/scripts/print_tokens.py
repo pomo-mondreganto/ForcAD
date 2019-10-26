@@ -12,15 +12,11 @@ _SELECT_TEAMS_NAME_TOKEN_QUERY = "SELECT name, token from teams"
 
 
 def run():
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-
-    curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
-    result = curs.fetchall()
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
+        result = curs.fetchall()
 
     print('\n'.join("{name}:{token}".format(name=name, token=token) for name, token in result))
-    curs.close()
-    storage.get_db_pool().putconn(conn)
 
 
 if __name__ == '__main__':

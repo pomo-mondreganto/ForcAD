@@ -269,6 +269,9 @@ def process_round():
 
     logger.info(f'Processing round {new_round}')
 
+    # Might think there's a RC here (I thought so too)
+    # But all teamtasks with round >= real_round are updated in the attack handler
+    # So both old and new teamtasks will be updated properly
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('round', finished_round)
         pipeline.set('real_round', new_round)

@@ -27,66 +27,62 @@ _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score,
 
 
 def run():
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
+    with storage.db_cursor() as (conn, curs):
+        create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
+        create_query = open(create_query_path).read()
+        curs.execute(create_query)
 
-    create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
-    create_query = open(create_query_path).read()
-    curs.execute(create_query)
+        curs.execute(_CONFIG_INITIALIZATION_QUERY, (0, 0))
 
-    curs.execute(_CONFIG_INITIALIZATION_QUERY, (0, 0))
+        teams_config = config.get_teams_config()
+        teams = []
 
-    teams_config = config.get_teams_config()
-    teams = []
+        for team_conf in teams_config:
+            team_token = secrets.token_hex(8)
+            team = models.Team(id=None, **team_conf, token=team_token)
+            curs.execute(_TEAM_INSERT_QUERY, (team.name, team.ip, team_token))
+            team.id, = curs.fetchone()
+            teams.append(team)
 
-    for team_conf in teams_config:
-        team_token = secrets.token_hex(8)
-        team = models.Team(id=None, **team_conf, token=team_token)
-        curs.execute(_TEAM_INSERT_QUERY, (team.name, team.ip, team_token))
-        team.id, = curs.fetchone()
-        teams.append(team)
+        tasks_config = config.get_tasks_config()
+        tasks = []
 
-    tasks_config = config.get_tasks_config()
-    tasks = []
+        game_config = config.get_game_config()
+        global_env_path = game_config['env_path']
+        checkers_path = game_config['checkers_path']
+        global_default_score = game_config['default_score']
 
-    game_config = config.get_game_config()
-    global_env_path = game_config['env_path']
-    checkers_path = game_config['checkers_path']
-    global_default_score = game_config['default_score']
+        for task_conf in tasks_config:
+            if 'env_path' not in task_conf:
+                task_conf['env_path'] = global_env_path
 
-    for task_conf in tasks_config:
-        if 'env_path' not in task_conf:
-            task_conf['env_path'] = global_env_path
+            if 'default_score' not in task_conf:
+                task_conf['default_score'] = global_default_score
 
-        if 'default_score' not in task_conf:
-            task_conf['default_score'] = global_default_score
+            task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
 
-        task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
-
-        task = models.Task(id=None, **task_conf)
-        curs.execute(
-            _TASK_INSERT_QUERY,
-            (
-                task.name,
-                task.checker,
-                task.gets,
-                task.puts,
-                task.places,
-                task.checker_timeout,
-                task.env_path,
-                int(task.checker_returns_flag_id),
+            task = models.Task(id=None, **task_conf)
+            curs.execute(
+                _TASK_INSERT_QUERY,
+                (
+                    task.name,
+                    task.checker,
+                    task.gets,
+                    task.puts,
+                    task.places,
+                    task.checker_timeout,
+                    task.env_path,
+                    int(task.checker_returns_flag_id),
+                )
             )
-        )
-        task.id, = curs.fetchone()
-        tasks.append(task)
+            task.id, = curs.fetchone()
+            tasks.append(task)
 
-    for team in teams:
-        for task in tasks:
-            curs.execute(_TEAMTASK_INSERT_QUERY, (task.id, team.id, 0, task.default_score, -1))
+        for team in teams:
+            for task in tasks:
+                curs.execute(_TEAMTASK_INSERT_QUERY, (task.id, team.id, 0, task.default_score, -1))
 
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        conn.commit()
 
     storage.caching.cache_teamtasks(round=0)
     game_state = storage.game.get_game_state(round=0)

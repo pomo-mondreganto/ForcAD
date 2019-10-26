@@ -80,7 +80,7 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
     """
     game_config = config.get_game_config()
 
-    with storage.db_cursor(dict_cursor=False) as (conn, curs):
+    with storage.db_cursor() as (conn, curs):
         curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
         flags = curs.fetchall()
 
@@ -101,7 +101,7 @@ def cache_last_owned(team_id: int, round: int, pipeline):
     """
     game_config = config.get_game_config()
 
-    with storage.db_cursor(dict_cursor=False) as (conn, curs):
+    with storage.db_cursor() as (conn, curs):
         curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
         flags = curs.fetchall()
 

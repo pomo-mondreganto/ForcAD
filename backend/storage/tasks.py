@@ -90,25 +90,22 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
     if checker_verdict.status == helplib.status.TaskStatus.UP:
         add = 1
 
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(
-        _UPDATE_TEAMTASKS_STATUS_QUERY,
-        (
-            checker_verdict.status.value,
-            checker_verdict.public_message,
-            checker_verdict.private_message,
-            json.dumps(checker_verdict.command),
-            add,
-            task_id,
-            team_id,
-            round,
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(
+            _UPDATE_TEAMTASKS_STATUS_QUERY,
+            (
+                checker_verdict.status.value,
+                checker_verdict.public_message,
+                checker_verdict.private_message,
+                json.dumps(checker_verdict.command),
+                add,
+                task_id,
+                team_id,
+                round,
+            )
         )
-    )
 
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        conn.commit()
 
 
 def get_teamtasks(round: int) -> Optional[List[dict]]:
@@ -213,20 +210,15 @@ def initialize_teamtasks(round: int):
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-
-    for team in teams:
-        for task in tasks:
-            curs.execute(
-                _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
-                {
-                    'task_id': task.id,
-                    'team_id': team.id,
-                    'round': round,
-                },
-            )
-            conn.commit()
-
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+    with storage.db_cursor() as (conn, curs):
+        for team in teams:
+            for task in tasks:
+                curs.execute(
+                    _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
+                    {
+                        'task_id': task.id,
+                        'team_id': team.id,
+                        'round': round,
+                    },
+                )
+                conn.commit()

@@ -111,64 +111,60 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
 
         Possible race condition here (two flags with one rating delta), use with locks
     """
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(
+            _SELECT_SCORE_BY_TEAM_TASK_QUERY,
+            (
+                attacker_id,
+                task_id,
+                round,
+            ),
+        )
+        attacker_score, = curs.fetchone()
 
-    curs.execute(
-        _SELECT_SCORE_BY_TEAM_TASK_QUERY,
-        (
-            attacker_id,
-            task_id,
-            round,
-        ),
-    )
-    attacker_score, = curs.fetchone()
+        curs.execute(
+            _SELECT_SCORE_BY_TEAM_TASK_QUERY,
+            (
+                victim_id,
+                task_id,
+                round,
+            ),
+        )
+        victim_score, = curs.fetchone()
 
-    curs.execute(
-        _SELECT_SCORE_BY_TEAM_TASK_QUERY,
-        (
-            victim_id,
-            task_id,
-            round,
-        ),
-    )
-    victim_score, = curs.fetchone()
+        game_config = config.get_game_config()
+        game_hardness = game_config.get('game_hardness')
+        inflation = game_config.get('inflation')
 
-    game_config = config.get_game_config()
-    game_hardness = game_config.get('game_hardness')
-    inflation = game_config.get('inflation')
+        rs = rating_system.RatingSystem(
+            attacker=attacker_score,
+            victim=victim_score,
+            game_hardness=game_hardness,
+            inflation=inflation,
+        )
 
-    rs = rating_system.RatingSystem(
-        attacker=attacker_score,
-        victim=victim_score,
-        game_hardness=game_hardness,
-        inflation=inflation,
-    )
+        attacker_delta, victim_delta = rs.calculate()
 
-    attacker_delta, victim_delta = rs.calculate()
+        curs.execute(
+            _UPDATE_TEAMTASKS_SCORE_QUERY,
+            (
+                attacker_score + attacker_delta,
+                attacker_id,
+                task_id,
+                round,
+            ),
+        )
+        curs.execute(
+            _UPDATE_TEAMTASKS_SCORE_QUERY,
+            (
+                victim_score + victim_delta,
+                victim_id,
+                task_id,
+                round,
+            ),
+        )
 
-    curs.execute(
-        _UPDATE_TEAMTASKS_SCORE_QUERY,
-        (
-            attacker_score + attacker_delta,
-            attacker_id,
-            task_id,
-            round,
-        ),
-    )
-    curs.execute(
-        _UPDATE_TEAMTASKS_SCORE_QUERY,
-        (
-            victim_score + victim_delta,
-            victim_id,
-            task_id,
-            round,
-        ),
-    )
-
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        conn.commit()
 
     return attacker_delta, victim_delta
 

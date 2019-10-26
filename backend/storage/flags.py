@@ -35,16 +35,12 @@ def add_stolen_flag(flag: helplib.models.Flag, attacker: int):
         pipeline.incr(f'team:{flag.team_id}:task:{flag.task_id}:lost')
         pipeline.execute()
 
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker, flag.id))
+        curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id, flag.task_id))
+        curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker, flag.task_id))
 
-    curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker, flag.id))
-    curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id, flag.task_id))
-    curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker, flag.task_id))
-
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        conn.commit()
 
 
 def check_flag(flag: helplib.models.Flag, attacker: int, round: int):
@@ -114,23 +110,20 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
         :return: flag with set "id" field
     """
 
-    conn = storage.get_db_pool().getconn()
-    curs = conn.cursor()
-    curs.execute(
-        _INSERT_FLAG_QUERY,
-        (
-            flag.flag,
-            flag.team_id,
-            flag.task_id,
-            flag.round,
-            flag.flag_data,
-            flag.vuln_number,
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(
+            _INSERT_FLAG_QUERY,
+            (
+                flag.flag,
+                flag.team_id,
+                flag.task_id,
+                flag.round,
+                flag.flag_data,
+                flag.vuln_number,
+            )
         )
-    )
-    flag.id, = curs.fetchone()
-    conn.commit()
-    curs.close()
-    storage.get_db_pool().putconn(conn)
+        flag.id, = curs.fetchone()
+        conn.commit()
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         while True:
