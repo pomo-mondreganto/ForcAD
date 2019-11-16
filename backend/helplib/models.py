@@ -58,6 +58,13 @@ class Team(Model):
             'token': self.token,
         }
 
+    def to_dict_for_participants(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'ip': self.ip,
+        }
+
     def __str__(self):
         return f"Team({self.id, self.name})"
 

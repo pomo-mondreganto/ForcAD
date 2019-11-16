@@ -221,4 +221,4 @@ def initialize_teamtasks(round: int):
                         'round': round,
                     },
                 )
-                conn.commit()
+        conn.commit()

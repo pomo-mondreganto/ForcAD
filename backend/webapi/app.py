@@ -63,7 +63,7 @@ async def handle_connect(_sid, _environ):
     game_state = await storage.game.get_game_state_async(loop)
 
     teams = await storage.teams.get_teams_async(loop)
-    teams = [team.to_dict() for team in teams]
+    teams = [team.to_dict_for_participants() for team in teams]
     tasks = await storage.tasks.get_tasks_async(loop)
     tasks = [task.to_dict_for_participants() for task in tasks]
     if not game_state:
@@ -90,7 +90,7 @@ async def handle_connect(_sid, _environ):
 @cors_allow_all
 async def get_teams(_request):
     teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
-    teams = [team.to_dict() for team in teams]
+    teams = [team.to_dict_for_participants() for team in teams]
     return json_response(teams)
 
 
