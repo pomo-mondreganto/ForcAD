@@ -10,7 +10,7 @@ case ${CELERY_CONTAINER_TYPE} in
         celery worker -A celery_tasks \
         -E -l info \
         --pool=gevent \
-        --concurrency=500
+        --concurrency=60
         ;;
     "beat")
         echo "[*] Starting celery beat"
