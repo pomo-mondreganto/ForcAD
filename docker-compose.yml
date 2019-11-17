@@ -73,6 +73,7 @@ services:
       - 31338:31338
     restart: on-failure
     tty: true
+    pids_limit: 100
 
   tcp_flag_submitter:
     build:

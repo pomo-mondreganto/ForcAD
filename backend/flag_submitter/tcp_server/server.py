@@ -125,6 +125,24 @@ class SocketServer:
                 self.inputs,
             )
 
+            for sock in exceptional:
+                if sock in readable:
+                    readable.remove(sock)
+                if sock in readable:
+                    writable.remove(sock)
+                self.clear(sock)
+
+            for sock in writable:
+                try:
+                    next_msg = self.message_queues[sock].get_nowait()
+                except queue.Empty:
+                    self.outputs.remove(sock)
+                else:
+                    sock.send(next_msg)
+                finally:
+                    if self.get_sock_break(sock):
+                        self.clear(sock)
+
             for sock in readable:
                 if sock is listen_socket:
                     conn, addr = sock.accept()
@@ -161,20 +179,6 @@ class SocketServer:
                     if len(self.buffers[sock]) > MAX_BUFFER_SIZE:
                         self.handle_string(sock, self.buffers[sock])
                         self.buffers[sock] = ''
-
-            for sock in writable:
-                try:
-                    next_msg = self.message_queues[sock].get_nowait()
-                except queue.Empty:
-                    self.outputs.remove(sock)
-                else:
-                    sock.send(next_msg)
-                finally:
-                    if self.get_sock_break(sock):
-                        self.clear(sock)
-
-            for sock in exceptional:
-                self.clear(sock)
 
 
 def main():
