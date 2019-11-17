@@ -188,12 +188,13 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
 
         with locking.acquire_redis_lock(pipeline, f'team:{min_team_id}:locked'):
             with locking.acquire_redis_lock(pipeline, f'team:{max_team_id}:locked'):
-                attacker_delta, victim_delta = update_attack_team_ratings(
-                    attacker_id=attacker_id,
-                    victim_id=victim_id,
-                    task_id=task_id,
-                    round=round,
-                )
+                with locking.acquire_redis_lock(pipeline, 'round_update'):
+                    attacker_delta, victim_delta = update_attack_team_ratings(
+                        attacker_id=attacker_id,
+                        victim_id=victim_id,
+                        task_id=task_id,
+                        round=round,
+                    )
 
         flag_data = {
             'attacker_id': attacker_id,

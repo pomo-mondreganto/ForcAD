@@ -6,7 +6,7 @@ import redis
 
 import helplib
 import storage
-from helplib import models
+from helplib import models, locking
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = f"""
@@ -210,15 +210,17 @@ def initialize_teamtasks(round: int):
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
-    with storage.db_cursor() as (conn, curs):
-        for team in teams:
-            for task in tasks:
-                curs.execute(
-                    _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
-                    {
-                        'task_id': task.id,
-                        'team_id': team.id,
-                        'round': round,
-                    },
-                )
-        conn.commit()
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        with locking.acquire_redis_lock(pipeline, 'round_update'):
+            with storage.db_cursor() as (conn, curs):
+                for team in teams:
+                    for task in tasks:
+                        curs.execute(
+                            _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
+                            {
+                                'task_id': task.id,
+                                'team_id': team.id,
+                                'round': round,
+                            },
+                        )
+                conn.commit()
