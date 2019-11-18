@@ -6,25 +6,20 @@ import redis
 
 import helplib
 import storage
-from helplib import models, locking
+from helplib import models
 from storage import caching
 
-_UPDATE_TEAMTASKS_STATUS_QUERY = f"""
+_UPDATE_TEAMTASKS_STATUS_QUERY = """
 UPDATE teamtasks SET status = %s, public_message = %s, private_message = %s, command = %s, 
 up_rounds = up_rounds + %s
 WHERE task_id = %s AND team_id = %s AND round = %s
 """
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
-WITH prev_table AS (
-    SELECT score, stolen, lost, up_rounds FROM teamtasks 
-    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
-    ORDER BY round DESC LIMIT 1 
-    FOR UPDATE
-)
 INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, up_rounds) 
-SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds 
-FROM prev_table;
+SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds FROM teamtasks 
+    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
+    ORDER BY round DESC LIMIT 1;
 """
 
 
@@ -210,17 +205,15 @@ def initialize_teamtasks(round: int):
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        with locking.acquire_redis_lock(pipeline, 'round_update'):
-            with storage.db_cursor() as (conn, curs):
-                for team in teams:
-                    for task in tasks:
-                        curs.execute(
-                            _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
-                            {
-                                'task_id': task.id,
-                                'team_id': team.id,
-                                'round': round,
-                            },
-                        )
-                conn.commit()
+    with storage.db_cursor() as (conn, curs):
+        for team in teams:
+            for task in tasks:
+                curs.execute(
+                    _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
+                    {
+                        'task_id': task.id,
+                        'team_id': team.id,
+                        'round': round,
+                    },
+                )
+        conn.commit()

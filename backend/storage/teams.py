@@ -10,7 +10,9 @@ import storage
 from helplib import models, locking
 from storage import caching
 
-_SELECT_SCORE_BY_TEAM_TASK_QUERY = "SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s"
+_SELECT_SCORE_BY_TEAM_TASK_QUERY = """
+SELECT score from teamtasks WHERE team_id=%s AND task_id=%s AND round=%s FOR NO KEY UPDATE
+"""
 
 _UPDATE_TEAMTASKS_SCORE_QUERY = "UPDATE teamtasks SET score = %s WHERE team_id=%s AND task_id=%s AND round >= %s"
 
