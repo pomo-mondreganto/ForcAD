@@ -59,6 +59,9 @@ def run():
             if 'default_score' not in task_conf:
                 task_conf['default_score'] = global_default_score
 
+            if 'checker_returns_flag' not in task_conf:
+                task_conf['checker_returns_flag'] = True
+
             task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
 
             task = models.Task(id=None, **task_conf)
