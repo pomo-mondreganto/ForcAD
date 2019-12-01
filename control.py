@@ -90,9 +90,13 @@ def reset_game(*_args, **_kwargs):
     )
 
 
-def start_game(*_args, **_kwargs):
+def start_game(*_args, **kwargs):
+    if 'fast' in kwargs:
+        docker_compose = 'docker-compose-fast.yml'
+    else:
+        docker_compose = 'docker-compose.yml'
     subprocess.check_output(
-        ['docker-compose', 'up', '--build', '-d'],
+        ['docker-compose', '-f', docker_compose, 'up', '--build', '-d'],
         cwd=BASE_DIR,
     )
 
@@ -119,6 +123,7 @@ COMMANDS = {
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     parser.add_argument('command', choices=COMMANDS.keys(), help='Command to run')
+    parser.add_argument('--fast', action='store_true', help='Use faster build with default rating system')
     parser.add_argument('-i', '--instances', type=int, metavar='N', help='Number of celery instances for scale_celery')
     args = parser.parse_args()
 

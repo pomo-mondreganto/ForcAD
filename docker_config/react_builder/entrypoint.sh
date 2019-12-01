@@ -1,9 +1,11 @@
 #!/bin/sh
 
+set -e
+
 cd /app
 
-echo "[*] Running npm run build"
-npm run build
+echo "[*] Running yarn build"
+yarn build
 
 echo "[*] Cleaning /react_build"
 rm -rf /react_build/*

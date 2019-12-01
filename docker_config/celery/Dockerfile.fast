@@ -1,0 +1,27 @@
+FROM pomomondreganto/forcad_base:latest
+
+########## CUSTOMIZE ##########
+
+#RUN apk add chromium chromium-chromedriver
+RUN apk add capstone bash libffi-dev openssl-dev git
+
+ADD ./checkers/requirements.txt /checker_requirements.txt
+RUN pip install -r /checker_requirements.txt
+
+ADD ./checkers /checkers
+
+ENV PWNLIB_NOTERM=true
+
+########## END CUSTOMIZE ##########
+
+ADD backend /app
+
+ADD ./docker_config/celery/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+#RUN adduser -S celery
+#USER celery
+
+USER nobody
+
+CMD ["/entrypoint.sh"]

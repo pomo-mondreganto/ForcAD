@@ -2,9 +2,9 @@ FROM node:11.9.0-alpine
 
 RUN mkdir /app
 ADD ./frontend/package.json /app/package.json
-ADD ./frontend/package-lock.json /app/package-lock.json
+ADD ./frontend/yarn.lock /app/yarn.lock
 WORKDIR /app
-RUN npm install
+RUN yarn install
 
 ADD ./frontend/ /app
 
