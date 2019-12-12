@@ -1,3 +1,5 @@
+[![Rawsec's CyberSecurity Inventory](https://inventory.rawsec.ml/img/badges/Rawsec-inventoried-FF5050_popout.svg)](https://inventory.rawsec.ml/)
+
 # ForcAD
 
 ![Front page](static/front_page.jpg)
