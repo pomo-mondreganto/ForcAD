@@ -1,5 +1,7 @@
 from typing import Optional
 
+import redis
+
 import storage
 from helplib import models
 
@@ -10,6 +12,8 @@ _UPDATE_REAL_ROUND_QUERY = 'UPDATE globalconfig SET real_round = %s WHERE id=1'
 _SET_GAME_RUNNING_QUERY = 'UPDATE globalconfig SET game_running = %s WHERE id=1'
 
 _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
+
+_GET_GLOBAL_CONFIG_QUERY = 'SELECT * from globalconfig WHERE id=1'
 
 
 def get_current_round() -> int:
@@ -74,10 +78,45 @@ def get_game_running() -> int:
     return game_running
 
 
+def get_db_global_config() -> models.GlobalConfig:
+    """Get global config from database as it is. Do not use it to fetch round or game_running"""
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_GET_GLOBAL_CONFIG_QUERY)
+        result = curs.fetchone()
+
+    result.pop('game_running')
+    result.pop('real_round')
+
+    return models.GlobalConfig.from_dict(result)
+
+
+def get_current_global_config() -> models.GlobalConfig:
+    """Get global config from cache is cached, otherwise cache it"""
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        while True:
+            try:
+                pipeline.watch('global_config:cached')
+                cached = pipeline.exists('global_config:cached')
+
+                pipeline.multi()
+                if not cached:
+                    storage.caching.cache_global_config(pipeline)
+
+                pipeline.execute()
+                break
+            except redis.WatchError:
+                continue
+
+        result, = pipeline.get('global_config').execute()
+        global_config = models.GlobalConfig.from_json(result)
+
+    return global_config
+
+
 async def get_current_round_async(loop) -> int:
     """Get current round (asynchronous version)"""
-    redis = await storage.get_async_redis_pool(loop)
-    round = await redis.get('round')
+    redis_pool = await storage.get_async_redis_pool(loop)
+    round = await redis_pool.get('round')
 
     try:
         round = round.decode()
@@ -106,8 +145,8 @@ def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
 
 async def get_game_state_async(loop) -> Optional[models.GameState]:
     """Get game state for current round (asynchronous version)"""
-    redis = await storage.get_async_redis_pool(loop)
-    state = await redis.get('game_state')
+    redis_pool = await storage.get_async_redis_pool(loop)
+    state = await redis_pool.get('game_state')
     try:
         state = state.decode()
         state = models.GameState.from_json(state)

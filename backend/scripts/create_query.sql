@@ -57,9 +57,16 @@ CREATE TABLE IF NOT EXISTS TeamTasks
 
 CREATE TABLE IF NOT EXISTS GlobalConfig
 (
-    id           SERIAL PRIMARY KEY,
-    game_running INTEGER DEFAULT 0,
-    real_round   INTEGER DEFAULT 0
+    id            SERIAL PRIMARY KEY,
+    game_running  INTEGER DEFAULT 0,
+    real_round    INTEGER DEFAULT 0,
+    checkers_path VARCHAR(256),
+    default_score FLOAT,
+    env_path      VARCHAR(256),
+    flag_lifetime INTEGER,
+    game_hardness FLOAT,
+    inflation     INTEGER,
+    round_time    INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_teamtasks_team_task_ids

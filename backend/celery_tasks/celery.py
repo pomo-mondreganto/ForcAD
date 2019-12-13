@@ -1,6 +1,7 @@
 from celery import Celery
 
 import config
+import storage
 
 celery_config = config.get_celery_config()
 
@@ -11,12 +12,12 @@ app = Celery(
     ],
 )
 
-game_config = config.get_game_config()
+game_config = storage.game.get_current_global_config()
 
 app.conf.beat_schedule = {
     'process_round': {
         'task': 'celery_tasks.tasks.process_round',
-        'schedule': game_config['round_time'],
+        'schedule': game_config.round_time,
     },
 }
 

@@ -9,19 +9,20 @@ sys.path.insert(0, BASE_DIR)
 
 import storage
 import config
+from psycopg2.extensions import AsIs
 
 from helplib import models
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
-_CONFIG_INITIALIZATION_QUERY = 'INSERT INTO globalconfig (real_round, game_running) VALUES (%s, %s)'
+_CONFIG_INITIALIZATION_QUERY = '''INSERT INTO globalconfig (%s) VALUES (%s)'''
 
 _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
 
-_TASK_INSERT_QUERY = """
+_TASK_INSERT_QUERY = '''
 INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id) 
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-"""
+'''
 
 _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
 
@@ -31,8 +32,6 @@ def run():
         create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
         create_query = open(create_query_path).read()
         curs.execute(create_query)
-
-        curs.execute(_CONFIG_INITIALIZATION_QUERY, (0, 0))
 
         teams_config = config.get_teams_config()
         teams = []
@@ -47,22 +46,29 @@ def run():
         tasks_config = config.get_tasks_config()
         tasks = []
 
-        game_config = config.get_game_config()
-        global_env_path = game_config['env_path']
-        checkers_path = game_config['checkers_path']
-        global_default_score = game_config['default_score']
+        global_config = config.get_global_config()
+        global_config.pop('start_time')
+
+        columns = global_config.keys()
+        values = tuple(global_config[k] for k in columns)
+        curs.execute(
+            _CONFIG_INITIALIZATION_QUERY,
+            (AsIs(columns), values),
+        )
+
+        gconf = models.GlobalConfig.from_dict(global_config)
 
         for task_conf in tasks_config:
             if 'env_path' not in task_conf:
-                task_conf['env_path'] = global_env_path
+                task_conf['env_path'] = gconf.env_path
 
             if 'default_score' not in task_conf:
-                task_conf['default_score'] = global_default_score
+                task_conf['default_score'] = gconf.default_score
 
             if 'checker_returns_flag_id' not in task_conf:
                 task_conf['checker_returns_flag_id'] = True
 
-            task_conf['checker'] = os.path.join(checkers_path, task_conf['checker'])
+            task_conf['checker'] = os.path.join(gconf.checkers_path, task_conf['checker'])
 
             task = models.Task(id=None, **task_conf)
             curs.execute(

@@ -202,9 +202,6 @@ class GameState(Model):
             'team_tasks': self.team_tasks
         }
 
-    def to_json(self):
-        return json.dumps(self.to_dict())
-
     def __str__(self):
         return f"GameState for round {self.round}"
 
@@ -233,4 +230,43 @@ class CheckerVerdict(Model):
             'public_message': self.public_message,
             'command': self.command,
             'status': self.status.value,
+        }
+
+
+class GlobalConfig(Model):
+    """Model representing global config"""
+    checkers_path: str
+    default_score: float
+    env_path: str
+    flag_lifetime: int
+    game_hardness: float
+    inflation: bool
+    round_time: int
+
+    def __init__(self,
+                 checkers_path: str,
+                 default_score: float,
+                 env_path: str,
+                 flag_lifetime: int,
+                 game_hardness: float,
+                 inflation: bool,
+                 round_time: int):
+        super(GlobalConfig, self).__init__()
+        self.checkers_path = checkers_path
+        self.default_score = default_score
+        self.env_path = env_path
+        self.flag_lifetime = flag_lifetime
+        self.game_hardness = game_hardness
+        self.inflation = inflation
+        self.round_time = round_time
+
+    def to_dict(self):
+        return {
+            'checkers_path': self.checkers_path,
+            'default_score': self.default_score,
+            'env_path': self.env_path,
+            'flag_lifetime': self.flag_lifetime,
+            'game_hardness': self.game_hardness,
+            'inflation': self.inflation,
+            'round_time': self.round_time,
         }

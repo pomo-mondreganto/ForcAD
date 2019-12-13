@@ -1,6 +1,5 @@
 import json
 
-import config
 import helplib
 import storage
 from helplib import models
@@ -78,10 +77,10 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         :param pipeline: redis connection to add command to
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = storage.game.get_current_global_config()
 
     with storage.db_cursor() as (conn, curs):
-        curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+        curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config.flag_lifetime, team_id))
         flags = curs.fetchall()
 
     pipeline.delete(f'team:{team_id}:cached:stolen', f'team:{team_id}:stolen_flags')
@@ -99,10 +98,10 @@ def cache_last_owned(team_id: int, round: int, pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = storage.game.get_current_global_config()
 
     with storage.db_cursor() as (conn, curs):
-        curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
+        curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config.flag_lifetime, team_id))
         flags = curs.fetchall()
 
     pipeline.delete(f'team:{team_id}:cached:owned', f'team:{team_id}:owned_flags')
@@ -119,10 +118,10 @@ def cache_last_flags(round: int, pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = storage.game.get_current_global_config()
 
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config['flag_lifetime'],))
+        curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config.flag_lifetime,))
         flags = curs.fetchall()
 
     pipeline.delete('flags:cached')
@@ -179,3 +178,11 @@ def cache_teamtasks_for_team(team_id: int, current_round: int, pipeline):
     data = json.dumps(results)
     pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
     pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1)
+
+
+def cache_global_config(pipeline):
+    """Put global config to cache (without round or game_running)"""
+    global_config = storage.game.get_db_global_config()
+    data = global_config.to_json()
+    pipeline.set('global_config', data)
+    pipeline.set('global_config:cached', data)

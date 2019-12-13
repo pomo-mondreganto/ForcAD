@@ -5,7 +5,6 @@ import aioredis
 import rating_system
 import redis
 
-import config
 import storage
 from helplib import models, locking
 from storage import caching
@@ -134,9 +133,9 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
         )
         victim_score, = curs.fetchone()
 
-        game_config = config.get_game_config()
-        game_hardness = game_config.get('game_hardness')
-        inflation = game_config.get('inflation')
+        game_config = storage.game.get_current_global_config()
+        game_hardness = game_config.game_hardness
+        inflation = game_config.game_hardness
 
         rs = rating_system.RatingSystem(
             attacker=attacker_score,
