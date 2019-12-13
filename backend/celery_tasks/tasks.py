@@ -310,7 +310,7 @@ def start_game():
             if already_started:
                 logger.info('Game already started')
                 return
-            storage.game.set_game_running(1)
+            storage.game.set_game_running(True)
 
     storage.caching.cache_teamtasks(round=0)
 

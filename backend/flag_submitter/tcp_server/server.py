@@ -97,11 +97,9 @@ class SocketServer:
             except exceptions.FlagSubmitException as e:
                 self.write_to_sock(sock, str(e).encode() + b'\n')
             else:
-                storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
                 attacker_delta = storage.teams.handle_attack(
                     attacker_id=team_id,
-                    victim_id=flag.team_id,
-                    task_id=flag.task_id,
+                    flag=flag,
                     round=round,
                 )
                 self.write_to_sock(sock, f'Flag accepted! Earned {attacker_delta} flag points!\n'.encode())

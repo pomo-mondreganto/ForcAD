@@ -62,14 +62,14 @@ def update_real_round_in_db(new_round: int):
         conn.commit()
 
 
-def set_game_running(new_value: int):
+def set_game_running(new_value: bool):
     """Update game_running value in db"""
     with storage.db_cursor() as (conn, curs):
         curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
         conn.commit()
 
 
-def get_game_running() -> int:
+def get_game_running() -> bool:
     """Update game_running value in db"""
     with storage.db_cursor() as (conn, curs):
         curs.execute(_GET_GAME_RUNNING_QUERY)

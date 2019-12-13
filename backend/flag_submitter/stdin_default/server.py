@@ -42,11 +42,9 @@ while True:
     except exceptions.FlagSubmitException as e:
         print(e)
     else:
-        storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
         attacker_delta = storage.teams.handle_attack(
             attacker_id=team_id,
-            victim_id=flag.team_id,
-            task_id=flag.task_id,
+            flag=flag,
             round=round,
         )
         flags_correct += 1

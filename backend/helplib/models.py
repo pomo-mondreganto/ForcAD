@@ -235,6 +235,7 @@ class CheckerVerdict(Model):
 
 class GlobalConfig(Model):
     """Model representing global config"""
+    id: Optional[int]
     checkers_path: str
     default_score: float
     env_path: str
@@ -244,6 +245,7 @@ class GlobalConfig(Model):
     round_time: int
 
     def __init__(self,
+                 id: Optional[int],
                  checkers_path: str,
                  default_score: float,
                  env_path: str,
@@ -252,6 +254,7 @@ class GlobalConfig(Model):
                  inflation: bool,
                  round_time: int):
         super(GlobalConfig, self).__init__()
+        self.id = id
         self.checkers_path = checkers_path
         self.default_score = default_score
         self.env_path = env_path
@@ -262,6 +265,7 @@ class GlobalConfig(Model):
 
     def to_dict(self):
         return {
+            'id': self.id,
             'checkers_path': self.checkers_path,
             'default_score': self.default_score,
             'env_path': self.env_path,

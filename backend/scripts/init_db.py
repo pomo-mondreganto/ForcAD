@@ -9,13 +9,13 @@ sys.path.insert(0, BASE_DIR)
 
 import storage
 import config
-from psycopg2.extensions import AsIs
 
 from helplib import models
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
-_CONFIG_INITIALIZATION_QUERY = '''INSERT INTO globalconfig (%s) VALUES (%s)'''
+# noinspection 
+_CONFIG_INITIALIZATION_QUERY = '''INSERT INTO globalconfig ({columns}) VALUES ({values}) RETURNING id'''
 
 _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
 
@@ -49,12 +49,14 @@ def run():
         global_config = config.get_global_config()
         global_config.pop('start_time')
 
-        columns = global_config.keys()
-        values = tuple(global_config[k] for k in columns)
+        keys = global_config.keys()
+        columns = ','.join(keys)
+        values = ','.join(f'%({key})s' for key in keys)
         curs.execute(
-            _CONFIG_INITIALIZATION_QUERY,
-            (AsIs(columns), values),
+            _CONFIG_INITIALIZATION_QUERY.format(columns=columns, values=values),
+            global_config,
         )
+        global_config['id'], = curs.fetchone()
 
         gconf = models.GlobalConfig.from_dict(global_config)
 

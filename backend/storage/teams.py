@@ -135,7 +135,7 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
 
         game_config = storage.game.get_current_global_config()
         game_hardness = game_config.game_hardness
-        inflation = game_config.game_hardness
+        inflation = game_config.inflation
 
         rs = rating_system.RatingSystem(
             attacker=attacker_score,
@@ -170,18 +170,18 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
     return attacker_delta, victim_delta
 
 
-def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) -> float:
+def handle_attack(attacker_id: int, flag: models.Flag, round: int) -> float:
     """Lock team for update, call rating recalculation,
         then publish redis message about stolen flag
 
         :param attacker_id: id of the attacking team
-        :param victim_id: id of the victim team
-        :param task_id: id of task which is attacked
+        :param flag: flag that is stolen
         :param round: round of the attack
 
         :return: attacker rating change
     """
 
+    victim_id = flag.team_id
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         # Deadlock is our enemy
         min_team_id = min(attacker_id, victim_id)
@@ -189,13 +189,13 @@ def handle_attack(attacker_id: int, victim_id: int, task_id: int, round: int) ->
 
         with locking.acquire_redis_lock(pipeline, f'team:{min_team_id}:locked'):
             with locking.acquire_redis_lock(pipeline, f'team:{max_team_id}:locked'):
-                with locking.acquire_redis_lock(pipeline, 'round_update'):
-                    attacker_delta, victim_delta = update_attack_team_ratings(
-                        attacker_id=attacker_id,
-                        victim_id=victim_id,
-                        task_id=task_id,
-                        round=round,
-                    )
+                storage.flags.add_stolen_flag(flag=flag, attacker=attacker_id)
+                attacker_delta, victim_delta = update_attack_team_ratings(
+                    attacker_id=attacker_id,
+                    victim_id=victim_id,
+                    task_id=flag.task_id,
+                    round=round,
+                )
 
         flag_data = {
             'attacker_id': attacker_id,
