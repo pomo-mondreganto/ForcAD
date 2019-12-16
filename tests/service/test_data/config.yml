@@ -44,4 +44,7 @@ tasks:
 
 teams:
   - ip: test_service
-    name: "Test team"
+    name: "Test working team"
+
+  - ip: 127.0.0.1
+    name: "Test unreachable team"
