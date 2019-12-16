@@ -28,7 +28,7 @@ before_script:
 
 script:
   - docker ps
-  - python -m unittest discover -s tests
+  - python -m unittest discover -v -s tests
 
 after_script:
   - ./control.py reset
