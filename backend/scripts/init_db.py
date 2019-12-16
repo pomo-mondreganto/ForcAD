@@ -89,10 +89,13 @@ def run():
             task.id, = curs.fetchone()
             tasks.append(task)
 
-        for team in teams:
-            for task in tasks:
-                curs.execute(_TEAMTASK_INSERT_QUERY, (task.id, team.id, 0, task.default_score, -1))
+        data = [
+            (task.id, team.id, 0, task.default_score, -1)
+            for team in teams
+            for task in tasks
+        ]
 
+        curs.executemany(_TEAMTASK_INSERT_QUERY, data)
         conn.commit()
 
     storage.caching.cache_teamtasks(round=0)
