@@ -10,7 +10,6 @@ import queue
 from typing import Tuple, ByteString, Optional
 
 import storage
-import helplib
 from helplib import exceptions
 
 BACKLOG = 5
@@ -93,15 +92,14 @@ class SocketServer:
 
             team_id = self.get_sock_team_id(sock)
             try:
-                flag = helplib.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
+                attacker_delta = storage.teams.handle_attack(
+                    attacker_id=team_id,
+                    flag_str=flag_str,
+                    round=round,
+                )
             except exceptions.FlagSubmitException as e:
                 self.write_to_sock(sock, str(e).encode() + b'\n')
             else:
-                attacker_delta = storage.teams.handle_attack(
-                    attacker_id=team_id,
-                    flag=flag,
-                    round=round,
-                )
                 self.write_to_sock(sock, f'Flag accepted! Earned {attacker_delta} flag points!\n'.encode())
 
     def serve_forever(self):
