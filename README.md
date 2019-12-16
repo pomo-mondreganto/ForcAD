@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/pomo-mondreganto/ForcAD.svg?branch=master)](https://travis-ci.org/pomo-mondreganto/ForcAD)
-[![Rawsec's CyberSecurity Inventory](https://inventory.rawsec.ml/img/badges/Rawsec-inventoried-FF5050_popout.svg)](https://inventory.rawsec.ml/)
+[![Rawsec's CyberSecurity Inventory](https://inventory.rawsec.ml/img/badges/Rawsec-inventoried-FF5050_flat.svg)](https://inventory.rawsec.ml/)
 
 # ForcAD
 
