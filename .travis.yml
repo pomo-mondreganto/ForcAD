@@ -16,18 +16,19 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
 
 install:
-  - python backend/tests/setup_forcad.py
+  - python tests/setup_forcad.py
   - pip install -r control_requirements.txt
+  - pip install -r tests/requirements.txt
   - ./control.py setup
   - ./control.py build
 
 before_script:
   - ./control.py start
+  - python tests/wait_for_start.py
 
 script:
   - docker ps
-  - curl http://127.0.0.1:8080
-  - curl http://127.0.0.1:80
+  - python -m unittest discover -s tests
 
 after_script:
   - ./control.py reset

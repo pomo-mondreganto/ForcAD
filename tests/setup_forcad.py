@@ -4,7 +4,7 @@ import shutil
 
 # backend
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_BASE = os.path.dirname(os.path.dirname(TESTS_DIR))
+PROJECT_BASE = os.path.dirname(TESTS_DIR)
 
 dst = os.path.join(PROJECT_BASE, 'checkers/test_service')
 if os.path.exists(dst):

@@ -11,7 +11,7 @@ backend/config/*config.yml
 checkers/*
 !checkers/.gitkeep
 !checkers/bin/.gitkeep
-!backend/tests/test_data/*
+!tests/test_data/*
 
 *.env
 
