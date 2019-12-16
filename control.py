@@ -98,7 +98,14 @@ def reset_game(*_args, **_kwargs):
     )
 
 
-def start_game(*_args, **kwargs):
+def build(*_args, **_kwargs):
+    subprocess.check_output(
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'build'],
+        cwd=BASE_DIR,
+    )
+
+
+def start_game(*_args, **_kwargs):
     subprocess.check_output(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d'],
         cwd=BASE_DIR,
@@ -120,6 +127,7 @@ COMMANDS = {
     'setup': setup_config,
     'print_tokens': print_tokens,
     'reset': reset_game,
+    'build': build,
     'start': start_game,
     'scale_celery': scale_celery,
 }

@@ -19,10 +19,10 @@ install:
   - python backend/tests/setup_forcad.py
   - pip install -r control_requirements.txt
   - ./control.py setup
-  - docker-compose build
+  - ./control.py build
 
 before_script:
-  - docker-compose up -d
+  - ./control.py start
 
 script:
   - docker ps
