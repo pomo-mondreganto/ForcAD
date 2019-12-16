@@ -19,7 +19,8 @@ class AppConfig:
     def get_main_config():
         if not AppConfig._main_config:
             conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-            AppConfig._main_config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+            with open(conf_path) as f:
+                AppConfig._main_config = yaml.load(f, Loader=yaml.FullLoader)
 
         return AppConfig._main_config
 
