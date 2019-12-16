@@ -1,10 +1,13 @@
 import os
 import subprocess
+import sys
 import time
+
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_DIR)
 
 import backend
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
 INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
 FRONT_BUILD_CONTAINER_NAME = 'forcad_react_builder_1'
