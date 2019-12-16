@@ -16,7 +16,7 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
 
 install:
-  - pip install control_requirements.txt
+  - pip install -r control_requirements.txt
   - ./control.py reset
   - ./control.py setup
   - python backend/tests/setup_forcad.py
