@@ -1,0 +1,47 @@
+celery:
+  accept_content:
+    - json
+  backend_url: redis://redis:6379/2
+  broker_transport_options:
+    visibility_timeout: 36000
+  broker_url: redis://redis:6379/1
+  result_serializer: json
+  task_serializer: json
+  timezone: Europe/Moscow
+  worker_prefetch_multiplier: 1
+flower:
+  password: secret
+  username: system_admin
+global:
+  checkers_path: /checkers/
+  default_score: 2500
+  env_path: /checkers/bin/
+  flag_lifetime: 5
+  game_hardness: 3000.0
+  inflation: true
+  round_time: 20
+  start_time: 2019-11-30 15:30:00+03:00
+storages:
+  db:
+    dbname: system_db
+    host: postgres
+    password: secret
+    port: 5432
+    user: system_admin
+  redis:
+    db: 0
+    host: redis
+    port: 6379
+
+tasks:
+  - checker: test_service/checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gets: 2
+    name: "test service"
+    places: 5
+    puts: 2
+
+teams:
+  - ip: test_service
+    name: "Test team"

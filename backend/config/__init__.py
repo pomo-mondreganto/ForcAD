@@ -4,6 +4,12 @@ import yaml
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_FILENAME = 'config.yml'
+
+if os.environ.get('TEST'):
+    CONFIG_FILENAME = 'test_config.yml'
+elif os.environ.get('LOCAL'):
+    CONFIG_FILENAME = 'local_config.yml'
 
 
 class AppConfig:
@@ -12,7 +18,7 @@ class AppConfig:
     @staticmethod
     def get_main_config():
         if not AppConfig._main_config:
-            conf_path = os.path.join(CONFIG_DIR, 'config.yml')
+            conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
             AppConfig._main_config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
 
         return AppConfig._main_config

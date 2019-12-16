@@ -1,0 +1,34 @@
+language: python
+
+python:
+  - "3.7"
+
+env:
+  - DOCKER_COMPOSE_VERSION=1.25.1
+
+services:
+  - docker
+
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+install:
+  - pip install control_reqirements.txt
+  - ./control.py reset
+  - ./control.py setup
+  - python backend/tests/setup_forcad.py
+  - docker-compose build
+
+before_script:
+  - docker-compose up -d
+
+script:
+  - docker ps
+  - curl http://127.0.0.1:8080
+  - curl http://127.0.0.1:80
+
+after_script:
+  - ./control.py reset
