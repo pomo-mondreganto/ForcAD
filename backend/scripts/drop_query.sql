@@ -1,11 +1,6 @@
-DROP TABLE teams;
-
-DROP TABLE flags;
-
-DROP TABLE stolenflags;
-
-DROP TABLE tasks;
-
-DROP TABLE teamtasks;
-
-DROP TABLE globalconfig;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS flags;
+DROP TABLE IF EXISTS stolenflags;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS teamtasks;
+DROP TABLE IF EXISTS globalconfig;

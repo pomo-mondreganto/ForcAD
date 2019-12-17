@@ -29,7 +29,7 @@ def get_storage_config() -> dict:
     return AppConfig.get_main_config()['storages']
 
 
-def get_game_config() -> dict:
+def get_global_config() -> dict:
     return AppConfig.get_main_config()['global']
 
 

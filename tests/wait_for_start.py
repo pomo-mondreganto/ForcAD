@@ -4,8 +4,8 @@ import sys
 import time
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_DIR = os.path.join(PROJECT_DIR, 'backend')
-sys.path.insert(0, CONFIG_DIR)
+BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+sys.path.insert(0, BACKEND_DIR)
 
 import config
 
@@ -25,7 +25,7 @@ def wait_for_container(name):
 
 
 def wait_rounds(rounds):
-    round_time = config.get_game_config()['round_time']
+    round_time = config.get_global_config()['round_time']
     time.sleep(rounds * round_time)
 
 

@@ -206,14 +206,18 @@ def initialize_teamtasks(round: int):
     tasks = storage.tasks.get_tasks()
 
     with storage.db_cursor() as (conn, curs):
-        for team in teams:
-            for task in tasks:
-                curs.execute(
-                    _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
-                    {
-                        'task_id': task.id,
-                        'team_id': team.id,
-                        'round': round,
-                    },
-                )
+        data = [
+            {
+                'task_id': task.id,
+                'team_id': team.id,
+                'round': round,
+            }
+            for team in teams
+            for task in tasks
+        ]
+
+        curs.executemany(
+            _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
+            data,
+        )
         conn.commit()

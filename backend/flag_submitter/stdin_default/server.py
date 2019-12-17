@@ -6,7 +6,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.insert(0, BASE_DIR)
 
 import storage
-import helplib
 from helplib import exceptions
 
 print('Welcome! Please, enter your team token:')
@@ -38,17 +37,14 @@ while True:
         print('Game is unavailable yet')
 
     try:
-        flag = helplib.flags.check_flag(flag_str=flag_str, attacker=team_id, round=round)
+        attacker_delta = storage.teams.handle_attack(
+            attacker_id=team_id,
+            flag_str=flag_str,
+            round=round,
+        )
     except exceptions.FlagSubmitException as e:
         print(e)
     else:
-        storage.flags.add_stolen_flag(flag=flag, attacker=team_id)
-        attacker_delta = storage.teams.handle_attack(
-            attacker_id=team_id,
-            victim_id=flag.team_id,
-            task_id=flag.task_id,
-            round=round,
-        )
         flags_correct += 1
         print(f'Flag accepted! Earned {attacker_delta} flag points!')
 
