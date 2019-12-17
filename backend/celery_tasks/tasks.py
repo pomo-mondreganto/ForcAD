@@ -175,7 +175,7 @@ def get_action(put_ok, team_json, task_json, round):
     team = models.Team.from_json(team_json)
     task = models.Task.from_json(task_json)
 
-    flag_lifetime = config.get_global_config()['flag_lifetime']
+    flag_lifetime = storage.game.get_current_global_config().flag_lifetime
 
     rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
     random.shuffle(rounds_to_check)
@@ -310,7 +310,7 @@ def start_game():
             if already_started:
                 logger.info('Game already started')
                 return
-            storage.game.set_game_running(1)
+            storage.game.set_game_running(True)
 
     storage.caching.cache_teamtasks(round=0)
 

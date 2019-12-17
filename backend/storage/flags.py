@@ -3,7 +3,6 @@ import secrets
 import redis
 from typing import Optional
 
-import config
 import helplib
 import storage
 from storage import caching
@@ -52,9 +51,9 @@ def check_flag(flag: helplib.models.Flag, attacker: int, round: int):
 
         :raises: an instance of FlagSubmitException on validation error
     """
-    game_config = config.get_global_config()
+    game_config = storage.game.get_current_global_config()
 
-    if round - flag.round > game_config['flag_lifetime']:
+    if round - flag.round > game_config.flag_lifetime:
         raise helplib.exceptions.FlagSubmitException('Flag is too old')
 
     if flag.team_id == attacker:
