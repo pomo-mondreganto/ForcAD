@@ -78,7 +78,7 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         :param pipeline: redis connection to add command to
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = config.get_global_config()
 
     with storage.db_cursor() as (conn, curs):
         curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
@@ -99,7 +99,7 @@ def cache_last_owned(team_id: int, round: int, pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = config.get_global_config()
 
     with storage.db_cursor() as (conn, curs):
         curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config['flag_lifetime'], team_id))
@@ -119,7 +119,7 @@ def cache_last_flags(round: int, pipeline):
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    game_config = config.get_game_config()
+    game_config = config.get_global_config()
 
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config['flag_lifetime'],))

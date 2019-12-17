@@ -25,7 +25,7 @@ def wait_for_container(name):
 
 
 def wait_rounds(rounds):
-    round_time = config.get_game_config()['round_time']
+    round_time = config.get_global_config()['round_time']
     time.sleep(rounds * round_time)
 
 

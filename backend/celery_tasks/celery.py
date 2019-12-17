@@ -11,7 +11,7 @@ app = Celery(
     ],
 )
 
-game_config = config.get_game_config()
+game_config = config.get_global_config()
 
 app.conf.beat_schedule = {
     'process_round': {

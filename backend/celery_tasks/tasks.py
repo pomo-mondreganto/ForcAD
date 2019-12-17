@@ -16,7 +16,7 @@ logger = get_task_logger(__name__)
 @worker_ready.connect
 def startup(**_kwargs):
     """Task to run on start of celery, schedules game start"""
-    game_config = config.get_game_config()
+    game_config = config.get_global_config()
 
     logger.info(f'Received game config: {game_config}')
 
@@ -175,7 +175,7 @@ def get_action(put_ok, team_json, task_json, round):
     team = models.Team.from_json(team_json)
     task = models.Task.from_json(task_json)
 
-    flag_lifetime = config.get_game_config()['flag_lifetime']
+    flag_lifetime = config.get_global_config()['flag_lifetime']
 
     rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
     random.shuffle(rounds_to_check)

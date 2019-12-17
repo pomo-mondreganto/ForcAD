@@ -47,7 +47,7 @@ def run():
         tasks_config = config.get_tasks_config()
         tasks = []
 
-        game_config = config.get_game_config()
+        game_config = config.get_global_config()
         global_env_path = game_config['env_path']
         checkers_path = game_config['checkers_path']
         global_default_score = game_config['default_score']

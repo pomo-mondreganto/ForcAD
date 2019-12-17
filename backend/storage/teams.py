@@ -1,9 +1,9 @@
 import json
-from typing import List, Optional, Tuple
 
 import aioredis
 import rating_system
 import redis
+from typing import List, Optional, Tuple
 
 import config
 import storage
@@ -134,7 +134,7 @@ def update_attack_team_ratings(attacker_id: int, victim_id: int, task_id: int, r
         )
         victim_score, = curs.fetchone()
 
-        game_config = config.get_game_config()
+        game_config = config.get_global_config()
         game_hardness = game_config.get('game_hardness')
         inflation = game_config.get('inflation')
 
