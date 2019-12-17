@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS Teams
 (
     id    SERIAL PRIMARY KEY,
     name  VARCHAR(255) NOT NULL DEFAULT '',
-    ip    INET,
+    ip    VARCHAR(32)  NOT NULL,
     token VARCHAR(16)  NOT NULL DEFAULT ''
 );
 

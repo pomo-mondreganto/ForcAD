@@ -1,9 +1,9 @@
 import json
-from typing import List, Optional, Tuple
 
 import aioredis
 import rating_system
 import redis
+from typing import List, Optional, Tuple
 
 import storage
 from helplib import models, locking, flags

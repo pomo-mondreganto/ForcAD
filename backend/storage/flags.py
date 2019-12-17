@@ -1,7 +1,7 @@
 import secrets
-from typing import Optional
 
 import redis
+from typing import Optional
 
 import helplib
 import storage

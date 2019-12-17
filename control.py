@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
-import argparse
 import os
+
+import argparse
 import shutil
 import subprocess
-
 import yaml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(BASE_DIR, 'backend', 'config')
+DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+
+CONFIG_FILENAME = 'config.yml'
+
+if os.environ.get('TEST'):
+    CONFIG_FILENAME = 'test_config.yml'
+elif os.environ.get('LOCAL'):
+    CONFIG_FILENAME = 'local_config.yml'
 
 
 def setup_db(config):
@@ -61,7 +69,7 @@ def setup_flower(config):
 
 
 def setup_config(*_args, **_kwargs):
-    conf_path = os.path.join(CONFIG_DIR, 'config.yml')
+    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
     setup_db(config)
     setup_flower(config)
@@ -69,7 +77,7 @@ def setup_config(*_args, **_kwargs):
 
 def print_tokens(*_args, **_kwargs):
     res = subprocess.check_output(
-        ['docker-compose', 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
         cwd=BASE_DIR,
     )
 
@@ -85,18 +93,21 @@ def reset_game(*_args, **_kwargs):
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
     subprocess.check_output(
-        ['docker-compose', 'down', '-v', '--remove-orphans'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v', '--remove-orphans'],
         cwd=BASE_DIR,
     )
 
 
-def start_game(*_args, **kwargs):
-    if 'fast' in kwargs:
-        docker_compose = 'docker-compose-fast.yml'
-    else:
-        docker_compose = 'docker-compose.yml'
+def build(*_args, **_kwargs):
     subprocess.check_output(
-        ['docker-compose', '-f', docker_compose, 'up', '--build', '-d'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'build'],
+        cwd=BASE_DIR,
+    )
+
+
+def start_game(*_args, **_kwargs):
+    subprocess.check_output(
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d'],
         cwd=BASE_DIR,
     )
 
@@ -107,7 +118,7 @@ def scale_celery(instances, *_args, **_kwargs):
         exit(1)
 
     subprocess.check_output(
-        ['docker-compose', 'up', '--scale', f'celery={instances}', '-d'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--scale', f'celery={instances}', '-d'],
         cwd=BASE_DIR,
     )
 
@@ -116,6 +127,7 @@ COMMANDS = {
     'setup': setup_config,
     'print_tokens': print_tokens,
     'reset': reset_game,
+    'build': build,
     'start': start_game,
     'scale_celery': scale_celery,
 }
@@ -126,6 +138,11 @@ if __name__ == '__main__':
     parser.add_argument('--fast', action='store_true', help='Use faster build with default rating system')
     parser.add_argument('-i', '--instances', type=int, metavar='N', help='Number of celery instances for scale_celery')
     args = parser.parse_args()
+
+    if args.fast:
+        DOCKER_COMPOSE_FILE = 'docker-compose-fast.yml'
+    elif os.environ.get('TEST'):
+        DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
 
     try:
         COMMANDS[args.command](**vars(args))
