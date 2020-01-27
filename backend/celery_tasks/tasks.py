@@ -228,26 +228,6 @@ def get_action(put_ok, team_json, task_json, round):
 
 
 @shared_task
-def run_checker(team_json, task_json, round):
-    """Run check, put and get"""
-    chained = chain(
-        check_action.s(team_json, task_json, round),
-        put_action.s(team_json, task_json, round),
-        get_action.s(team_json, task_json, round),
-    )
-
-    chained.apply_async()
-
-
-@shared_task
-def process_team(team_json, round):
-    """Run checkers for all team tasks"""
-    tasks = storage.tasks.get_tasks()
-    for task in tasks:
-        run_checker.delay(team_json, task.to_json(), round)
-
-
-@shared_task
 def process_round():
     """Process new round
 
@@ -292,8 +272,16 @@ def process_round():
             pipeline.execute()
 
     teams = storage.teams.get_teams()
-    for team in teams:
-        process_team.delay(team.to_json(), new_round)
+    tasks = storage.tasks.get_tasks()
+    for task in tasks:
+        for team in teams:
+            chained = chain(
+                check_action.s(team.to_json(), task.to_json(), new_round),
+                put_action.s(team.to_json(), task.to_json(), new_round),
+                get_action.s(team.to_json(), task.to_json(), new_round),
+            )
+
+            chained.apply_async()
 
 
 @shared_task

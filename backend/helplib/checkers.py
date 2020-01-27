@@ -1,5 +1,6 @@
 import os
 import secrets
+
 import subprocess
 from typing import Tuple, List
 
@@ -125,10 +126,10 @@ def run_generic_command(command: List,
                     f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
                     f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
                 )
-        except ValueError:
+        except ValueError as e:
             status = TaskStatus.CHECK_FAILED
             public_message = 'Check failed'
-            private_message = 'Check failed'
+            private_message = f'Check failed with ValueError: {str(e)}'
             logger.warning(
                 f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
                 f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
@@ -136,7 +137,7 @@ def run_generic_command(command: List,
 
     except subprocess.TimeoutExpired:
         status = TaskStatus.DOWN
-        private_message = f'{command_type.upper()} timeout'
+        private_message = f'{command_type.upper()} timeout (killed by ForcAD)'
         public_message = 'Timeout'
 
     result = helplib.models.CheckerVerdict(
