@@ -98,10 +98,13 @@ services:
     restart: on-failure
 
   redis:
-    image: redis:5.0.5-alpine
+    image: redis:5.0.7-alpine
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024
+    ports:
+      - "6379:6379"
 
   postgres:
     image: postgres:10.8-alpine

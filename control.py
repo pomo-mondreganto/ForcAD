@@ -118,7 +118,14 @@ def scale_celery(instances, *_args, **_kwargs):
         exit(1)
 
     subprocess.check_output(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--scale', f'celery={instances}', '-d'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--scale', f'celery={instances}', '-d', 'celery'],
+        cwd=BASE_DIR,
+    )
+
+
+def run_worker(*_args, **_kwargs):
+    subprocess.check_output(
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d', 'celery'],
         cwd=BASE_DIR,
     )
 
@@ -130,6 +137,7 @@ COMMANDS = {
     'build': build,
     'start': start_game,
     'scale_celery': scale_celery,
+    'worker': run_worker,
 }
 
 if __name__ == '__main__':

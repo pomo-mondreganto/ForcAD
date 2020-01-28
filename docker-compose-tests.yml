@@ -15,7 +15,7 @@ services:
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
-    restart: "no"
+    restart: no
 
   celerybeat:
     build:
@@ -26,7 +26,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
-    restart: "no"
+    restart: no
 
   flower:
     build:
@@ -38,7 +38,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - docker_config/celery/flower_environment.env
-    restart: "no"
+    restart: no
 
   initializer:
     build:
@@ -48,7 +48,7 @@ services:
       - ./docker_config/postgres/environment.env
     environment:
       - TEST=1
-    restart: "no"
+    restart: no
 
   webapi:
     build:
@@ -59,7 +59,7 @@ services:
     environment:
       - TEST=1
     tty: true
-    restart: "no"
+    restart: no
 
   react_builder:
     build:
@@ -69,7 +69,7 @@ services:
       - react_build:/react_build/
     environment:
       - TEST=1
-    restart: "no"
+    restart: no
 
   socat_flag_submitter:
     build:
@@ -83,7 +83,7 @@ services:
       - 31338:31338
     tty: true
     pids_limit: 100
-    restart: "no"
+    restart: no
 
   tcp_flag_submitter:
     build:
@@ -96,7 +96,7 @@ services:
     ports:
       - 31337:31337
     tty: true
-    restart: "no"
+    restart: no
 
   nginx:
     build:
@@ -107,13 +107,16 @@ services:
     ports:
       - 8080:80
       - 80:80
-    restart: "no"
+    restart: no
 
   redis:
-    image: redis:5.0.5-alpine
+    image: redis:5.0.7-alpine
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
+    restart: no
     sysctls:
       net.core.somaxconn: 1024
-    restart: "no"
+    ports:
+      - "6379:6379"
 
   postgres:
     image: postgres:10.8-alpine
@@ -123,7 +126,7 @@ services:
       - 5432:5432
     env_file:
       - ./docker_config/postgres/environment.env
-    restart: "no"
+    restart: no
 
   test_service:
     build:
@@ -131,4 +134,4 @@ services:
       dockerfile: docker_config/test_service/Dockerfile
     ports:
       - 10000:10000
-    restart: "no"
+    restart: no
