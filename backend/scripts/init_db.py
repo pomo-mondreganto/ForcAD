@@ -2,6 +2,7 @@
 
 import os
 import secrets
+
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,6 +49,7 @@ def run():
 
         global_config = config.get_global_config()
         global_config.pop('start_time')
+        global_config.pop('timezone', None)
 
         keys = global_config.keys()
         columns = ','.join(keys)

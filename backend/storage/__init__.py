@@ -63,6 +63,7 @@ async def get_async_redis_pool(loop):
         _async_redis_pool = await aioredis.create_redis_pool(
             address=address,
             db=db,
+            password=redis_config.get('password', None),
             minsize=5,
             maxsize=15,
             loop=loop,

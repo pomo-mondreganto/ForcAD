@@ -46,6 +46,32 @@ def setup_db(config):
         f.write('\n'.join(postgres_config))
 
 
+def setup_redis(config):
+    redis_env_path = os.path.join(
+        BASE_DIR,
+        'docker_config',
+        'redis',
+        'environment.env',
+    )
+
+    redis_conf = config['storages']['redis']
+    redis_host = redis_conf.get('host', 'redis')
+    redis_port = redis_conf.get('port', 6379)
+    redis_pass = redis_conf.get('password', None)
+    redis_db = redis_conf.get('db', 0)
+
+    redis_config = [
+        "# THIS FILE IS MANAGED BY 'control.py'",
+        'REDIS_HOST={redis_host}'.format(redis_host=redis_host),
+        'REDIS_PORT={redis_port}'.format(redis_port=redis_port),
+        'REDIS_PASSWORD={redis_pass}'.format(redis_pass=redis_pass),
+        'REDIS_DB={redis_db}'.format(redis_db=redis_db),
+    ]
+
+    with open(redis_env_path, 'w') as f:
+        f.write('\n'.join(redis_config))
+
+
 def setup_flower(config):
     flower_env_path = os.path.join(
         BASE_DIR,
@@ -72,6 +98,7 @@ def setup_config(*_args, **_kwargs):
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
     setup_db(config)
+    setup_redis(config)
     setup_flower(config)
 
 

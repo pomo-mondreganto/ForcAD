@@ -14,6 +14,7 @@ services:
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   celerybeat:
@@ -24,6 +25,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   flower:
@@ -34,6 +36,7 @@ services:
       - CELERY_CONTAINER_TYPE=flower
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
       - docker_config/celery/flower_environment.env
     restart: on-failure
 
@@ -44,6 +47,7 @@ services:
       dockerfile: docker_config/initializer/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   webapi:
@@ -52,6 +56,7 @@ services:
       dockerfile: docker_config/webapi/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
     tty: true
 
@@ -69,6 +74,7 @@ services:
       dockerfile: docker_config/socat_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31338:31338
     restart: on-failure
@@ -81,6 +87,7 @@ services:
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31337:31337
     restart: on-failure
@@ -103,6 +110,8 @@ services:
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024
+    env_file:
+      - ./docker_config/redis/environment.env
     ports:
       - "6379:6379"
 
@@ -113,3 +122,5 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
     restart: on-failure
+    ports:
+      - "5432:5432"

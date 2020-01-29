@@ -42,4 +42,28 @@ def get_tasks_config() -> list:
 
 
 def get_celery_config() -> dict:
-    return AppConfig.get_main_config()['celery']
+    storages = get_storage_config()
+    global_conf = get_global_config()
+
+    redis_host = storages['redis'].get('host', 'redis')
+    redis_port = storages['redis'].get('port', 6379)
+    redis_pass = storages['redis'].get('password', None)
+    redis_db = storages['redis'].get('db', 0) + 2
+
+    if redis_pass is not None:
+        broker_url = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{redis_db}'
+    else:
+        broker_url = f'redis://{redis_host}:{redis_port}/{redis_db}'
+
+    conf = {
+        'accept_content': [
+            'json',
+        ],
+        'broker_url': broker_url,
+        'result_serializer': 'json',
+        'task_serializer': 'json',
+        'timezone': global_conf['timezone'],
+        'worker_prefetch_multiplier': 1,
+    }
+
+    return conf

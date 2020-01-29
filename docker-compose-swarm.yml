@@ -14,6 +14,7 @@ services:
       - CELERY_CONTAINER_TYPE=worker
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   celerybeat:
@@ -25,6 +26,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   flower:
@@ -37,6 +39,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - docker_config/celery/flower_environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
 
@@ -47,6 +50,7 @@ services:
       dockerfile: docker_config/initializer/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   webapi:
@@ -56,6 +60,7 @@ services:
       dockerfile: docker_config/webapi/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
     tty: true
 
@@ -79,6 +84,7 @@ services:
       dockerfile: docker_config/socat_flag_submitter/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31337:31337
     restart: on-failure
@@ -105,8 +111,8 @@ services:
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024
-    ports:
-      - "6379:6379"
+    env_file:
+      - ./docker_config/redis/environment.env
 
   postgres:
     image: postgres:10.8-alpine
