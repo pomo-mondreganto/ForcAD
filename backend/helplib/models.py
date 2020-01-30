@@ -212,17 +212,20 @@ class CheckerVerdict(Model):
     public_message: str
     command: str
     status: helplib.status.TaskStatus
+    action: str
 
     def __init__(self,
                  private_message: str,
                  public_message: str,
                  command: str,
+                 action: str,
                  status: helplib.status.TaskStatus):
         super(CheckerVerdict, self).__init__()
         self.private_message = private_message
         self.public_message = public_message
         self.command = command
         self.status = status
+        self.action = action
 
     def to_dict(self):
         return {
@@ -230,10 +233,11 @@ class CheckerVerdict(Model):
             'public_message': self.public_message,
             'command': self.command,
             'status': self.status.value,
+            'action': self.action,
         }
 
     def __str__(self):
-        return f'CheckerVerdict {self.status.name}'
+        return f'CheckerVerdict ({self.action} {self.status.name})'
 
 
 class GlobalConfig(Model):

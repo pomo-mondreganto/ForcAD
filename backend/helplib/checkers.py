@@ -146,6 +146,7 @@ def run_generic_command(command: List,
         public_message=public_message,
         private_message=private_message,
         command=command_str,
+        action=command_type,
         status=status
     )
 

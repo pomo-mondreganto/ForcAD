@@ -62,6 +62,7 @@ def check_action(team: models.Team, task: models.Task, round: int) -> models.Che
         status=TaskStatus.CHECK_FAILED,
         private_message='Check pending',
         public_message='Check pending',
+        action='CHECK',
         command="",
     )
 
@@ -165,6 +166,7 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
         status=TaskStatus.UP,
         public_message='',
         private_message='',
+        action='GET',
         command="",
     )
 
@@ -196,9 +198,18 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
 @shared_task
 def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.Team, task: models.Task, round: int):
-    check_verdict = verdicts[0]
-    gets_verdict = verdicts[-1]
-    puts_verdicts = verdicts[1:-1]
+    check_verdict = None
+    puts_verdicts = []
+    gets_verdict = None
+    for verdict in verdicts:
+        if verdict.action.upper() == 'CHECK':
+            check_verdict = verdict
+        elif verdict.action.upper() == 'GET':
+            gets_verdict = verdict
+        elif verdict.action.upper() == 'PUT':
+            puts_verdicts.append(verdict)
+        else:
+            logger.error(f'Got invalid verdict action: {verdict.to_dict()}')
 
     logger.info(
         f"Finished testing team `{team.name}` task `{task.name}`. "
@@ -219,7 +230,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
             storage.tasks.update_task_status(
                 task_id=task.id,
                 team_id=team.id,
-                checker_verdict=check_verdict,
+                checker_verdict=verdict,
                 round=round,
             )
             return
@@ -228,10 +239,17 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
         storage.tasks.update_task_status(
             task_id=task.id,
             team_id=team.id,
-            checker_verdict=check_verdict,
+            checker_verdict=gets_verdict,
             round=round,
         )
         return
+
+    storage.tasks.update_task_status(
+        task_id=task.id,
+        team_id=team.id,
+        checker_verdict=check_verdict,
+        round=round,
+    )
 
 
 @shared_task
