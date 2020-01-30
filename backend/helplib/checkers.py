@@ -1,5 +1,6 @@
 import os
 import secrets
+import shlex
 
 import subprocess
 from typing import Tuple, List
@@ -140,10 +141,11 @@ def run_generic_command(command: List,
         private_message = f'{command_type.upper()} timeout (killed by ForcAD)'
         public_message = 'Timeout'
 
+    command_str = ' '.join(shlex.quote(x) for x in command)
     result = helplib.models.CheckerVerdict(
         public_message=public_message,
         private_message=private_message,
-        command=command,
+        command=command_str,
         status=status
     )
 

@@ -1,8 +1,8 @@
 import json
-from typing import List, Optional
 
 import aioredis
 import redis
+from typing import List, Optional
 
 import helplib
 import storage
@@ -92,7 +92,7 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
                 checker_verdict.status.value,
                 checker_verdict.public_message,
                 checker_verdict.private_message,
-                json.dumps(checker_verdict.command),
+                checker_verdict.command,
                 add,
                 task_id,
                 team_id,

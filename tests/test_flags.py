@@ -1,11 +1,11 @@
 import os
+from unittest import TestCase
+
+import requests
 import socket
 import subprocess
 import sys
 import time
-from unittest import TestCase
-
-import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,12 +37,16 @@ class FlagSubmitTestCase(TestCase):
         database_config['host'] = '127.0.0.1'
         self.db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
 
-    def get_last_flags_from_db(self):
+    def get_last_flags_from_db(self, team_token):
         conn = self.db_pool.getconn()
         curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
-        query = 'SELECT * FROM flags WHERE round >= (SELECT MAX(round) - 3 from flags)'
-        curs.execute(query)
+        query = '''
+        SELECT * FROM flags F 
+        INNER JOIN teams T on F.team_id = T.id 
+        WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s 
+        '''
+        curs.execute(query, (team_token,))
         return curs.fetchall()
 
     def submit_flags_to_tcp_mux(self, token, flags=None, token_valid=True):
@@ -86,8 +90,8 @@ class FlagSubmitTestCase(TestCase):
         return data
 
     def test_flag_submission(self):
-        flags = self.get_last_flags_from_db()
-        flags = [flag['flag'] for flag in flags]
+        ok_flags = self.get_last_flags_from_db(self.working_token)
+        ok_flags = [flag['flag'] for flag in ok_flags]
 
         self.submit_flags_to_tcp_mux(
             token='invalid token',
@@ -97,7 +101,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.unreachable_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -107,7 +111,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.unreachable_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -118,7 +122,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.working_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -145,8 +149,8 @@ class FlagSubmitTestCase(TestCase):
             if 'working' in team['name']:
                 hist = self.get_team_history(team['id'])
                 last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['lost'], len(flags))
+                self.assertEqual(last['lost'], len(ok_flags))
             else:
                 hist = self.get_team_history(team['id'])
                 last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['stolen'], len(flags))
+                self.assertEqual(last['stolen'], len(ok_flags))

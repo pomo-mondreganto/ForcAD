@@ -1,7 +1,7 @@
 import json
-from typing import Optional, List
 
 import yaml
+from typing import Optional, List
 
 import helplib.status
 
@@ -210,13 +210,13 @@ class CheckerVerdict(Model):
     """Model representing checker action result"""
     private_message: str
     public_message: str
-    command: List
+    command: str
     status: helplib.status.TaskStatus
 
     def __init__(self,
                  private_message: str,
                  public_message: str,
-                 command: List,
+                 command: str,
                  status: helplib.status.TaskStatus):
         super(CheckerVerdict, self).__init__()
         self.private_message = private_message
@@ -231,6 +231,9 @@ class CheckerVerdict(Model):
             'command': self.command,
             'status': self.status.value,
         }
+
+    def __str__(self):
+        return f'CheckerVerdict {self.status.name}'
 
 
 class GlobalConfig(Model):

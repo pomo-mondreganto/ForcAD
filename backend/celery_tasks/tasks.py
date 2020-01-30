@@ -1,9 +1,10 @@
 import random
 import secrets
 
-from celery import shared_task, chain
+from celery import shared_task, chain, group
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
+from typing import List
 
 import config
 import storage
@@ -45,23 +46,23 @@ def test_task():
 
 
 @shared_task
-def check_action(team_json, task_json, round: int):
+def check_action(team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
     """Run "check" checker action
 
-    :param team_json: json-dumped team
-    :param task_json: json-dumped task
+    :param team: models.Team instance
+    :param task: models.Task instance
     :param round: current round
+
+    :return verdict: models.CheckerVerdict instance
     """
-    team = models.Team.from_json(team_json)
-    task = models.Task.from_json(task_json)
 
     logger.info(f'Running checker for team {team.id} task {task.id}')
 
     tmp_verdict = models.CheckerVerdict(
         status=TaskStatus.CHECK_FAILED,
         private_message='Check pending',
-        public_message='',
-        command=[],
+        public_message='Check pending',
+        command="",
     )
 
     storage.tasks.update_task_status(
@@ -77,154 +78,160 @@ def check_action(team_json, task_json, round: int):
         checker_path=task.checker,
         env_path=task.env_path,
         host=team.ip,
-        team_name=team,
+        team_name=team.name,
         logger=logger,
         timeout=task.checker_timeout,
     )
 
-    if checker_verdict.status != TaskStatus.UP:
-        storage.tasks.update_task_status(
-            task_id=task.id,
-            team_id=team.id,
-            checker_verdict=checker_verdict,
-            round=round,
-        )
-        return False
-
-    return True
+    return checker_verdict
 
 
 @shared_task
-def put_action(check_ok, team_json, task_json, round):
+def noop(data):
+    """Helper task to return checker verdict"""
+    return data
+
+
+@shared_task
+def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
     """Run "put" checker action
 
-        :param check_ok: boolean passed by "check" action in chain to indicate successful check
-        :param team_json: json-dumped team
-        :param task_json: json-dumped task
+        :param _checker_verdict_code: integer verdict code passed by check action in chain
+        :param team: models.Team instance
+        :param task: models.Task instance
         :param round: current round
+        :returns verdict: models.CheckerVerdict instance
 
         If "check" action fails, put is not run.
-
-        It runs `task.puts` times, each time new flag is generated.
     """
-    if not check_ok:
-        return False
 
-    team = models.Team.from_json(team_json)
-    task = models.Task.from_json(task_json)
+    logger.info(f'Running PUT for team {team.id} task {task.id}')
 
-    logger.info(f'Running PUT {task.puts} time(s) for team {team.id} task {task.id}')
+    place = secrets.choice(range(1, task.places + 1))
+    flag = flags.generate_flag(
+        service=task.name[0].upper(),
+        team_id=team.id,
+        task_id=task.id,
+        round=round,
+    )
 
-    ok = True
-    for i in range(task.puts):
-        place = secrets.choice(range(1, task.places + 1))
-        flag = flags.generate_flag(
-            service=task.name[0].upper(),
-            team_id=team.id,
-            task_id=task.id,
-            round=round,
-        )
+    checker_verdict, flag_id = checkers.run_put_command(
+        checker_path=task.checker,
+        env_path=task.env_path,
+        host=team.ip,
+        place=place,
+        flag=flag,
+        team_name=team.name,
+        timeout=task.checker_timeout,
+        logger=logger,
+    )
 
-        checker_verdict, flag_id = checkers.run_put_command(
+    if task.checker_returns_flag_id:
+        flag.flag_data = checker_verdict.public_message
+    else:
+        flag.flag_data = flag_id
+
+    flag.vuln_number = place
+    storage.flags.add_flag(flag)
+
+    return checker_verdict
+
+
+@shared_task
+def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: models.Task,
+               round) -> models.CheckerVerdict:
+    """Run "get" checker action
+
+        :param prev_verdict: verdict passed by previous check or get in chain
+        :param team: models.Team instance
+        :param task: models.Task instance
+        :param round: current round
+        :returns: previous result & self result
+
+        If "check" or previous "get" actions fail, get is not run.
+
+    """
+    if prev_verdict.status != TaskStatus.UP:
+        return prev_verdict
+
+    flag_lifetime = storage.game.get_current_global_config().flag_lifetime
+
+    rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
+    round_to_check = random.choice(rounds_to_check)
+
+    logger.info(f'Running GET on round {round_to_check} for team {team.id} task {task.id}')
+
+    checker_verdict = models.CheckerVerdict(
+        status=TaskStatus.UP,
+        public_message='',
+        private_message='',
+        command="",
+    )
+
+    flag = storage.flags.get_random_round_flag(
+        team_id=team.id,
+        task_id=task.id,
+        round=round_to_check,
+        current_round=round,
+    )
+
+    if not flag:
+        checker_verdict.status = TaskStatus.UP
+        # checker_verdict.status = TaskStatus.CORRUPT
+        # checker_verdict.private_message = f'No flags from round {get_round}'
+        # checker_verdict.public_message = f'Could not get flag from round {get_round}'
+    else:
+        checker_verdict = checkers.run_get_command(
             checker_path=task.checker,
             env_path=task.env_path,
             host=team.ip,
-            place=place,
             flag=flag,
             team_name=team.name,
             timeout=task.checker_timeout,
             logger=logger,
         )
 
-        if checker_verdict.status == TaskStatus.UP:
-            if task.checker_returns_flag_id:
-                flag.flag_data = checker_verdict.public_message
-            else:
-                flag.flag_data = flag_id
-            flag.vuln_number = place
-            storage.flags.add_flag(flag)
-        else:
-            storage.tasks.update_task_status(
-                task_id=task.id,
-                team_id=team.id,
-                checker_verdict=checker_verdict,
-                round=round,
-            )
-            ok = False
-            break
-
-    return ok
+    return checker_verdict
 
 
 @shared_task
-def get_action(put_ok, team_json, task_json, round):
-    """Run "get" checker action
+def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.Team, task: models.Task, round: int):
+    check_verdict = verdicts[0]
+    gets_verdict = verdicts[-1]
+    puts_verdicts = verdicts[1:-1]
 
-        :param put_ok: boolean passed by "put" action in chain to indicate successful check and put
-        :param team_json: json-dumped team
-        :param task_json: json-dumped task
-        :param round: current round
-
-        If "check" or "put" actions fail, get is not run.
-
-        It runs `task.gets` times, each time a flag is chosen randomly from last "flag_lifetime" rounds
-    """
-    if not put_ok:
-        return False
-
-    team = models.Team.from_json(team_json)
-    task = models.Task.from_json(task_json)
-
-    flag_lifetime = storage.game.get_current_global_config().flag_lifetime
-
-    rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
-    random.shuffle(rounds_to_check)
-    rounds_to_check = rounds_to_check[:task.gets]
-
-    logger.info(f'Running GET on rounds {rounds_to_check} for team {team.id} task {task.id}')
-
-    checker_verdict = models.CheckerVerdict(
-        status=TaskStatus.UP,
-        public_message='',
-        private_message='',
-        command=[],
+    logger.info(
+        f"Finished testing team `{team.name}` task `{task.name}`. "
+        f"Verdicts: check: {check_verdict} puts {puts_verdicts} gets {gets_verdict}"
     )
 
-    for get_round in rounds_to_check:
-        flag = storage.flags.get_random_round_flag(
-            team_id=team.id,
+    if check_verdict.status != TaskStatus.UP:
+        storage.tasks.update_task_status(
             task_id=task.id,
-            round=get_round,
-            current_round=round,
+            team_id=team.id,
+            checker_verdict=check_verdict,
+            round=round,
         )
+        return
 
-        if not flag:
-            checker_verdict.status = TaskStatus.UP
-            # checker_verdict.status = TaskStatus.CORRUPT
-            # checker_verdict.private_message = f'No flags from round {get_round}'
-            # checker_verdict.public_message = f'Could not get flag from round {get_round}'
-        else:
-            checker_verdict = checkers.run_get_command(
-                checker_path=task.checker,
-                env_path=task.env_path,
-                host=team.ip,
-                flag=flag,
-                team_name=team.name,
-                timeout=task.checker_timeout,
-                logger=logger,
+    for verdict in puts_verdicts:
+        if verdict.status != TaskStatus.UP:
+            storage.tasks.update_task_status(
+                task_id=task.id,
+                team_id=team.id,
+                checker_verdict=check_verdict,
+                round=round,
             )
+            return
 
-        if checker_verdict.status != TaskStatus.UP:
-            break
-
-    storage.tasks.update_task_status(
-        task_id=task.id,
-        team_id=team.id,
-        checker_verdict=checker_verdict,
-        round=round,
-    )
-
-    return checker_verdict.status == TaskStatus.UP
+    if gets_verdict != TaskStatus.UP:
+        storage.tasks.update_task_status(
+            task_id=task.id,
+            team_id=team.id,
+            checker_verdict=check_verdict,
+            round=round,
+        )
+        return
 
 
 @shared_task
@@ -275,13 +282,22 @@ def process_round():
     tasks = storage.tasks.get_tasks()
     for task in tasks:
         for team in teams:
-            chained = chain(
-                check_action.s(team.to_json(), task.to_json(), new_round),
-                put_action.s(team.to_json(), task.to_json(), new_round),
-                get_action.s(team.to_json(), task.to_json(), new_round),
-            )
+            check = check_action.s(team, task, new_round)
 
-            chained.apply_async()
+            puts = group([
+                put_action.s(team, task, new_round)
+                for _ in range(task.puts)
+            ])
+
+            gets = chain(*[
+                get_action.s(team, task, new_round)
+                for _ in range(task.gets)
+            ])
+
+            handler = checker_results_handler.s(team, task, new_round)
+
+            scheme = chain(check, group([noop, puts, gets]), handler)
+            scheme.apply_async()
 
 
 @shared_task

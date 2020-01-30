@@ -48,20 +48,23 @@ def get_celery_config() -> dict:
     redis_host = storages['redis'].get('host', 'redis')
     redis_port = storages['redis'].get('port', 6379)
     redis_pass = storages['redis'].get('password', None)
-    redis_db = storages['redis'].get('db', 0) + 2
+    redis_db = storages['redis'].get('db', 0)
+    broker_db = redis_db + 1
+    result_db = redis_db + 2
 
     if redis_pass is not None:
-        broker_url = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{redis_db}'
+        broker_url = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{broker_db}'
+        result_backend = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{result_db}'
     else:
         broker_url = f'redis://{redis_host}:{redis_port}/{redis_db}'
+        result_backend = f'redis://{redis_host}:{redis_port}/{result_db}'
 
     conf = {
-        'accept_content': [
-            'json',
-        ],
+        'accept_content': ['pickle'],
         'broker_url': broker_url,
-        'result_serializer': 'json',
-        'task_serializer': 'json',
+        'result_backend': result_backend,
+        'result_serializer': 'pickle',
+        'task_serializer': 'pickle',
         'timezone': global_conf['timezone'],
         'worker_prefetch_multiplier': 1,
     }
