@@ -127,13 +127,14 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         logger=logger,
     )
 
-    if task.checker_returns_flag_id:
-        flag.flag_data = checker_verdict.public_message
-    else:
-        flag.flag_data = flag_id
+    if checker_verdict.status == TaskStatus.UP:
+        if task.checker_returns_flag_id:
+            flag.flag_data = checker_verdict.public_message
+        else:
+            flag.flag_data = flag_id
 
-    flag.vuln_number = place
-    storage.flags.add_flag(flag)
+        flag.vuln_number = place
+        storage.flags.add_flag(flag)
 
     return checker_verdict
 
@@ -153,7 +154,10 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     """
     if prev_verdict.status != TaskStatus.UP:
-        return prev_verdict
+        # to avoid returning CHECK verdict
+        new_verdict = models.CheckerVerdict.from_dict(prev_verdict.to_dict())
+        new_verdict.action = 'GET'
+        return new_verdict
 
     flag_lifetime = storage.game.get_current_global_config().flag_lifetime
 

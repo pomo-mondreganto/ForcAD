@@ -114,7 +114,7 @@ def run_generic_command(command: List,
 
         if killed:
             logger.warning(
-                f'Process was forcefully killed during {command_type.upper()} '
+                f'Process was forcefully killed during {command_type} '
                 f'for team {team_name}'
             )
 
@@ -177,7 +177,7 @@ def run_check_command(checker_path: str,
 
     return run_generic_command(
         command=check_command,
-        command_type='check',
+        command_type='CHECK',
         env_path=env_path,
         timeout=timeout,
         team_name=team_name,
@@ -219,7 +219,7 @@ def run_put_command(checker_path: str,
 
     return run_generic_command(
         command=put_command,
-        command_type='put',
+        command_type='PUT',
         env_path=env_path,
         timeout=timeout,
         team_name=team_name,
@@ -259,7 +259,7 @@ def run_get_command(checker_path: str,
 
     return run_generic_command(
         command=get_command,
-        command_type='get',
+        command_type='GET',
         env_path=env_path,
         timeout=timeout,
         team_name=team_name,
