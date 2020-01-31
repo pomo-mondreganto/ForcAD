@@ -1,4 +1,5 @@
 import os
+
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -6,34 +7,31 @@ sys.path.insert(0, BASE_DIR)
 
 import asyncio
 import json
-from functools import wraps
 
 from sanic import Sanic
 from sanic.response import json as json_response, html
-import storage
+from sanic_cors import CORS
 from aioredis.pubsub import Receiver
 
+import storage
 import socketio
 
-sio = socketio.AsyncServer(async_mode='sanic')
+sio = socketio.AsyncServer(
+    async_mode='sanic',
+    cors_allowed_origins=[],
+)
+
 app = Sanic()
+app.enable_websocket(True)
+CORS(app)
+
 sio.attach(app)
-
-
-def cors_allow_all(func):
-    @wraps(func)
-    async def wrapper(request, *args, **kwargs):
-        response = await func(request, *args, **kwargs)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-
-    return wrapper
 
 
 @app.listener('before_server_start')
 async def before_server_start(_sanic, loop):
     mpsc = Receiver(loop=loop)
-    redis = await storage.get_async_redis_pool(loop)
+    redis = await storage.get_async_redis_storage(loop, always_create_new=True)
     await redis.subscribe(
         mpsc.channel('scoreboard'),
         mpsc.channel('stolen_flags'),
@@ -48,7 +46,6 @@ async def background_task(mpsc):
         except AttributeError:
             pass
         else:
-            print(message, channel, channel.name)
             if channel.name == b'stolen_flags':
                 print('Emitting flag stolen event')
                 await sio.emit('flag_stolen', {'data': message}, namespace='/api/sio_interface')
@@ -87,7 +84,6 @@ async def handle_connect(_sid, _environ):
 
 
 @app.route('/api/teams/')
-@cors_allow_all
 async def get_teams(_request):
     teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
     teams = [team.to_dict_for_participants() for team in teams]
@@ -95,7 +91,6 @@ async def get_teams(_request):
 
 
 @app.route('/api/tasks/')
-@cors_allow_all
 async def get_tasks(_request):
     tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
     tasks = [task.to_dict_for_participants() for task in tasks]
@@ -104,7 +99,6 @@ async def get_tasks(_request):
 
 # noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
-@cors_allow_all
 async def get_team_history(_request, team_id):
     round = storage.game.get_current_round()
     teamtasks = storage.tasks.get_teamtasks_of_team_for_participants(team_id=team_id, current_round=round)
@@ -112,10 +106,9 @@ async def get_team_history(_request, team_id):
 
 
 @app.route('/api/status/')
-@cors_allow_all
 async def status(_request):
     return html("OK")
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)

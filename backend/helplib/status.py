@@ -8,3 +8,10 @@ class TaskStatus(enum.Enum):
     MUMBLE = 103
     DOWN = 104
     CHECK_FAILED = 110
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def counter(self):
+        return self.value

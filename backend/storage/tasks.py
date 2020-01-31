@@ -49,7 +49,7 @@ def get_tasks() -> List[models.Task]:
 async def get_tasks_async(loop) -> List[models.Task]:
     """Get list of tasks registered in the database (asynchronous version)"""
 
-    redis_aio = await storage.get_async_redis_pool(loop)
+    redis_aio = await storage.get_async_redis_storage(loop)
 
     while True:
         try:

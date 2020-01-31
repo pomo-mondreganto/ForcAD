@@ -32,7 +32,16 @@ tasks:
     checker_returns_flag_id: true
     checker_timeout: 10
     gets: 2
-    name: "test service"
+    name: test_basic_service
+    places: 5
+    puts: 2
+
+  - checker: test_service/gevent_checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gevent_optimized: true
+    gets: 2
+    name: test_gevent_service
     places: 5
     puts: 2
 
