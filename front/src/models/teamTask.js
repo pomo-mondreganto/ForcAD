@@ -18,7 +18,7 @@ class TeamTask {
         this.stolen = stolen;
         this.lost = lost;
         this.sla = (100.0 * upRounds) / Math.max(round, 1);
-        this.score = (score * this.sla) / 100;
+        this.score = score;
         this.message = message;
     }
 

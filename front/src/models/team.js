@@ -13,7 +13,10 @@ class Team {
             .filter(({ team_id: teamId }) => teamId === this.id)
             .map(teamTask => new TeamTask(teamTask))
             .sort(TeamTask.comp);
-        this.score = this.tasks.reduce((acc, { score }) => acc + score, 0);
+        this.score = this.tasks.reduce(
+            (acc, { score, sla }) => acc + score * (sla / 100.0),
+            0
+        );
     }
 
     static comp(A, B) {
