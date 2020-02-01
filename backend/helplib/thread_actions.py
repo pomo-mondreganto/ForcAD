@@ -45,10 +45,15 @@ def run_generic_action_in_thread(checker_path: str,
         verdict.public_message = 'Checker timed out'
         verdict.private_message = f'Checker for {action_name} timed out'
 
-    except (SystemExit, Exception) as e:
+    except BaseException as e:
         tb = format_exc()
-        exc = f'{type(e)} on {action_name}: {e}\n{tb}'
-        logger.warning(f'{action_name} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
+        exc = f'{type(e)}: {e}\n{tb}'
+
+        log_func = logger.warning
+        if not isinstance(e, Exception) and not isinstance(e, SystemExit):
+            log_func = logger.error
+
+        log_func(f'{action_name} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
 
         verdict.status = helplib.status.TaskStatus.CHECK_FAILED
         verdict.public_message = f'{action_name} failed'
@@ -57,7 +62,7 @@ def run_generic_action_in_thread(checker_path: str,
     else:
         logger.warning('Checker did not raise CheckFinished')
         verdict.status = checker.status
-        verdict.public_message = checker.public
-        verdict.private_message = checker.private
+        verdict.public_message = checker.public[:1024]
+        verdict.private_message = checker.private[:1024]
 
     return verdict

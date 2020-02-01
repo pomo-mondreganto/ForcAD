@@ -23,7 +23,7 @@ sio = socketio.AsyncServer(
 
 app = Sanic()
 app.enable_websocket(True)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 sio.attach(app)
 
