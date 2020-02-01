@@ -47,7 +47,7 @@ def run_generic_action_in_thread(checker_path: str,
 
     except BaseException as e:
         tb = format_exc()
-        exc = f'{type(e)} on {action_name}: {e}\n{tb}'
+        exc = f'{type(e)}: {e}\n{tb}'
 
         log_func = logger.warning
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
@@ -62,7 +62,7 @@ def run_generic_action_in_thread(checker_path: str,
     else:
         logger.warning('Checker did not raise CheckFinished')
         verdict.status = checker.status
-        verdict.public_message = checker.public
-        verdict.private_message = checker.private
+        verdict.public_message = checker.public[:1024]
+        verdict.private_message = checker.private[:1024]
 
     return verdict
