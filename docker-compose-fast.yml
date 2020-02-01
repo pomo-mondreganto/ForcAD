@@ -1,7 +1,7 @@
 version: '2.4'
 
 volumes:
-  react_build:
+  front_build:
 
 services:
   celery:
@@ -60,12 +60,12 @@ services:
     restart: on-failure
     tty: true
 
-  react_builder:
+  front_builder:
     build:
       context: .
-      dockerfile: docker_config/react_builder/Dockerfile
+      dockerfile: docker_config/front_builder/Dockerfile
     volumes:
-      - react_build:/react_build/
+      - front_build:/front_build/
     restart: on-failure
 
   socat_flag_submitter:
@@ -98,7 +98,7 @@ services:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
     volumes:
-      - react_build:/react_build
+      - front_build:/front_build
     ports:
       - 8080:80
       - 80:80

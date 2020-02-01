@@ -1,7 +1,7 @@
 version: '3.7'
 
 volumes:
-  react_build:
+  front_build:
   database:
 
 services:
@@ -64,11 +64,11 @@ services:
     restart: on-failure
     tty: true
 
-  react_builder:
-    image: ${FORCAD_REGISTRY}/forcad_react_builder:${FORCAD_ARCH_TAG}
+  front_builder:
+    image: ${FORCAD_REGISTRY}/forcad_front_builder:${FORCAD_ARCH_TAG}
     build:
       context: .
-      dockerfile: docker_config/react_builder/Dockerfile
+      dockerfile: docker_config/front_builder/Dockerfile
     volumes:
       - react_build:/react_build/
     restart: on-failure
@@ -96,7 +96,7 @@ services:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
     volumes:
-      - react_build:/react_build
+      - front_build:/front_build
     ports:
       - 8080:80
     restart: on-failure
