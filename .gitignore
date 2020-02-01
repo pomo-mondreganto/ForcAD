@@ -46,3 +46,4 @@ checkers/*
 # End of https://www.gitignore.io/api/node
 
 backend/rs_implementation/build
+node_modules/
