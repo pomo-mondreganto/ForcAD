@@ -5,7 +5,7 @@
         </header>
         <container>
             <statuses />
-            <scoreboard :updateRound="updateRound" />
+            <team-scoreboard :updateRound="updateRound" />
         </container>
         <footer class="footer">
             Powered by <span class="team">C4T BuT S4D</span> CTF team
@@ -16,14 +16,14 @@
 <script>
 import Container from '@/components/Container/Index';
 import Topbar from '@/components/Topbar/Index';
-import Scoreboard from '@/components/Scoreboard/Index';
+import TeamScoreboard from '@/components/TeamScoreboard/Index';
 import Statuses from '@/components/Statuses/Index';
 
 export default {
     components: {
         Container,
         Topbar,
-        Scoreboard,
+        TeamScoreboard,
         Statuses,
     },
 

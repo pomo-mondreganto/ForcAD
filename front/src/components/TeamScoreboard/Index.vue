@@ -2,7 +2,7 @@
     <div v-if="error !== null">
         {{ error }}
     </div>
-    <div v-else-if="teams !== null" class="table">
+    <div v-else-if="team !== null" class="table">
         <div class="row">
             <div class="number">#</div>
             <div class="team">team</div>
@@ -13,37 +13,30 @@
                 </div>
             </div>
         </div>
-        <transition-group name="teams-list">
-            <div
-                class="row"
-                v-for="({ name, score, tasks, ip, id }, index) in teams"
-                :key="name"
-            >
-                <div class="number" :class="`top-${index + 1}`">
-                    {{ index + 1 }}
+        <div>
+            <div class="row" v-for="state in states" :key="state.tasks[0].id">
+                <div class="number">
+                    {{ state.tasks[0].round }}
                 </div>
-                <div
-                    class="team team-row"
-                    @click="openTeam(id)"
-                    :class="`top-${index + 1}`"
-                >
-                    <div class="team-name">{{ name }}</div>
-                    <div class="ip">{{ ip }}</div>
+                <div class="team">
+                    <div class="team-name">{{ team.name }}</div>
+                    <div class="ip">{{ team.ip }}</div>
                 </div>
-                <div class="score" :class="`top-${index + 1}`">
-                    {{ score.toFixed(2) }}
+                <div class="score">
+                    {{ state.score.toFixed(2) }}
                 </div>
                 <div class="service">
                     <div
                         v-for="{
                             id,
-                            sla,
+                            up_rounds: upRounds,
+                            round,
                             score,
                             stolen,
                             lost,
                             message,
                             status,
-                        } in tasks"
+                        } in state.tasks"
                         :key="id"
                         class="service-cell"
                         :class="`status-${status}`"
@@ -55,7 +48,13 @@
                             </span>
                         </button>
                         <div class="sla">
-                            <strong>SLA</strong>: {{ sla.toFixed(2) }}%
+                            <strong>SLA</strong>:
+                            {{
+                                (
+                                    (100.0 * upRounds) /
+                                    Math.max(round, 1)
+                                ).toFixed(2)
+                            }}%
                         </div>
                         <div class="fp">
                             <strong>FP</strong>: {{ score.toFixed(2) }}
@@ -66,15 +65,12 @@
                     </div>
                 </div>
             </div>
-        </transition-group>
+        </div>
     </div>
 </template>
 
 <script>
-import io from 'socket.io-client';
 import { serverUrl } from '@/config';
-import Task from '@/models/task';
-import Team from '@/models/team';
 
 export default {
     props: {
@@ -84,67 +80,58 @@ export default {
     data: function() {
         return {
             error: null,
-            server: null,
+            team: null,
+            teamId: null,
             tasks: null,
-            teams: null,
+            round: 0,
         };
     },
 
-    methods: {
-        openTeam: function(id) {
-            this.$router.push({ name: 'team', params: { id } }).catch(() => {});
-        },
-    },
+    created: async function() {
+        this.teamId = this.$route.params.id;
+        try {
+            const { data: teams } = await this.$http.get(
+                `${serverUrl}/api/teams/`
+            );
+            const { data: tasks } = await this.$http.get(
+                `${serverUrl}/api/tasks/`
+            );
+            const { data: states } = await this.$http.get(
+                `${serverUrl}/api/teams/${this.teamId}`
+            );
+            this.team = teams.filter(({ id }) => id == this.teamId)[0];
+            this.tasks = tasks.sort(({ id: idA }, { id: idB }) => idA - idB);
+            this.round = states.reduce(
+                (acc, { round }) => Math.max(acc, round),
+                0
+            );
+            this.updateRound(this.round);
+            this.states = [];
+            for (let i = this.round; i >= 0; i -= 1) {
+                this.states.push({
+                    tasks: states
+                        .filter(({ round }) => round === i)
+                        .sort(
+                            ({ task_id: taskIdA }, { task_id: taskIdB }) =>
+                                taskIdA - taskIdB
+                        ),
+                    score: states
+                        .filter(({ round }) => round === i)
+                        .reduce((acc, { score }) => acc + score, 0),
+                });
+            }
 
-    created: function() {
-        this.server = io(`${serverUrl}/api/sio_interface`, {
-            forceNew: true,
-        });
-        this.server.on('connect_error', () => {
+            this.states = this.states.filter(
+                state => state.tasks.length == this.states[0].tasks.length
+            );
+        } catch {
             this.error = "Can't connect to server";
-        });
-        this.server.on('init_scoreboard', ({ data }) => {
-            this.error = null;
-            const {
-                state: { round, team_tasks: teamTasks },
-                tasks,
-                teams,
-            } = JSON.parse(data);
-
-            this.updateRound(round);
-            this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
-            this.teams = teams
-                .map(
-                    team =>
-                        new Team({
-                            ...team,
-                            teamTasks,
-                        })
-                )
-                .sort(Team.comp);
-        });
-        this.server.on('update_scoreboard', ({ data }) => {
-            this.error = null;
-            const { round, team_tasks: teamTasks } = JSON.parse(data);
-            this.updateRound(round);
-            this.teams.forEach(team => {
-                team.update(teamTasks);
-            });
-            this.teams = this.teams.sort(Team.comp);
-        });
+        }
     },
 };
 </script>
 
 <style lang="scss" scoped>
-.team-row {
-    cursor: pointer;
-}
-
-.teams-list-move {
-    transition: transform 1s;
-}
-
 .table {
     display: flex;
     flex-flow: column nowrap;

@@ -29,11 +29,19 @@ export default {
     },
 
     created: async function() {
-        const { data: teams } = await this.$http.get(`${serverUrl}/api/teams/`);
-        const { data: tasks } = await this.$http.get(`${serverUrl}/api/tasks/`);
-
-        this.teams = teams;
-        this.tasks = tasks;
+        try {
+            const { data: teams } = await this.$http.get(
+                `${serverUrl}/api/teams/`
+            );
+            const { data: tasks } = await this.$http.get(
+                `${serverUrl}/api/tasks/`
+            );
+            this.teams = teams;
+            this.tasks = tasks;
+        } catch {
+            this.error = "Can't connect to server";
+            return;
+        }
 
         this.server = io(`${serverUrl}/api/sio_interface`, {
             forceNew: true,
