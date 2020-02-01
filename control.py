@@ -145,7 +145,15 @@ def scale_celery(instances, *_args, **_kwargs):
         exit(1)
 
     subprocess.check_output(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--scale', f'celery={instances}', '-d', 'celery'],
+        [
+            'docker-compose',
+            '-f', DOCKER_COMPOSE_FILE,
+            'up', '-d',
+            '--no-recreate',
+            '--no-build',
+            '--scale', f'celery={instances}',
+            'celery',
+        ],
         cwd=BASE_DIR,
     )
 
