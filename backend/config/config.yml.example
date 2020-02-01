@@ -1,59 +1,44 @@
-global:
-  round_time: 60 # should be ~4 times greater than the highest checker timeout
-  flag_lifetime: 5
-  start_time: 2019-04-18 15:47:00+03:00 # Don't forget the timezone
-  checkers_path: /checkers/
-  env_path: /checkers/bin/ # can be specified for each task
-  default_score: 1000 # global for all tasks if not specified
-  game_hardness: 1300.0 # game hardness, default 1300, Recommended 500-2000
-  inflation: false  # give points for attacking zero-fp teams
-
-tasks:
-  - name: Test task
-    checker: awesomeBlog/check.py # relative to checkers_path
-    env_path: /additional/env
-    gets: 1
-    puts: 1
-    places: 1
-    checker_timeout: 30
-    checker_returns_flag_id: true
-
-celery:
-  broker_url: redis://redis:6379/1
-  backend_url: redis://redis:6379/1
-  task_serializer: json
-  accept_content:
-    - json
-  result_serializer: json
-  broker_transport_options:
-    visibility_timeout: 36000
-
-  worker_prefetch_multiplier: 1
-
-  timezone: Europe/Moscow
-
 flower:
+  password: secret
   username: system_admin
-  password: password
+
+global:
+  timezone: Europe/Moscow
+  checkers_path: /checkers/
+  default_score: 2500
+  env_path: /checkers/bin/
+  flag_lifetime: 5
+  game_hardness: 3000.0
+  inflation: true
+  round_time: 20
+  start_time: 2019-11-30 15:30:00+03:00
 
 storages:
-  # Use db configuration from postgres environment file
-  # (docker_config/postgres/environment.env)
   db:
+    dbname: system_db
     host: postgres
+    password: secret
     port: 5432
-    user: user
-    password: password
-    dbname: test_db
+    user: system_admin
 
   redis:
+    db: 0
     host: redis
     port: 6379
-    db: 0
+    password: secret
+
+tasks:
+  - checker: test_service/checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gets: 2
+    name: "test service"
+    places: 5
+    puts: 2
 
 teams:
-  - name: "Test team"
-    ip: "127.0.0.1"
+  - ip: test_service
+    name: "Test working team"
 
-  - name: "Shadow Servants"
-    ip: "192.168.1.3"
+  - ip: 127.0.0.1
+    name: "Test unreachable team"

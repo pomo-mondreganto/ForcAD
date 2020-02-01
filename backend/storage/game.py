@@ -1,6 +1,5 @@
-from typing import Optional
-
 import redis
+from typing import Optional
 
 import storage
 from helplib import models
@@ -115,7 +114,7 @@ def get_current_global_config() -> models.GlobalConfig:
 
 async def get_current_round_async(loop) -> int:
     """Get current round (asynchronous version)"""
-    redis_pool = await storage.get_async_redis_pool(loop)
+    redis_pool = await storage.get_async_redis_storage(loop)
     round = await redis_pool.get('round')
 
     try:
@@ -145,7 +144,7 @@ def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
 
 async def get_game_state_async(loop) -> Optional[models.GameState]:
     """Get game state for current round (asynchronous version)"""
-    redis_pool = await storage.get_async_redis_pool(loop)
+    redis_pool = await storage.get_async_redis_storage(loop)
     state = await redis_pool.get('game_state')
     try:
         state = state.decode()

@@ -46,6 +46,11 @@ def test_task():
 
 
 @shared_task
+def exception_callback(*args, **kwargs):
+    logger.warning(f"Exception callback was called with args {args}, kwargs {kwargs}")
+
+
+@shared_task
 def check_action(team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
     """Run "check" checker action
 
@@ -56,34 +61,11 @@ def check_action(team: models.Team, task: models.Task, round: int) -> models.Che
     :return verdict: models.CheckerVerdict instance
     """
 
-    logger.info(f'Running checker for team {team.id} task {task.id}')
+    logger.info(f'Running CHECK for team `{team.name}` task `{task.name}`')
+    runner = checkers.CheckerRunner(team=team, task=task, logger=logger)
+    verdict = runner.check()
 
-    tmp_verdict = models.CheckerVerdict(
-        status=TaskStatus.CHECK_FAILED,
-        private_message='Check pending',
-        public_message='Check pending',
-        command="",
-    )
-
-    storage.tasks.update_task_status(
-        task_id=task.id,
-        team_id=team.id,
-        checker_verdict=tmp_verdict,
-        round=round,
-    )
-
-    logger.info(f'Running CHECK for team {team.id} task {task.id}')
-
-    checker_verdict = checkers.run_check_command(
-        checker_path=task.checker,
-        env_path=task.env_path,
-        host=team.ip,
-        team_name=team.name,
-        logger=logger,
-        timeout=task.checker_timeout,
-    )
-
-    return checker_verdict
+    return verdict
 
 
 @shared_task
@@ -105,7 +87,7 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         If "check" action fails, put is not run.
     """
 
-    logger.info(f'Running PUT for team {team.id} task {task.id}')
+    logger.info(f'Running CHECK for team `{team.name}` task `{task.name}`')
 
     place = secrets.choice(range(1, task.places + 1))
     flag = flags.generate_flag(
@@ -114,27 +96,20 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         task_id=task.id,
         round=round,
     )
-
-    checker_verdict, flag_id = checkers.run_put_command(
-        checker_path=task.checker,
-        env_path=task.env_path,
-        host=team.ip,
-        place=place,
-        flag=flag,
-        team_name=team.name,
-        timeout=task.checker_timeout,
-        logger=logger,
-    )
-
-    if task.checker_returns_flag_id:
-        flag.flag_data = checker_verdict.public_message
-    else:
-        flag.flag_data = flag_id
-
+    flag.flag_data = secrets.token_hex(20)
     flag.vuln_number = place
-    storage.flags.add_flag(flag)
 
-    return checker_verdict
+    runner = checkers.CheckerRunner(team=team, task=task, flag=flag, logger=logger)
+
+    verdict = runner.put()
+
+    if verdict.status == TaskStatus.UP:
+        if task.checker_returns_flag_id:
+            flag.flag_data = verdict.public_message
+
+        storage.flags.add_flag(flag)
+
+    return verdict
 
 
 @shared_task
@@ -152,7 +127,16 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     """
     if prev_verdict.status != TaskStatus.UP:
-        return prev_verdict
+        # to avoid returning CHECK verdict
+        new_verdict = models.CheckerVerdict(
+            action='GET',
+            status=prev_verdict.status,
+            command='',
+            public_message='Skipped GET, previous action failed',
+            private_message=f'Previous returned {prev_verdict}'
+        )
+
+        return new_verdict
 
     flag_lifetime = storage.game.get_current_global_config().flag_lifetime
 
@@ -161,10 +145,11 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     logger.info(f'Running GET on round {round_to_check} for team {team.id} task {task.id}')
 
-    checker_verdict = models.CheckerVerdict(
+    verdict = models.CheckerVerdict(
         status=TaskStatus.UP,
         public_message='',
         private_message='',
+        action='GET',
         command="",
     )
 
@@ -176,29 +161,29 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
     )
 
     if not flag:
-        checker_verdict.status = TaskStatus.UP
-        # checker_verdict.status = TaskStatus.CORRUPT
-        # checker_verdict.private_message = f'No flags from round {get_round}'
-        # checker_verdict.public_message = f'Could not get flag from round {get_round}'
+        verdict.status = TaskStatus.UP
+        verdict.private_message = f'No flag from round {round_to_check}'
     else:
-        checker_verdict = checkers.run_get_command(
-            checker_path=task.checker,
-            env_path=task.env_path,
-            host=team.ip,
-            flag=flag,
-            team_name=team.name,
-            timeout=task.checker_timeout,
-            logger=logger,
-        )
+        runner = checkers.CheckerRunner(team=team, task=task, flag=flag, logger=logger)
+        verdict = runner.get()
 
-    return checker_verdict
+    return verdict
 
 
 @shared_task
 def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.Team, task: models.Task, round: int):
-    check_verdict = verdicts[0]
-    gets_verdict = verdicts[-1]
-    puts_verdicts = verdicts[1:-1]
+    check_verdict = None
+    puts_verdicts = []
+    gets_verdict = None
+    for verdict in verdicts:
+        if verdict.action.upper() == 'CHECK':
+            check_verdict = verdict
+        elif verdict.action.upper() == 'GET':
+            gets_verdict = verdict
+        elif verdict.action.upper() == 'PUT':
+            puts_verdicts.append(verdict)
+        else:
+            logger.error(f'Got invalid verdict action: {verdict.to_dict()}')
 
     logger.info(
         f"Finished testing team `{team.name}` task `{task.name}`. "
@@ -219,7 +204,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
             storage.tasks.update_task_status(
                 task_id=task.id,
                 team_id=team.id,
-                checker_verdict=check_verdict,
+                checker_verdict=verdict,
                 round=round,
             )
             return
@@ -228,10 +213,17 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
         storage.tasks.update_task_status(
             task_id=task.id,
             team_id=team.id,
-            checker_verdict=check_verdict,
+            checker_verdict=gets_verdict,
             round=round,
         )
         return
+
+    storage.tasks.update_task_status(
+        task_id=task.id,
+        team_id=team.id,
+        checker_verdict=check_verdict,
+        round=round,
+    )
 
 
 @shared_task
@@ -281,16 +273,17 @@ def process_round():
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
     for task in tasks:
+        hard_timeout = task.checker_timeout + 5
         for team in teams:
-            check = check_action.s(team, task, new_round)
+            check = check_action.s(team, task, new_round).set(time_limit=hard_timeout)
 
             puts = group([
-                put_action.s(team, task, new_round)
+                put_action.s(team, task, new_round).set(time_limit=hard_timeout)
                 for _ in range(task.puts)
             ])
 
             gets = chain(*[
-                get_action.s(team, task, new_round)
+                get_action.s(team, task, new_round).set(time_limit=hard_timeout)
                 for _ in range(task.gets)
             ])
 

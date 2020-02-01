@@ -42,7 +42,7 @@ def get_teams() -> List[models.Team]:
 async def get_teams_async(loop) -> List[models.Team]:
     """Get list of teams registered in the database (asynchronous version)"""
 
-    redis_aio = await storage.get_async_redis_pool(loop)
+    redis_aio = await storage.get_async_redis_storage(loop)
 
     while True:
         try:

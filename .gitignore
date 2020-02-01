@@ -8,7 +8,6 @@ __pycache__
 !docker_volumes/**/.gitkeep
 
 backend/config/*config.yml
-!backend/config/test_config.yml
 checkers/*
 !checkers/.gitkeep
 !checkers/bin/.gitkeep

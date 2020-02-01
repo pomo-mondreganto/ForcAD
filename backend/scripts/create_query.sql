@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS Tasks
     puts                    INTEGER,
     places                  INTEGER,
     checker_timeout         INTEGER,
-    checker_returns_flag_id INTEGER
+    checker_returns_flag_id INTEGER,
+    gevent_optimized        INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks
