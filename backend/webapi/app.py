@@ -23,7 +23,7 @@ sio = socketio.AsyncServer(
 
 app = Sanic()
 app.enable_websocket(True)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, supports_credentials=True, automatic_options=True)
 
 sio.attach(app)
 
@@ -111,4 +111,4 @@ async def status(_request):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=True)

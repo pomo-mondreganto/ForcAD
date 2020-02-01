@@ -120,6 +120,7 @@ export default {
             this.teams.forEach(team => {
                 team.update(teamTasks);
             });
+            this.teams = this.teams.sort(Team.comp);
         });
     },
 };
@@ -144,7 +145,7 @@ export default {
         height: 6em;
     }
 
-    & > :last-child > * {
+    & > :last-child > :last-child > * {
         border-bottom: 1px solid #c6cad1;
     }
 }

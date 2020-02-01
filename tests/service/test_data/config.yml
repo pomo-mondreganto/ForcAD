@@ -41,13 +41,29 @@ tasks:
     checker_timeout: 10
     gevent_optimized: true
     gets: 2
-    name: test_gevent_service
+    name: test_gevent_service_1
+    places: 5
+    puts: 2
+
+
+  - checker: test_service/gevent_checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gevent_optimized: true
+    gets: 2
+    name: test_gevent_service_2
     places: 5
     puts: 2
 
 teams:
   - ip: test_service
-    name: "Test working team"
+    name: "Test working team 1"
+
+  - ip: test_service
+    name: "Test working team 2"
+
+  - ip: test_service
+    name: "Test working team 3"
 
   - ip: 127.0.0.1
     name: "Test unreachable team"
