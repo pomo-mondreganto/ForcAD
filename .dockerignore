@@ -4,7 +4,9 @@
 .idea
 
 backend/rs_implementation/build
+
 frontend/node_modules
+front/node_modules
 
 control.py
 control_requirements.txt
