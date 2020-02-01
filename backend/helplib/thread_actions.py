@@ -6,6 +6,12 @@ import gevent
 import helplib
 
 
+def set_verdict_error(verdict, action_name, message):
+    verdict.status = helplib.status.TaskStatus.CHECK_FAILED
+    verdict.public_message = f'{action_name} failed'
+    verdict.private_message = message
+
+
 def run_generic_action_in_thread(checker_path: str,
                                  task_name: str,
                                  action_name: str,
@@ -34,9 +40,20 @@ def run_generic_action_in_thread(checker_path: str,
             checker.action(action_name.lower(), *action_args, **action_kwargs)
 
     except finished_exception:
-        verdict.status = checker.status
-        verdict.public_message = checker.public
-        verdict.private_message = checker.private
+        try:
+            verdict.status = helplib.status.TaskStatus(checker.status)
+        except ValueError:
+            mess = f'Invalid TaskStatus: {checker.status} for team `{team_name}` task `{task_name}`'
+            logger.error(mess)
+
+            set_verdict_error(
+                verdict=verdict,
+                action_name=action_name,
+                message=mess,
+            )
+        else:
+            verdict.public_message = checker.public
+            verdict.private_message = checker.private
 
     except helplib.exceptions.CheckerTimeoutException:
         logger.warning(f'{action_name} action for team `{team_name}` task {task_name} timed out')
@@ -52,17 +69,22 @@ def run_generic_action_in_thread(checker_path: str,
         log_func = logger.warning
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
             log_func = logger.error
-
         log_func(f'{action_name} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
 
-        verdict.status = helplib.status.TaskStatus.CHECK_FAILED
-        verdict.public_message = f'{action_name} failed'
-        verdict.private_message = exc
+        set_verdict_error(
+            verdict=verdict,
+            action_name=action_name,
+            message=exc,
+        )
 
     else:
-        logger.warning('Checker did not raise CheckFinished')
-        verdict.status = checker.status
-        verdict.public_message = checker.public[:1024]
-        verdict.private_message = checker.private[:1024]
+        mess = 'Checker did not raise CheckFinished'
+        logger.error(mess)
+
+        set_verdict_error(
+            verdict=verdict,
+            action_name=action_name,
+            message=mess,
+        )
 
     return verdict
