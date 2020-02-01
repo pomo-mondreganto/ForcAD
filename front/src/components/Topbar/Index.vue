@@ -1,6 +1,6 @@
 <template>
     <div class="topbar">
-        <router-link to="live">Live</router-link>
+        <router-link to="/live/">Live</router-link>
         <div>Round: {{ round }}</div>
     </div>
 </template>
