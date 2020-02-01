@@ -14,7 +14,7 @@ monkey.patch_all()
 class Checker(BaseChecker):
     def __init__(self, *args, **kwargs):
         super(Checker, self).__init__(*args, **kwargs)
-        self.mch = CheckMachine(self.host)
+        self.mch = CheckMachine(self)
 
     def action(self, action, *args, **kwargs):
         try:
@@ -24,7 +24,7 @@ class Checker(BaseChecker):
 
     def check(self):
         self.mch.ping()
-        cquit(Status.OK)
+        self.cquit(Status.OK)
 
     def put(self, flag_id, flag, vuln):
         new_id = self.mch.put_flag(flag, vuln)
