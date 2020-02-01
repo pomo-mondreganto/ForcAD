@@ -1,11 +1,11 @@
 import os
-from unittest import TestCase
-
-import requests
 import socket
 import subprocess
 import sys
 import time
+from unittest import TestCase
+
+import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -145,12 +145,16 @@ class FlagSubmitTestCase(TestCase):
         wait_rounds(1)
 
         teams = self.get_teams()
+        all_stolen = 0
+        all_lost = 0
         for team in teams:
-            if 'working' in team['name']:
-                hist = self.get_team_history(team['id'])
-                last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['lost'], len(ok_flags))
-            else:
-                hist = self.get_team_history(team['id'])
-                last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['stolen'], len(ok_flags))
+            hist = self.get_team_history(team['id'])
+            last = max(hist, key=lambda x: x['round'])
+            all_stolen += last['stolen']
+            all_lost += last['lost']
+
+            if 'working' not in team['name']:
+                self.assertEqual(last['lost'], 0)
+
+        self.assertEqual(all_stolen, len(ok_flags))
+        self.assertEqual(all_lost, len(ok_flags))
