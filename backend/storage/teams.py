@@ -205,6 +205,7 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         flag_data = {
             'attacker_id': attacker_id,
             'victim_id': victim_id,
+            'task_id': flag.task_id,
             'attacker_delta': attacker_delta,
             'victim_delta': victim_delta,
         }
