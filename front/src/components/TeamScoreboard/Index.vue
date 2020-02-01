@@ -117,7 +117,11 @@ export default {
                         ),
                     score: states
                         .filter(({ round }) => round === i)
-                        .reduce((acc, { score }) => acc + score, 0),
+                        .reduce(
+                            (acc, { score, upRounds, round }) =>
+                                acc + score * (upRounds / Math.max(round, 1)),
+                            0
+                        ),
                 });
             }
 
