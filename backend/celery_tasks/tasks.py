@@ -271,6 +271,8 @@ def process_round():
             pipeline.execute()
 
     teams = storage.teams.get_teams()
+    random.shuffle(teams)
+
     tasks = storage.tasks.get_tasks()
     for task in tasks:
         hard_timeout = task.checker_timeout + 5
