@@ -185,7 +185,7 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         with locking.acquire_redis_lock(pipeline, f'attack:{attacker_id}:{flag_str}:lock'):
             flag = flags.check_flag(flag_str=flag_str, attacker=attacker_id, round=round)
-            storage.flags.add_stolen_flag(flag=flag, attacker=attacker_id)
+            storage.flags.add_stolen_flag(flag=flag, attacker=attacker_id, round=round)
 
         victim_id = flag.team_id
 

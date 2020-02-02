@@ -9,9 +9,17 @@ from storage import caching
 
 _INSERT_STOLEN_FLAG_QUERY = "INSERT INTO stolenflags (attacker_id, flag_id) VALUES (%s, %s)"
 
-_INCREMENT_LOST_FLAGS_QUERY = "UPDATE teamtasks SET lost = lost + 1 WHERE team_id=%s AND task_id = %s"
+_INCREMENT_LOST_FLAGS_QUERY = """
+UPDATE teamtasks 
+SET lost = lost + 1 
+WHERE team_id=%s AND task_id = %s AND round >= %s
+"""
 
-_INCREMENT_STOLEN_FLAGS_QUERY = "UPDATE teamtasks SET stolen = stolen + 1 WHERE team_id=%s AND task_id=%s"
+_INCREMENT_STOLEN_FLAGS_QUERY = """
+UPDATE teamtasks 
+SET stolen = stolen + 1 
+WHERE team_id=%s AND task_id=%s AND round >= %s
+"""
 
 _INSERT_FLAG_QUERY = """
 INSERT INTO flags (flag, team_id, task_id, round, flag_data, vuln_number) 
@@ -19,11 +27,12 @@ VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
 """
 
 
-def add_stolen_flag(flag: helplib.models.Flag, attacker: int):
+def add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
     """Add stolen flag both to database and cache
 
         :param flag: Flag model instance
         :param attacker: team id for the attacking team
+        :param round: round of the attack
 
         Using this function implies that the flag is validated,
         as it doesn't check anything
@@ -36,8 +45,8 @@ def add_stolen_flag(flag: helplib.models.Flag, attacker: int):
 
     with storage.db_cursor() as (conn, curs):
         curs.execute(_INSERT_STOLEN_FLAG_QUERY, (attacker, flag.id))
-        curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id, flag.task_id))
-        curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker, flag.task_id))
+        curs.execute(_INCREMENT_LOST_FLAGS_QUERY, (flag.team_id, flag.task_id, round))
+        curs.execute(_INCREMENT_STOLEN_FLAGS_QUERY, (attacker, flag.task_id, round))
 
         conn.commit()
 
