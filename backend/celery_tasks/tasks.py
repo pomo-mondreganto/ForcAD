@@ -47,16 +47,16 @@ def test_task():
 
 @shared_task
 def exception_callback(*args, **kwargs):
+    # TODO: parse args & return error
     logger.warning(f"Exception callback was called with args {args}, kwargs {kwargs}")
 
 
 @shared_task
-def check_action(team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
+def check_action(team: models.Team, task: models.Task) -> models.CheckerVerdict:
     """Run "check" checker action
 
     :param team: models.Team instance
     :param task: models.Task instance
-    :param round: current round
 
     :return verdict: models.CheckerVerdict instance
     """
@@ -127,6 +127,9 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     """
     if prev_verdict.status != TaskStatus.UP:
+        if prev_verdict.action == 'GET':
+            return prev_verdict
+
         # to avoid returning CHECK verdict
         new_verdict = models.CheckerVerdict(
             action='GET',
@@ -171,7 +174,16 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
 
 @shared_task
-def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.Team, task: models.Task, round: int):
+def checker_results_handler(
+        verdicts: List[models.CheckerVerdict],
+        team: models.Team,
+        task: models.Task,
+        round: int) -> models.CheckerVerdict:
+    """Parse returning verdicts and return the final one
+
+        If there were any errors, the first one'll be returned
+        Otherwise, verdict of the CHECK action will be returned
+    """
     check_verdict = None
     puts_verdicts = []
     gets_verdict = None
@@ -197,7 +209,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
             checker_verdict=check_verdict,
             round=round,
         )
-        return
+        return check_verdict
 
     for verdict in puts_verdicts:
         if verdict.status != TaskStatus.UP:
@@ -207,7 +219,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
                 checker_verdict=verdict,
                 round=round,
             )
-            return
+            return verdict
 
     if gets_verdict != TaskStatus.UP:
         storage.tasks.update_task_status(
@@ -216,7 +228,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
             checker_verdict=gets_verdict,
             round=round,
         )
-        return
+        return gets_verdict
 
     storage.tasks.update_task_status(
         task_id=task.id,
@@ -224,6 +236,7 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict], team: models.
         checker_verdict=check_verdict,
         round=round,
     )
+    return check_verdict
 
 
 @shared_task
@@ -277,7 +290,7 @@ def process_round():
     for task in tasks:
         hard_timeout = task.checker_timeout + 5
         for team in teams:
-            check = check_action.s(team, task, new_round).set(time_limit=hard_timeout)
+            check = check_action.s(team, task).set(time_limit=hard_timeout)
 
             puts = group([
                 put_action.s(team, task, new_round).set(time_limit=hard_timeout)
