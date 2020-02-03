@@ -134,7 +134,7 @@ Config file (`backend/config/config.yml`) is split into five main parts:
 
 - **teams** contains playing teams. Example contents:
 
-```
+```yaml
 teams:
 - ip: 10.70.0.2
   name: Team1
@@ -144,7 +144,7 @@ teams:
  
 - **tasks** contains configuration of checkers and task-related parameters. Example: 
 
-```
+```yaml
 tasks:
 - checker: collacode/checker.py
   checker_returns_flag_id: true
@@ -203,7 +203,7 @@ By default, `checkers/bin` is used, so all auxiliary executables can be but ther
 
 `checkers` folder in project root (containing all checker folders) is recommended to have the following structure:
 
-```
+```yaml
 checkers:
   - requirements.txt  <-- automatically installed (with pip) combined requirements of all checkers
   - task1:
