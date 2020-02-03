@@ -5,6 +5,7 @@ import os
 import argparse
 import shutil
 import subprocess
+import time
 import yaml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,6 +103,25 @@ def setup_config(*_args, **_kwargs):
     setup_flower(config)
 
 
+def setup_worker(redis, database):
+    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
+    config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+
+    # create config backup
+    backup_path = os.path.join(CONFIG_DIR, f'config_backup_{int(time.time())}.yml')
+    with open(backup_path, 'w') as f:
+        yaml.dump(config, f)
+
+    # patch config host variables to connect to the right place
+    config['storages']['redis']['host'] = redis
+    config['storages']['db']['host'] = database
+
+    with open(conf_path, 'w') as f:
+        yaml.dump(config, f)
+
+    setup_config()
+
+
 def print_tokens(*_args, **_kwargs):
     res = subprocess.check_output(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
@@ -158,7 +178,14 @@ def scale_celery(instances, *_args, **_kwargs):
     )
 
 
-def run_worker(*_args, **_kwargs):
+def run_worker(redis, database, *_args, **_kwargs):
+    if redis is None or database is None:
+        print('Please, specify redis & database address --redis IP, --database IP')
+        exit(1)
+
+    # patch configuration
+    setup_worker(redis, database)
+
     subprocess.check_output(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d', 'celery'],
         cwd=BASE_DIR,
@@ -178,8 +205,11 @@ COMMANDS = {
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     parser.add_argument('command', choices=COMMANDS.keys(), help='Command to run')
-    parser.add_argument('--fast', action='store_true', help='Use faster build with default rating system')
+    parser.add_argument('--fast', action='store_true', help='Use faster build with default source code')
     parser.add_argument('-i', '--instances', type=int, metavar='N', help='Number of celery instances for scale_celery')
+    parser.add_argument('--redis', type=str, help='Redis address for the worker to connect')
+    parser.add_argument('--database', type=str, help='PostgreSQL address for the worker to connect')
+
     args = parser.parse_args()
 
     if args.fast:
