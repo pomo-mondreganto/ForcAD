@@ -116,21 +116,21 @@ Config file (`backend/config/config.yml`) is split into five main parts:
 
 - **storages** describes settings used to connect to PostgreSQL and Redis (examples provided):
   - `db`: PostgreSQL settings:
-    - dbname: system_db
-    - host: postgres
-    - password: **change_me**
-    - port: 5432
-    - user: system_admin
+    - `dbname: system_db`
+    - `host: postgres`
+    - `password: **change_me**`
+    - `port: 5432`
+    - `user: system_admin`
 
-  - redis:
-    - db: 0
-    - host: redis
-    - port: 6379
-    - password: **change_me**
+  - `redis`: Redis settings:
+    - `db: 0`
+    - `host: redis`
+    - `port: 6379`
+    - `password: **change_me**`
 
 - **flower** contains credentials to access visualization (`/flower/` on scoreboard):
-  - password: **change_me**
-  - username: system_admin
+  - `password: **change_me**`
+  - `username: system_admin`
 
 - **teams** contains playing teams. Example contents:
 
