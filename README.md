@@ -114,7 +114,7 @@ Config file (`backend/config/config.yml`) is split into five main parts:
   - `round_time`: round duration in seconds. Example: `120`
   - `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00+03:00` (don't forget the timezone)
 
-- storages describes settings used to connect to PostgreSQL and Redis (examples provided):
+- **storages** describes settings used to connect to PostgreSQL and Redis (examples provided):
   - `db`: PostgreSQL settings:
     - dbname: system_db
     - host: postgres
@@ -128,11 +128,11 @@ Config file (`backend/config/config.yml`) is split into five main parts:
     - port: 6379
     - password: **change_me**
 
-- flower contains credentials to access visualization (`/flower/` on scoreboard):
+- **flower** contains credentials to access visualization (`/flower/` on scoreboard):
   - password: **change_me**
   - username: system_admin
 
-- teams contains playing teams. Example contents:
+- **teams** contains playing teams. Example contents:
 
 ```
 teams:
@@ -142,7 +142,7 @@ teams:
   name: Team2
 ```
  
-- tasks contains configuration of checkers and task-related parameters. Example: 
+- **tasks** contains configuration of checkers and task-related parameters. Example: 
 
 ```
 tasks:
@@ -263,7 +263,9 @@ Example invocation: `/checkers/task/check.py get 127.0.0.1 <flag_id> <flag> <vul
 
 This action should check if the flag can be acquired correctly.
 
-`GET` is **not** run if `CHECK` (or previous `GETs` if `gets > 1`) fail. 
+`GET` **is not run** if `CHECK` (or previous `GETs` if `gets > 1`) fail. 
+
+A simple example of checker can be found [here](tests/service/checker/checker.py).
 
 ------
 
