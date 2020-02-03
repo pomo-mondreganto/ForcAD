@@ -20,37 +20,40 @@ The name is pronounced as "forkád".
 set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for recommendations see 
 [checker_timeout](#checkers) variable).
 
-3. Change default passwords (that includes `storages.db.password` for database and `flower.password` for
-`celery` visualization).
+3. **Change default passwords** (that includes `storages.db.password`, `storages.redis.password` for database and cache,
+ `flower.password` for `celery` visualization, which contains flags).
 
 4. Install `control_requirements.txt` (`pip3 install -r control_requirements.txt`) and run `./control.py setup` 
 to transfer config variables
 
-5. Run `docker-compose up --build` to start the system (add `-d` option to detach). 
-Wait patiently for the images to build, it could take a few minutes, but happens only once. 
+5. Run `./control.py start --fast` to start the system. 
+Wait patiently for the images to build, it could take a few minutes, but happens only once.
+Notice that `--fast` option uses the pre-built image, so if you modified the source code, omit this option to 
+run the full build.  
 
-That's all! Now you should be able to access scoreboard at `http://0.0.0.0:8080/`.
+That's all! Now you should be able to access the scoreboard at `http://0.0.0.0:8080/`.
 
 ###### Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks).
 
 ## Configuration and usage
 
-Due to some limitations of docker proxy, teams are identified by unique randomly generated on startup tokens 
-(look for them in the logs of `initializer` container or print using the following command after the system started: 
-`./control.py print_tokens`). 
+Teams are identified by unique randomly generated on startup tokens (look for them in the logs of `initializer` 
+container or print using the following command after the system started: `./control.py print_tokens`).
+ 
 You can either share all tokens with all teams (as submitting flags for other teams is not really profitable), 
 or send tokens privately. Tokens have one upside: all requests can be masqueraded.
 
 Platform consists of several modules: 
 
-- **TCP flag submitter** (over socat). For each connection send team token in the first line, then flags, each in a new line. 
+- **TCP flag submitter** (over `socat` on port 31338 or python tcp server on port 31337, both perform well). 
+For each connection send team token in the first line, then flags, each in a new line. 
 
-- **Celerybeat** sends round start events to `celery`
+- **Celerybeat** sends round start events to `celery`.
 
-- **Celery** is the main container, which runs checkers. 
-Can be scaled using docker command: `docker-compose up --scale celery=n -d` to run `n` instances 
-(assuming system is already started). One instance for 10 team-tasks is recommended (so, if there're 8 teams and 6 tasks, 
-run 5 instances of `celery`).
+- **Celery** is the main container which runs checkers. 
+Can be scaled using docker command: `./control.py scale_celery -i N` to run `N` instances 
+(assuming system is already started). One instance for 60 team-tasks is recommended (so, if there're 80 teams and 4 tasks, 
+run 5-6 instances of `celery`).
 
 - **Flower** is a beautiful celery monitoring app 
 
@@ -60,29 +63,35 @@ run 5 instances of `celery`).
 
 - **Webapi** provides api for react frontend
 
-- **React builder** starts on `docker-compose up`, builds frontend sources and copies them to the volume 
-from which they're served by nginx
+- **Front builder** builds frontend sources and copies them to the volume, from which they're served by nginx. 
+It exits after it's finished 
 
-- **Nginx** acts as a routing proxy, that unites frontend, api and flower
+- **Nginx** acts as a routing proxy that unites frontend, api and flower
 
-- **Initializer** also starts on `docker-compose up`, waits for the database to start (all other containers wait for 
+- **Initializer** starts with the system, waits for the database to become available (all other containers wait for 
 the initializer to finish its job) then drops old tables and initializes database. From that point,
 changing team or task config is useless, as they're copied to database already. If changes are required, connect to 
 the postgres container directly and run `psql` command (read the reference). For default database name and user 
 (`system_db` and `system_admin`) use `docker-compose exec postgres psql -U system_admin system_db` (no password 
-is required as it's a local connection). 
+is required as it's a local connection). After changes in database you need to drop the cache. Easy way is to run 
+FLUSHALL in redis, but that can lead to a round of unavailable scoreboard. 
+
+
+#### Rating system
 
 Platform has a somewhat-flexible rating system. Basically, rating system is a class that's initialized by 2 floats: 
 current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
 victim rating changes respectively. Having read that, you can easily replace default rating system in 
-[C rating system](backend/rs_implementation/rating_system.c) by your own brand-new one. Default rating system is based on Elo 
-rating and performs quite well in practice. **game_hardness** and **inflation** configuration variables can be set in `global` 
-block in `config.yml`, the first one sets how much points team is earning for an attack (the higher the hardness, the 
-bigger the rating change is), and the second one states is there's an "inflation" of points: whether a team earns points
-by attacking zero-rating victim. Current rating system with inflation results in quite a dynamic and fast gameplay.
-Default value for `game_hardness` in both versions (with and w/o inflation) is `1300`, recommended range is 
-`[500, 10000]` (try to emulate it first). Initial score for task can also be configured in global settings (that'll be
-the default value) and for each task independently.
+[C rating system](backend/rs_implementation/rating_system.c) by your own brand-new one. Default rating system is 
+based on Elo rating and performs quite well in practice. **game_hardness** and **inflation** configuration variables 
+can be set in `global` block in `config.yml`, the first one sets how much points team is earning for an attack 
+(the higher the hardness, the bigger the rating change is), and the second one states is there's an "inflation" of 
+points: whether a team earns points by attacking zero-rating victim. Current rating system with inflation results in 
+quite a dynamic and fast gameplay. Default value for `game_hardness` in both versions (with and w/o inflation) is 
+`1300`, recommended range is `[500, 10000]` (try to emulate it first). Initial score for task can also be configured in 
+global settings (that'll be the default value) and for each task independently.
+
+#### Flag format
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
 corresponding service name. You can change flag generation in function `generate_flag` in 
@@ -90,39 +99,126 @@ corresponding service name. You can change flag generation in function `generate
 
 Each flag is valid (and can be checked by checker) for `flag_lifetime` rounds (global config variable).    
 
+#### Configuration file
+
+Config file (`backend/config/config.yml`) is split into five main parts: 
+
+- **global** describes global settings: 
+  - `timezone`: mainly used for celery to show better times in flower. Example: timezone: `Europe/Moscow`
+  - `checkers_path`: path to checkers inside Docker container. `/checkers/` if not changed specifically.
+  - `default_score`: default score for tasks. Example: `2000`
+  - `env_path`: path or default `env_path` for checkers (see [checkers](#checkers) section). Example: `/checkers/bin/`
+  - `flag_lifetime`: flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`
+  - `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`
+  - `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`
+  - `round_time`: round duration in seconds. Example: `120`
+  - `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00+03:00` (don't forget the timezone)
+
+- storages describes settings used to connect to PostgreSQL and Redis (examples provided):
+  - `db`: PostgreSQL settings:
+    - dbname: system_db
+    - host: postgres
+    - password: **change_me**
+    - port: 5432
+    - user: system_admin
+
+  - redis:
+    - db: 0
+    - host: redis
+    - port: 6379
+    - password: **change_me**
+
+- flower contains credentials to access visualization (`/flower/` on scoreboard):
+  - password: **change_me**
+  - username: system_admin
+
+- teams contains playing teams. Example contents:
+
+```
+teams:
+- ip: 10.70.0.2
+  name: Team1
+- ip: 10.70.1.2
+  name: Team2
+```
+ 
+- tasks contains configuration of checkers and task-related parameters. Example: 
+
+```
+tasks:
+- checker: collacode/checker.py
+  checker_returns_flag_id: true
+  checker_timeout: 30
+  gevent_optimized: true
+  default_score: 1500
+  gets: 3
+  name: collacode
+  places: 1
+  puts: 3
+
+- checker: tiktak/checker.py
+  checker_returns_flag_id: true
+  checker_timeout: 30
+  gets: 2
+  name: tiktak
+  places: 3
+  puts: 2
+``` 
+
+`gevent_optimized` is an experimental feature to make checkers faster. Don't use it if you're not absolutely sure 
+you know how it works. Example checker is [here](tests/service/checker/gevent_checker.py).
+ 
+
 ## Checkers
 
 Checksystem is completely compatible with Hackerdom checkers, but some config-level enhancements were added (see below).
 Checkers are configured for each task independently. It's recommended to put each checker in a separate folder 
-under `checkers` on project root. Checker is considered to consist of the main executable and some 
+under `checkers` in project root. Checker is considered to consist of the main executable and some 
 auxiliary files in the same folder.
 
 Checker-related configuration variables: 
 
-- `checker`: path to the main checker executable (relative to `checkers` folder)
+- `checker`: path to the main checker executable (relative to `checkers` folder), which need to be **world-executable**
+(run `chmod o+rx checker_executable`)
 
-- `gets`: number of flags to put for each team for each round
+- `puts`: number of flags to put for each team for each round
 
-- `puts`: number of flags to check from the last `flag_lifetime` rounds 
+- `gets`: number of flags to check from the last `flag_lifetime` rounds 
 (see [Configuration and usage](#configuration-and-usage) for lifetime description). 
 
-- `places`: large tasks may contain a lot of possible places for a flag, that is the number. 
-It'll be passed to checker (the range is `[1, places]`).
+- `places`: large tasks may contain a lot of possible places for a flag, that is the number. It's randomized for each
+`put` from the range `[1, places]` and passed to the checker's `PUT` and `GET` actions.
 
-- `checker_timeout` (seconds): timeout for **each** checker action. As there're 3 actions run in a row, with some latency 
-between them, I recommend setting `round_time` at least 4 times greater than the maximum checker timeout. 
+- `checker_timeout` (seconds): timeout for **each** checker action. As there're at minumum 3 actions run (depending on 
+`puts` and `gets`), I recommend setting `round_time` at least 4 times greater than the maximum checker timeout 
+if possible. 
 
 - `checker_returns_flag_id`: whether the checker returns new `flag_id` for the `GET` action for this flag, or the 
 passed `flag_id` should be used when getting flag (see more in [checker writing](#writing-a-checker) section)
 
 - `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
-By default, `checkers/bin` is used, so all auxiliary executables can be but there. 
+By default, `checkers/bin` is used, so all auxiliary executables can be but there.
+
+#### Checkers folder
+
+`checkers` folder in project root (containing all checker folders) is recommended to have the following structure:
+
+```
+checkers:
+  - requirements.txt  <-- automatically installed (with pip) combined requirements of all checkers
+  - task1:
+    - checker.py  <-- executable
+  - task2:
+    - checker.py  <-- executable
+```
 
 ## Writing a checker
 
-Checker is an app that checks whether the team's task is running normally, puts flags and then checks them after a few rounds. 
+Checker is an app that checks whether the team's task is running normally, puts flags and then checks them after a 
+few rounds. 
 
-Actions and arguments are passed to checker as command-line arguments, first one is always command type, second is team host.
+Actions and arguments are passed to checker as command-line arguments, the first one is always command type, the second 
+is team host.
 
 Checker should terminate with one of the five return codes: 
 
@@ -153,10 +249,11 @@ Example invocation: `/checkers/task/check.py check 127.0.0.1`
 Example invocation: `/checkers/task/check.py put 127.0.0.1 <flag_id> <flag> <vuln_number>`
 
 If the checker returns `flag_id` (see [checker config](#checkers)), it should write some data 
-which helps to access flag later (username, password, etc) to `stdout`. Otherwise, it ought to use `flag_id` as some "seed" 
-to generate such data (on the next invocation `flag_id` will be the same if `checker_returns_flag_id` is set to `false`).
+which helps to access flag later (username, password, etc) to `stdout` (that data will be the `flag_id` passed to `GET`
+action). Otherwise, it ought to use `flag_id` as some "seed" to generate such data (on the next invocation `flag_id` 
+will be the same if `checker_returns_flag_id` is set to `false`).
 
-`PUT` is **not** run if `CHECK` failed
+`PUT` **is run** even if `CHECK` failed
 
 ------
 
@@ -166,7 +263,7 @@ Example invocation: `/checkers/task/check.py get 127.0.0.1 <flag_id> <flag> <vul
 
 This action should check if the flag can be acquired correctly.
 
-`GET` is **not** run if `CHECK` or `PUT` fail. 
+`GET` is **not** run if `CHECK` (or previous `GETs` if `gets > 1`) fail. 
 
 ------
 
@@ -176,11 +273,24 @@ See [this link](https://github.com/HackerDom/ructf-2017/wiki/Интерфейс-
 writing checkers for Hackerdom checksystem. Vulns' frequencies (e.g. put 1 flag for the first vuln for each 
 3 flags of the second) are not supported yet, but can be easily emulated with task place count and checker. 
 For example, for the above configuration (1:3) specify 4 places for the task, and then in checker `PUT` flag for the 
-first vuln if the supplied place is 1 and to the second vuln otherwise.    
+first vuln if the supplied vuln is 1 and to the second vuln otherwise (vuln is 2, 3 or 4).    
+
+##### Local files
+
+If checker is using local files, it should access them by the relative to its directory path, as checkers are run using 
+absolute paths inside Docker. For example, the following is incorrect: `open('local_file.txt')` as in Docker it'll try 
+to open `/local_file.txt` instead of `/checkers/task/local_file.txt`. Correct usage would be
+
+```python
+import os
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+open(os.path.join(BASE_DIR, 'local_file.txt'))
+```
 
 #### Modifying checker container
 
-As checkers run in `celery` container, open [docker_config/celery/Dockerfile](docker_config/celery/Dockerfile) 
+As checkers run in `celery` container, open [docker_config/celery/Dockerfile.fast](docker_config/celery/Dockerfile.fast)
+(or [docker_config/celery/Dockerfile](docker_config/celery/Dockerfile) if you're not using fast build) 
 and install all necessary packages to the image. Any modification can be made in `CUSTOMIZE` block. 
 With enough confidence, even the base image of celery container could be changed 
 (`python3.7` needs to be installed anyway).
