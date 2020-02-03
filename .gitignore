@@ -11,7 +11,6 @@ backend/config/*config.yml
 checkers/*
 !checkers/.gitkeep
 !checkers/bin/.gitkeep
-!tests/test_data/*
 
 *.env
 
@@ -45,3 +44,4 @@ checkers/*
 # End of https://www.gitignore.io/api/node
 
 backend/rs_implementation/build
+node_modules/

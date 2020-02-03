@@ -2,6 +2,7 @@
 
 import os
 import secrets
+
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,8 +21,8 @@ _CONFIG_INITIALIZATION_QUERY = '''INSERT INTO globalconfig ({columns}) VALUES ({
 _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
 
 _TASK_INSERT_QUERY = '''
-INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id) 
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id, gevent_optimized) 
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 '''
 
 _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
@@ -48,6 +49,7 @@ def run():
 
         global_config = config.get_global_config()
         global_config.pop('start_time')
+        global_config.pop('timezone', None)
 
         keys = global_config.keys()
         columns = ','.join(keys)
@@ -60,15 +62,17 @@ def run():
 
         gconf = models.GlobalConfig.from_dict(global_config)
 
+        task_defaults = {
+            'env_path': gconf.env_path,
+            'default_score': gconf.default_score,
+            'checker_returns_flag_id': True,
+            'gevent_optimized': False,
+        }
+
         for task_conf in tasks_config:
-            if 'env_path' not in task_conf:
-                task_conf['env_path'] = gconf.env_path
-
-            if 'default_score' not in task_conf:
-                task_conf['default_score'] = gconf.default_score
-
-            if 'checker_returns_flag_id' not in task_conf:
-                task_conf['checker_returns_flag_id'] = True
+            for k, v in task_defaults.items():
+                if k not in task_conf:
+                    task_conf[k] = v
 
             task_conf['checker'] = os.path.join(gconf.checkers_path, task_conf['checker'])
 
@@ -84,6 +88,7 @@ def run():
                     task.checker_timeout,
                     task.env_path,
                     int(task.checker_returns_flag_id),
+                    int(task.gevent_optimized),
                 )
             )
             task.id, = curs.fetchone()

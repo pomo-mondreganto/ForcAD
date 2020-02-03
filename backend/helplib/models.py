@@ -1,7 +1,7 @@
 import json
-from typing import Optional, List
 
 import yaml
+from typing import Optional, List
 
 import helplib.status
 
@@ -81,6 +81,8 @@ class Task(Model):
     puts: int
     places: int
     checker_timeout: int
+    checker_returns_flag_id: bool
+    gevent_optimized: bool
     env_path: str
     default_score: Optional[float]
 
@@ -93,6 +95,7 @@ class Task(Model):
                  places: int,
                  checker_timeout: int,
                  checker_returns_flag_id: bool,
+                 gevent_optimized: bool,
                  env_path: str,
                  default_score: Optional[float] = None):
         super(Task, self).__init__()
@@ -104,6 +107,7 @@ class Task(Model):
         self.places = places
         self.checker_timeout = checker_timeout
         self.checker_returns_flag_id = checker_returns_flag_id
+        self.gevent_optimized = gevent_optimized
         self.env_path = env_path
         self.default_score = default_score
 
@@ -117,6 +121,7 @@ class Task(Model):
             'places': self.places,
             'checker_timeout': self.checker_timeout,
             'checker_returns_flag_id': self.checker_returns_flag_id,
+            'gevent_optimized': self.gevent_optimized,
             'env_path': self.env_path,
             'default_score': self.default_score,
         }
@@ -210,19 +215,27 @@ class CheckerVerdict(Model):
     """Model representing checker action result"""
     private_message: str
     public_message: str
-    command: List
+    command: str
     status: helplib.status.TaskStatus
+    action: str
 
     def __init__(self,
                  private_message: str,
                  public_message: str,
-                 command: List,
+                 command: str,
+                 action: str,
                  status: helplib.status.TaskStatus):
         super(CheckerVerdict, self).__init__()
         self.private_message = private_message
         self.public_message = public_message
         self.command = command
-        self.status = status
+
+        if isinstance(status, int):
+            self.status = helplib.status.TaskStatus(status)
+        else:
+            self.status = status
+
+        self.action = action
 
     def to_dict(self):
         return {
@@ -230,7 +243,11 @@ class CheckerVerdict(Model):
             'public_message': self.public_message,
             'command': self.command,
             'status': self.status.value,
+            'action': self.action,
         }
+
+    def __str__(self):
+        return f'CheckerVerdict ({self.action} {self.status.name})'
 
 
 class GlobalConfig(Model):

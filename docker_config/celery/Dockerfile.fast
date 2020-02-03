@@ -2,7 +2,9 @@ FROM pomomondreganto/forcad_base:latest
 
 ########## CUSTOMIZE ##########
 
-#RUN apk add chromium chromium-chromedriver
+RUN apk add libxml2-dev libxslt-dev
+RUN apk add g++ freetype-dev ffmpeg jpeg-dev zlib-dev
+RUN apk add chromium chromium-chromedriver
 RUN apk add capstone bash libffi-dev openssl-dev git
 
 ADD ./checkers/requirements.txt /checker_requirements.txt

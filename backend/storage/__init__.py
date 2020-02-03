@@ -14,7 +14,7 @@ from storage import (
 )
 
 _redis_storage = None
-_async_redis_pool = None
+_async_redis_storage = None
 _db_pool = None
 
 
@@ -53,18 +53,25 @@ def get_redis_storage():
     return _redis_storage
 
 
-async def get_async_redis_pool(loop):
-    global _async_redis_pool
+async def _connect_async_redis(loop):
+    redis_config = config.get_storage_config()['redis']
+    address = f'redis://{redis_config["host"]}:{redis_config["port"]}'
+    db = redis_config['db']
+    return await aioredis.create_redis(
+        address=address,
+        db=db,
+        password=redis_config.get('password', None),
+        loop=loop,
+    )
 
-    if not _async_redis_pool:
-        redis_config = config.get_storage_config()['redis']
-        address = f'redis://{redis_config["host"]}:{redis_config["port"]}'
-        db = redis_config['db']
-        _async_redis_pool = await aioredis.create_redis_pool(
-            address=address,
-            db=db,
-            minsize=5,
-            maxsize=15,
-            loop=loop,
-        )
-    return _async_redis_pool
+
+async def get_async_redis_storage(loop, always_create_new=False):
+    if always_create_new:
+        return await _connect_async_redis(loop)
+
+    global _async_redis_storage
+
+    if not _async_redis_storage:
+        _async_redis_storage = await _connect_async_redis(loop)
+
+    return _async_redis_storage

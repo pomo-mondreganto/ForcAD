@@ -42,7 +42,7 @@ def get_teams() -> List[models.Team]:
 async def get_teams_async(loop) -> List[models.Team]:
     """Get list of teams registered in the database (asynchronous version)"""
 
-    redis_aio = await storage.get_async_redis_pool(loop)
+    redis_aio = await storage.get_async_redis_storage(loop)
 
     while True:
         try:
@@ -185,7 +185,7 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         with locking.acquire_redis_lock(pipeline, f'attack:{attacker_id}:{flag_str}:lock'):
             flag = flags.check_flag(flag_str=flag_str, attacker=attacker_id, round=round)
-            storage.flags.add_stolen_flag(flag=flag, attacker=attacker_id)
+            storage.flags.add_stolen_flag(flag=flag, attacker=attacker_id, round=round)
 
         victim_id = flag.team_id
 
@@ -205,6 +205,7 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         flag_data = {
             'attacker_id': attacker_id,
             'victim_id': victim_id,
+            'task_id': flag.task_id,
             'attacker_delta': attacker_delta,
             'victim_delta': victim_delta,
         }

@@ -1,7 +1,7 @@
 version: '2.4'
 
 volumes:
-  react_build:
+  front_build:
 
 services:
   celery:
@@ -15,6 +15,7 @@ services:
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: "no"
 
   celerybeat:
@@ -26,6 +27,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: "no"
 
   flower:
@@ -37,6 +39,7 @@ services:
       - CELERY_CONTAINER_TYPE=flower
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
       - docker_config/celery/flower_environment.env
     restart: "no"
 
@@ -46,6 +49,7 @@ services:
       dockerfile: docker_config/initializer/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     environment:
       - TEST=1
     restart: "no"
@@ -56,17 +60,18 @@ services:
       dockerfile: docker_config/webapi/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     environment:
       - TEST=1
     tty: true
     restart: "no"
 
-  react_builder:
+  front_builder:
     build:
       context: .
-      dockerfile: docker_config/react_builder/Dockerfile
+      dockerfile: docker_config/front_builder/Dockerfile
     volumes:
-      - react_build:/react_build/
+      - front_build:/front_build/
     environment:
       - TEST=1
     restart: "no"
@@ -77,6 +82,7 @@ services:
       dockerfile: docker_config/socat_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     environment:
       - TEST=1
     ports:
@@ -91,6 +97,7 @@ services:
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     environment:
       - TEST=1
     ports:
@@ -103,17 +110,22 @@ services:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
     volumes:
-      - react_build:/react_build
+      - front_build:/front_build
     ports:
       - 8080:80
       - 80:80
     restart: "no"
 
   redis:
-    image: redis:5.0.5-alpine
+    image: redis:5.0.7-alpine
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
+    restart: "no"
     sysctls:
       net.core.somaxconn: 1024
-    restart: "no"
+    env_file:
+      - ./docker_config/redis/environment.env
+    ports:
+      - "6379:6379"
 
   postgres:
     image: postgres:10.8-alpine

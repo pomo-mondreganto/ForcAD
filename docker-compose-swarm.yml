@@ -1,7 +1,7 @@
 version: '3.7'
 
 volumes:
-  react_build:
+  front_build:
   database:
 
 services:
@@ -14,6 +14,7 @@ services:
       - CELERY_CONTAINER_TYPE=worker
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   celerybeat:
@@ -25,6 +26,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   flower:
@@ -37,6 +39,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - docker_config/celery/flower_environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
 
@@ -47,6 +50,7 @@ services:
       dockerfile: docker_config/initializer/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   webapi:
@@ -56,14 +60,15 @@ services:
       dockerfile: docker_config/webapi/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
     tty: true
 
-  react_builder:
-    image: ${FORCAD_REGISTRY}/forcad_react_builder:${FORCAD_ARCH_TAG}
+  front_builder:
+    image: ${FORCAD_REGISTRY}/forcad_front_builder:${FORCAD_ARCH_TAG}
     build:
       context: .
-      dockerfile: docker_config/react_builder/Dockerfile
+      dockerfile: docker_config/front_builder/Dockerfile
     volumes:
       - react_build:/react_build/
     restart: on-failure
@@ -79,6 +84,7 @@ services:
       dockerfile: docker_config/socat_flag_submitter/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31337:31337
     restart: on-failure
@@ -90,7 +96,7 @@ services:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
     volumes:
-      - react_build:/react_build
+      - front_build:/front_build
     ports:
       - 8080:80
     restart: on-failure
@@ -100,10 +106,13 @@ services:
           - node.labels.external == 1
 
   redis:
-    image: redis:5.0.5-alpine
+    image: redis:5.0.7-alpine
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
     restart: on-failure
     sysctls:
-      - net.core.somaxconn=1024
+      net.core.somaxconn: 1024
+    env_file:
+      - ./docker_config/redis/environment.env
 
   postgres:
     image: postgres:10.8-alpine

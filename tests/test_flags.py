@@ -37,12 +37,16 @@ class FlagSubmitTestCase(TestCase):
         database_config['host'] = '127.0.0.1'
         self.db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
 
-    def get_last_flags_from_db(self):
+    def get_last_flags_from_db(self, team_token):
         conn = self.db_pool.getconn()
         curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
-        query = 'SELECT * FROM flags WHERE round >= (SELECT MAX(round) - 3 from flags)'
-        curs.execute(query)
+        query = '''
+        SELECT * FROM flags F 
+        INNER JOIN teams T on F.team_id = T.id 
+        WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s 
+        '''
+        curs.execute(query, (team_token,))
         return curs.fetchall()
 
     def submit_flags_to_tcp_mux(self, token, flags=None, token_valid=True):
@@ -86,8 +90,8 @@ class FlagSubmitTestCase(TestCase):
         return data
 
     def test_flag_submission(self):
-        flags = self.get_last_flags_from_db()
-        flags = [flag['flag'] for flag in flags]
+        ok_flags = self.get_last_flags_from_db(self.working_token)
+        ok_flags = [flag['flag'] for flag in ok_flags]
 
         self.submit_flags_to_tcp_mux(
             token='invalid token',
@@ -97,7 +101,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.unreachable_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -107,7 +111,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.unreachable_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -118,7 +122,7 @@ class FlagSubmitTestCase(TestCase):
 
         results = self.submit_flags_to_tcp_mux(
             token=self.working_token,
-            flags=flags,
+            flags=ok_flags,
             token_valid=True,
         )
 
@@ -141,12 +145,19 @@ class FlagSubmitTestCase(TestCase):
         wait_rounds(1)
 
         teams = self.get_teams()
+        all_stolen = 0
+        all_lost = 0
         for team in teams:
-            if 'working' in team['name']:
-                hist = self.get_team_history(team['id'])
-                last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['lost'], len(flags))
-            else:
-                hist = self.get_team_history(team['id'])
-                last = max(hist, key=lambda x: x['round'])
-                self.assertEqual(last['stolen'], len(flags))
+            hist = self.get_team_history(team['id'])
+            last_round = max(map(lambda x: x['round'], hist))
+
+            for each in hist:
+                if 'working' not in team['name']:
+                    self.assertEqual(each['lost'], 0)
+
+                if each['round'] == last_round:
+                    all_stolen += each['stolen']
+                    all_lost += each['lost']
+
+        self.assertEqual(all_stolen, len(ok_flags))
+        self.assertEqual(all_lost, len(ok_flags))

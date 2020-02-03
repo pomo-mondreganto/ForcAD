@@ -1,7 +1,7 @@
 version: '2.4'
 
 volumes:
-  react_build:
+  front_build:
 
 services:
   celery:
@@ -14,6 +14,7 @@ services:
       - ./checkers/:/checkers/
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   celerybeat:
@@ -24,6 +25,7 @@ services:
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   flower:
@@ -34,6 +36,7 @@ services:
       - CELERY_CONTAINER_TYPE=flower
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
       - docker_config/celery/flower_environment.env
     restart: on-failure
 
@@ -44,6 +47,7 @@ services:
       dockerfile: docker_config/initializer/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
 
   webapi:
@@ -52,15 +56,16 @@ services:
       dockerfile: docker_config/webapi/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     restart: on-failure
     tty: true
 
-  react_builder:
+  front_builder:
     build:
       context: .
-      dockerfile: docker_config/react_builder/Dockerfile
+      dockerfile: docker_config/front_builder/Dockerfile
     volumes:
-      - react_build:/react_build/
+      - front_build:/front_build/
     restart: on-failure
 
   socat_flag_submitter:
@@ -69,6 +74,7 @@ services:
       dockerfile: docker_config/socat_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31338:31338
     restart: on-failure
@@ -81,6 +87,7 @@ services:
       dockerfile: docker_config/tcp_flag_submitter/Dockerfile.fast
     env_file:
       - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
     ports:
       - 31337:31337
     restart: on-failure
@@ -91,17 +98,22 @@ services:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
     volumes:
-      - react_build:/react_build
+      - front_build:/front_build
     ports:
       - 8080:80
       - 80:80
     restart: on-failure
 
   redis:
-    image: redis:5.0.5-alpine
+    image: redis:5.0.7-alpine
+    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024
+    env_file:
+      - ./docker_config/redis/environment.env
+    ports:
+      - "6379:6379"
 
   postgres:
     image: postgres:10.8-alpine
@@ -110,3 +122,5 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
     restart: on-failure
+    ports:
+      - "5432:5432"

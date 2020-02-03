@@ -11,7 +11,7 @@ import config
 
 DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
 INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
-FRONT_BUILD_CONTAINER_NAME = 'forcad_react_builder_1'
+FRONT_BUILD_CONTAINER_NAME = 'forcad_front_builder_1'
 
 
 def wait_for_container(name):
