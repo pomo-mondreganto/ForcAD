@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 /await_start.sh
+
+set -e
 
 cd /app/flag_submitter/stdin_default
 echo "[*] Starting stdin (socat) flag submitter"

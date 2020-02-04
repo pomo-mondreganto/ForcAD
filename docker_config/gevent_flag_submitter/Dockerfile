@@ -21,11 +21,9 @@ RUN chmod +x /await_start.sh
 
 ###### SHARED PART END ######
 
-RUN apt-get install -y socat
-
 ADD backend /app
 
-ADD ./docker_config/socat_flag_submitter/entrypoint.sh /entrypoint.sh
+ADD ./docker_config/gevent_flag_submitter/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

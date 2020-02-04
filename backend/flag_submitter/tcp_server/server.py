@@ -1,4 +1,5 @@
 import os
+
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -179,7 +180,7 @@ class SocketServer:
 
 def main():
     host = '0.0.0.0'
-    port = 31337
+    port = 31339
 
     server = SocketServer(host, port)
     server.serve_forever()

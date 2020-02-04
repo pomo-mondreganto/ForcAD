@@ -2,7 +2,7 @@ FROM pomomondreganto/forcad_base:latest
 
 ADD backend /app
 
-ADD ./docker_config/tcp_flag_submitter/entrypoint.sh /entrypoint.sh
+ADD ./docker_config/gevent_flag_submitter/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

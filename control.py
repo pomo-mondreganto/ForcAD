@@ -20,6 +20,14 @@ elif os.environ.get('LOCAL'):
     CONFIG_FILENAME = 'local_config.yml'
 
 
+def run_command(command, cwd=None, env=None):
+    p = subprocess.Popen(command, cwd=cwd, env=env)
+    rc = p.wait()
+    if rc != 0:
+        print('[-] Failed!')
+        exit(1)
+
+
 def setup_db(config):
     postgres_env_path = os.path.join(
         BASE_DIR,
@@ -139,21 +147,21 @@ def reset_game(*_args, **_kwargs):
     data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
-    subprocess.check_output(
+    run_command(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v', '--remove-orphans'],
         cwd=BASE_DIR,
     )
 
 
 def build(*_args, **_kwargs):
-    subprocess.check_output(
+    run_command(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'build'],
         cwd=BASE_DIR,
     )
 
 
 def start_game(*_args, **_kwargs):
-    subprocess.check_output(
+    run_command(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d'],
         cwd=BASE_DIR,
     )
@@ -164,7 +172,7 @@ def scale_celery(instances, *_args, **_kwargs):
         print('Please, specify number of instances (-i N)')
         exit(1)
 
-    subprocess.check_output(
+    run_command(
         [
             'docker-compose',
             '-f', DOCKER_COMPOSE_FILE,
@@ -186,7 +194,7 @@ def run_worker(redis, database, *_args, **_kwargs):
     # patch configuration
     setup_worker(redis, database)
 
-    subprocess.check_output(
+    run_command(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d', 'celery'],
         cwd=BASE_DIR,
     )

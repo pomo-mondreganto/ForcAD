@@ -1,4 +1,5 @@
 import os
+
 import sys
 import time
 
@@ -34,7 +35,7 @@ while True:
     round = storage.game.get_real_round()
 
     if round == -1:
-        print('Game is unavailable yet')
+        print('Game is unavailable')
 
     try:
         attacker_delta = storage.teams.handle_attack(
@@ -54,5 +55,8 @@ while True:
 
 average = overall_time / flags_submitted
 
-print(f'Submitted a total of {flags_submitted} flags, {flags_correct} correct flags')
-print(f'Overall time processing flags is {overall_time:.5f} seconds, average is {average * 1000:.3f}ms per flag')
+print(f'Submitted a total of {flags_submitted} flags, {flags_correct} correct flags', file=sys.stderr)
+print(
+    f'Overall time processing flags is {overall_time:.5f} seconds, average is {average * 1000:.3f}ms per flag',
+    file=sys.stderr,
+)
