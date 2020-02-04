@@ -1,6 +1,6 @@
 FROM pomomondreganto/forcad_base:latest
 
-RUN apk add socat
+RUN apt-get install -y socat
 
 ADD backend /app
 

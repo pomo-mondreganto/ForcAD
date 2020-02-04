@@ -1,8 +1,8 @@
-FROM python:3.7-alpine
+FROM python:3.7
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apk add gcc make musl-dev postgresql-dev
+RUN apt-get update && apt-get install -y libpq-dev
 
 ADD backend/requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
@@ -23,8 +23,7 @@ RUN chmod +x /await_start.sh
 
 ########## CUSTOMIZE ##########
 
-#RUN apk add chromium chromium-chromedriver
-RUN apk add capstone bash libffi-dev openssl-dev git
+RUN apt-get install -y git libssl-dev libffi-dev build-essential
 
 ADD ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
@@ -39,9 +38,6 @@ ADD backend /app
 
 ADD ./docker_config/celery/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-#RUN adduser -S celery
-#USER celery
 
 USER nobody
 

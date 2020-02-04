@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 set +e
+
 echo "[*] Checking is postgres container started"
 python3 /db_check.py
 while [[ $? != 0 ]] ; do

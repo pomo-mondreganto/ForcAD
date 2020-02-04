@@ -68,6 +68,17 @@ services:
       - front_build:/front_build/
     restart: on-failure
 
+  gevent_flag_submitter:
+    build:
+      context: .
+      dockerfile: docker_config/gevent_flag_submitter/Dockerfile
+    env_file:
+      - ./docker_config/postgres/environment.env
+      - ./docker_config/redis/environment.env
+    ports:
+      - 31337:31337
+    restart: on-failure
+
   socat_flag_submitter:
     build:
       context: .
@@ -89,9 +100,8 @@ services:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
     ports:
-      - 31337:31337
+      - 31339:31339
     restart: on-failure
-    tty: true
 
   nginx:
     build:

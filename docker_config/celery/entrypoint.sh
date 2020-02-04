@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 /await_start.sh
+
+set -e
 
 cd /app
 

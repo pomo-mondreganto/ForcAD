@@ -2,10 +2,7 @@ FROM pomomondreganto/forcad_base:latest
 
 ########## CUSTOMIZE ##########
 
-RUN apk add libxml2-dev libxslt-dev
-RUN apk add g++ freetype-dev ffmpeg jpeg-dev zlib-dev
-RUN apk add chromium chromium-chromedriver
-RUN apk add capstone bash libffi-dev openssl-dev git
+RUN apt-get install -y git libssl-dev libffi-dev build-essential
 
 ADD ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
@@ -20,9 +17,6 @@ ADD backend /app
 
 ADD ./docker_config/celery/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-#RUN adduser -S celery
-#USER celery
 
 USER nobody
 
