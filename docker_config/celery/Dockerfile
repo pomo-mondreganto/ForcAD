@@ -23,14 +23,28 @@ RUN chmod +x /await_start.sh
 
 ########## CUSTOMIZE ##########
 
-RUN apt-get install -y git libssl-dev libffi-dev build-essential
+# uncomment blocks to enable features
+### pwntools dependencies ###
+################
+#RUN apt-get install -y git libssl-dev libffi-dev build-essential
+#ENV PWNLIB_NOTERM=true
+################
+
+### selenium (chromedriver) dependencies (from https://github.com/joyzoursky/docker-python-chromedriver) ###
+################
+#RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+#RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+#RUN apt-get -y update
+#RUN apt-get install -y google-chrome-stable
+#RUN apt-get install -yqq unzip
+#RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
+#RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+################
 
 ADD ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
 
 ADD ./checkers /checkers
-
-ENV PWNLIB_NOTERM=true
 
 ########## END CUSTOMIZE ##########
 
