@@ -149,6 +149,15 @@ services:
       - ./docker_config/postgres/environment.env
     restart: "no"
 
+  rabbitmq:
+    hostname: rabbitmq
+    image: rabbitmq:3.8.2-alpine
+    ports:
+      - 5672:5672
+    env_file:
+      - ./docker_config/rabbitmq/environment.env
+    restart: "no"
+
   test_service:
     build:
       context: .

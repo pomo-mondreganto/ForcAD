@@ -84,6 +84,8 @@ def get_team_id_by_token(token: str) -> Optional[int]:
                     pipeline.multi()
                     if not cached:
                         caching.cache_teams(pipeline)
+                    else:
+                        pipeline.unwatch()
 
                     pipeline.execute()
                     break
