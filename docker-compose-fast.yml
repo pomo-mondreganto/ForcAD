@@ -40,7 +40,6 @@ services:
       - docker_config/celery/flower_environment.env
     restart: on-failure
 
-
   initializer:
     build:
       context: .
@@ -124,6 +123,15 @@ services:
       - ./docker_config/redis/environment.env
     ports:
       - "6379:6379"
+
+  rabbitmq:
+    hostname: rabbitmq
+    image: rabbitmq:3.8.2-alpine
+    restart: on-failure
+    env_file:
+      - ./docker_config/rabbitmq/environment.env
+    ports:
+      - "5672:5672"
 
   postgres:
     image: postgres:10.8-alpine
