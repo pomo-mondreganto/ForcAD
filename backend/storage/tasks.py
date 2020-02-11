@@ -171,6 +171,7 @@ def get_teamtasks_of_team(team_id: int, current_round: int) -> Optional[List[dic
                             current_round=current_round,
                             pipeline=pipeline,
                         )
+
                     pipeline.execute()
                     break
                 except redis.WatchError:

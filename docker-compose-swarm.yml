@@ -114,6 +114,13 @@ services:
     env_file:
       - ./docker_config/redis/environment.env
 
+  rabbitmq:
+    hostname: rabbitmq
+    image: rabbitmq:3.8.2-alpine
+    env_file:
+      - ./docker_config/rabbitmq/environment.env
+    restart: "no"
+
   postgres:
     image: postgres:10.8-alpine
     volumes:

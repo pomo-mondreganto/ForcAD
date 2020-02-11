@@ -12,6 +12,7 @@ global:
   inflation: true
   round_time: 20
   start_time: 2019-11-30 15:30:00+03:00
+  game_mode: classic
 
 storages:
   db:
@@ -25,6 +26,13 @@ storages:
     db: 0
     host: redis
     port: 6379
+    password: secret
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    vhost: forcad
+    user: system_admin
     password: secret
 
 tasks:
@@ -44,7 +52,6 @@ tasks:
     name: test_gevent_service_1
     places: 5
     puts: 2
-
 
   - checker: test_service/gevent_checker.py
     checker_returns_flag_id: true

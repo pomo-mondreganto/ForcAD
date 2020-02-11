@@ -260,6 +260,7 @@ class GlobalConfig(Model):
     game_hardness: float
     inflation: bool
     round_time: int
+    game_mode: str
 
     def __init__(self,
                  id: Optional[int],
@@ -269,7 +270,8 @@ class GlobalConfig(Model):
                  flag_lifetime: int,
                  game_hardness: float,
                  inflation: bool,
-                 round_time: int):
+                 round_time: int,
+                 game_mode: str):
         super(GlobalConfig, self).__init__()
         self.id = id
         self.checkers_path = checkers_path
@@ -279,6 +281,7 @@ class GlobalConfig(Model):
         self.game_hardness = game_hardness
         self.inflation = inflation
         self.round_time = round_time
+        self.game_mode = game_mode
 
     def to_dict(self):
         return {
@@ -290,4 +293,5 @@ class GlobalConfig(Model):
             'game_hardness': self.game_hardness,
             'inflation': self.inflation,
             'round_time': self.round_time,
+            'game_mode': self.game_mode,
         }

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import traceback
 
 import argparse
 import shutil
@@ -63,18 +64,11 @@ def setup_redis(config):
         'environment.env',
     )
 
-    redis_conf = config['storages']['redis']
-    redis_host = redis_conf.get('host', 'redis')
-    redis_port = redis_conf.get('port', 6379)
-    redis_pass = redis_conf.get('password', None)
-    redis_db = redis_conf.get('db', 0)
+    redis_pass = config['storages']['redis'].get('password', None)
 
     redis_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        'REDIS_HOST={redis_host}'.format(redis_host=redis_host),
-        'REDIS_PORT={redis_port}'.format(redis_port=redis_port),
         'REDIS_PASSWORD={redis_pass}'.format(redis_pass=redis_pass),
-        'REDIS_DB={redis_db}'.format(redis_db=redis_db),
     ]
 
     with open(redis_env_path, 'w') as f:
@@ -103,12 +97,36 @@ def setup_flower(config):
         f.write('\n'.join(flower_config))
 
 
+def setup_rabbitmq(config):
+    rabbitmq_env_path = os.path.join(
+        BASE_DIR,
+        'docker_config',
+        'rabbitmq',
+        'environment.env',
+    )
+
+    rabbitmq_config = config['storages']['rabbitmq']
+    user = rabbitmq_config['user']
+    password = rabbitmq_config['password']
+    vhost = rabbitmq_config['vhost']
+    config_data = [
+        "# THIS FILE IS MANAGED BY 'control.py'",
+        'RABBITMQ_DEFAULT_USER={user}'.format(user=user),
+        'RABBITMQ_DEFAULT_PASS={password}'.format(password=password),
+        'RABBITMQ_DEFAULT_VHOST={vhost}'.format(vhost=vhost),
+    ]
+
+    with open(rabbitmq_env_path, 'w') as f:
+        f.write('\n'.join(config_data))
+
+
 def setup_config(*_args, **_kwargs):
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
     setup_db(config)
     setup_redis(config)
     setup_flower(config)
+    setup_rabbitmq(config)
 
 
 def setup_worker(redis, database):
@@ -228,5 +246,6 @@ if __name__ == '__main__':
     try:
         COMMANDS[args.command](**vars(args))
     except Exception as e:
-        print('Got exception:', e)
+        tb = traceback.format_exc()
+        print('Got exception:', e, tb)
         exit(1)

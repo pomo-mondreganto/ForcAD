@@ -21,7 +21,8 @@ _CONFIG_INITIALIZATION_QUERY = '''INSERT INTO globalconfig ({columns}) VALUES ({
 _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RETURNING id'
 
 _TASK_INSERT_QUERY = '''
-INSERT INTO Tasks (name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id, gevent_optimized) 
+INSERT INTO Tasks 
+(name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id, gevent_optimized) 
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 '''
 

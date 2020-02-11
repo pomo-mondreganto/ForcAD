@@ -49,14 +49,18 @@ def get_celery_config() -> dict:
     redis_port = storages['redis'].get('port', 6379)
     redis_pass = storages['redis'].get('password', None)
     redis_db = storages['redis'].get('db', 0)
-    broker_db = redis_db + 1
-    result_db = redis_db + 2
+    result_db = redis_db + 1
+
+    amqp_host = storages['rabbitmq'].get('host', 'rabbitmq')
+    amqp_user = storages['rabbitmq'].get('user', 'system_admin')
+    amqp_port = storages['rabbitmq'].get('port', 5672)
+    amqp_pass = storages['rabbitmq'].get('password', None)
+    amqp_vhost = storages['rabbitmq'].get('vhost', 'forcad')
+    broker_url = f'amqp://{amqp_user}:{amqp_pass}@{amqp_host}:{amqp_port}/{amqp_vhost}'
 
     if redis_pass is not None:
-        broker_url = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{broker_db}'
         result_backend = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{result_db}'
     else:
-        broker_url = f'redis://{redis_host}:{redis_port}/{redis_db}'
         result_backend = f'redis://{redis_host}:{redis_port}/{result_db}'
 
     conf = {

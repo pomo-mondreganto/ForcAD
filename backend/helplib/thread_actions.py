@@ -21,11 +21,6 @@ def run_generic_action_in_thread(checker_path: str,
                                  action_args: tuple,
                                  action_kwargs: dict,
                                  logger):
-    spec = importlib.util.spec_from_file_location(task_name, checker_path)
-    checker_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(checker_module)
-    checker = checker_module.Checker(host)
-    finished_exception = checker.get_check_finished_exception()
 
     verdict = helplib.models.CheckerVerdict(
         command=f'checker.{action_name.lower()}()',
@@ -34,6 +29,31 @@ def run_generic_action_in_thread(checker_path: str,
         public_message=f'{action_name} pending',
         private_message=f'{action_name} pending',
     )
+
+    try:
+        spec = importlib.util.spec_from_file_location(task_name, checker_path)
+        checker_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(checker_module)
+        checker = checker_module.Checker(host)
+        finished_exception = checker.get_check_finished_exception()
+    except BaseException as e:
+        tb = format_exc()
+        exc = f'{type(e)}: {e}\n{tb}'
+
+        message = (
+            'Exception while importing checker. '
+            'Your checker is not compatible with gevent_optimized option. '
+            f'Exception: {exc}'
+        )
+
+        logger.critical(message)
+
+        set_verdict_error(
+            verdict=verdict,
+            action_name=action_name,
+            message=message,
+        )
+        return verdict
 
     try:
         with gevent.Timeout(timeout, helplib.exceptions.CheckerTimeoutException):
