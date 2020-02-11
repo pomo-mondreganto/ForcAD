@@ -41,22 +41,46 @@ def startup(**_kwargs):
 
 
 @shared_task
-def test_task():
-    logger.info('Hello world!')
+def exception_callback(result, exc, traceback):
+    action_name = result.task.split('.')[-1].split('_')[0].upper()
+    if action_name == 'CHECK':
+        prev_verdict = None
+        team, task, round = result.args
+    else:
+        prev_verdict, team, task, round = result.args
+
+    logger.error(
+        f"Task exception handler was called for team {team} task {task}, "
+        f"exception {repr(exc)}, traceback\n{traceback}"
+    )
+
+    if prev_verdict is not None and prev_verdict.status != TaskStatus.UP:
+        verdict = prev_verdict
+    else:
+        verdict = models.CheckerVerdict(
+            action=action_name,
+            status=TaskStatus.CHECK_FAILED,
+            command='',
+            public_message=f'{action_name} failed',
+            private_message=f'Exception on {action_name}: {repr(exc)}\n{traceback}'
+        )
+
+    storage.tasks.update_task_status(
+        task_id=task.id,
+        team_id=team.id,
+        checker_verdict=verdict,
+        round=round,
+    )
+    return verdict
 
 
 @shared_task
-def exception_callback(*args, **kwargs):
-    # TODO: parse args & return error
-    logger.warning(f"Exception callback was called with args {args}, kwargs {kwargs}")
-
-
-@shared_task
-def check_action(team: models.Team, task: models.Task) -> models.CheckerVerdict:
+def check_action(team: models.Team, task: models.Task, _round: int) -> models.CheckerVerdict:
     """Run "check" checker action
 
     :param team: models.Team instance
     :param task: models.Task instance
+    :param _round: current round (for exception handler)
 
     :return verdict: models.CheckerVerdict instance
     """
@@ -87,7 +111,7 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         If "check" action fails, put is not run.
     """
 
-    logger.info(f'Running CHECK for team `{team.name}` task `{task.name}`')
+    logger.info(f'Running PUT for team `{team.name}` task `{task.name}`')
 
     place = secrets.choice(range(1, task.places + 1))
     flag = flags.generate_flag(
@@ -290,15 +314,15 @@ def process_round():
     for task in tasks:
         hard_timeout = task.checker_timeout + 5
         for team in teams:
-            check = check_action.s(team, task).set(time_limit=hard_timeout)
+            check = check_action.s(team, task, new_round).set(time_limit=hard_timeout, link_error=exception_callback)
 
             puts = group([
-                put_action.s(team, task, new_round).set(time_limit=hard_timeout)
+                put_action.s(team, task, new_round).set(time_limit=hard_timeout, link_error=exception_callback)
                 for _ in range(task.puts)
             ])
 
             gets = chain(*[
-                get_action.s(team, task, new_round).set(time_limit=hard_timeout)
+                get_action.s(team, task, new_round).set(time_limit=hard_timeout, link_error=exception_callback)
                 for _ in range(task.gets)
             ])
 
