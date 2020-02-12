@@ -193,16 +193,19 @@ class GameState(Model):
 
         Stored round and dict of team tasks
     """
+    round_start: int
     round: int
     team_tasks: List[dict]
 
-    def __init__(self, round: int, team_tasks: List[dict]):
+    def __init__(self, round_start: int, round: int, team_tasks: List[dict]):
         super(GameState, self).__init__()
+        self.round_start = round_start
         self.round = round
         self.team_tasks = team_tasks
 
     def to_dict(self):
         return {
+            'round_start': self.round_start,
             'round': self.round,
             'team_tasks': self.team_tasks
         }

@@ -1,7 +1,21 @@
+from typing import Optional
+
 import helplib
 from helplib import models
 from helplib.commands import run_generic_command
+from helplib.status import TaskStatus
 from helplib.thread_actions import run_generic_action_in_thread
+
+
+def first_error_or_first_verdict(verdicts: [models.CheckerVerdict]) -> Optional[models.CheckerVerdict]:
+    if not verdicts:
+        return None
+
+    for verdict in verdicts:
+        if verdict.status != TaskStatus.UP:
+            return verdict
+
+    return verdicts[0]
 
 
 class CheckerRunner:

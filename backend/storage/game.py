@@ -1,4 +1,5 @@
 import redis
+import time
 from typing import Optional
 
 import storage
@@ -26,6 +27,24 @@ def get_current_round() -> int:
         return -1
     else:
         return round
+
+
+def get_round_start(round: int) -> int:
+    """Get start time for round as unix timestamp"""
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        start_time, = pipeline.get(f'round:{round}:start_time').execute()
+    try:
+        start_time = int(start_time.decode())
+    except (AttributeError, UnicodeDecodeError, ValueError):
+        start_time = 0
+    return start_time
+
+
+def set_round_start(round: int):
+    """Set start time for round as str"""
+    cur_time = int(time.time())
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+        pipeline.set(f'round:{round}:start_time', cur_time).execute()
 
 
 def get_real_round() -> int:
@@ -124,7 +143,7 @@ async def get_current_round_async(loop) -> int:
         return -1
 
 
-def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
+def construct_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
     """Get game state for current round
 
         :param round: specify round to query manually. Otherwise, it'll be taken from cache
@@ -138,7 +157,8 @@ def get_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
     if not team_tasks:
         return None
 
-    state = models.GameState(round=round, team_tasks=team_tasks)
+    round_start = get_round_start(round)
+    state = models.GameState(round_start=round_start, round=round, team_tasks=team_tasks)
     return state
 
 
