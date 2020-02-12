@@ -129,7 +129,7 @@ def setup_config(*_args, **_kwargs):
     setup_rabbitmq(config)
 
 
-def setup_worker(redis, database):
+def setup_worker(redis, rabbitmq, database):
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
 
@@ -141,6 +141,7 @@ def setup_worker(redis, database):
     # patch config host variables to connect to the right place
     config['storages']['redis']['host'] = redis
     config['storages']['db']['host'] = database
+    config['storages']['rabbitmq']['host'] = rabbitmq
 
     with open(conf_path, 'w') as f:
         yaml.dump(config, f)
@@ -204,13 +205,13 @@ def scale_celery(instances, *_args, **_kwargs):
     )
 
 
-def run_worker(redis, database, *_args, **_kwargs):
-    if redis is None or database is None:
-        print('Please, specify redis & database address --redis IP, --database IP')
+def run_worker(redis, rabbitmq, database, *_args, **_kwargs):
+    if redis is None or rabbitmq is None or database is None:
+        print('Please, specify redis, rabbitmq & database address --redis IP, --rabbitmq IP, --database IP')
         exit(1)
 
     # patch configuration
-    setup_worker(redis, database)
+    setup_worker(redis, rabbitmq, database)
 
     run_command(
         ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'up', '--build', '-d', 'celery'],
@@ -234,6 +235,7 @@ if __name__ == '__main__':
     parser.add_argument('--fast', action='store_true', help='Use faster build with default source code')
     parser.add_argument('-i', '--instances', type=int, metavar='N', help='Number of celery instances for scale_celery')
     parser.add_argument('--redis', type=str, help='Redis address for the worker to connect')
+    parser.add_argument('--rabbitmq', type=str, help='RabbitMQ address for the worker to connect')
     parser.add_argument('--database', type=str, help='PostgreSQL address for the worker to connect')
 
     args = parser.parse_args()
