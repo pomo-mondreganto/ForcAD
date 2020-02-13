@@ -29,8 +29,8 @@
                     <div
                         v-for="{
                             id,
-                            up_rounds: upRounds,
-                            round,
+                            checks,
+                            checks_passed: checksPassed,
                             score,
                             stolen,
                             lost,
@@ -51,8 +51,8 @@
                             <strong>SLA</strong>:
                             {{
                                 (
-                                    (100.0 * upRounds) /
-                                    Math.max(round, 1)
+                                    (100.0 * checks_passed) /
+                                    Math.max(checks, 1)
                                 ).toFixed(2)
                             }}%
                         </div>
@@ -118,8 +118,12 @@ export default {
                     score: states
                         .filter(({ round }) => round === i)
                         .reduce(
-                            (acc, { score, up_rounds: upRounds, round }) =>
-                                acc + score * (upRounds / Math.max(round, 1)),
+                            (
+                                acc,
+                                { score, checks, checks_passed: checksPassed }
+                            ) =>
+                                acc +
+                                score * (checksPassed / Math.max(checks, 1)),
                             0
                         ),
                 });
