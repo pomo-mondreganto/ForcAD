@@ -12,7 +12,8 @@ global:
   inflation: true
   round_time: 20
   start_time: 2019-11-30 15:30:00+03:00
-  game_mode: classic
+  game_mode: blitz
+  get_period: 10
 
 storages:
   db:

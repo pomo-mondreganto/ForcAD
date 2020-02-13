@@ -68,10 +68,14 @@ async def handle_connect(_sid, _environ):
     else:
         state = game_state.to_dict()
 
+    game_config = storage.game.get_current_global_config()
+    game_config = game_config.to_dict()
+
     data_to_send = {
         'state': state,
         'teams': teams,
         'tasks': tasks,
+        'config': game_config,
     }
 
     await sio.emit(
@@ -95,6 +99,12 @@ async def get_tasks(_request):
     tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
     tasks = [task.to_dict_for_participants() for task in tasks]
     return json_response(tasks)
+
+
+@app.route('/api/config/')
+async def get_game_config(_request):
+    game_config = storage.game.get_current_global_config()
+    return json_response(game_config.to_dict())
 
 
 # noinspection PyUnresolvedReferences

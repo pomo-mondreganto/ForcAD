@@ -44,7 +44,7 @@ def exception_callback(result, exc, traceback):
 
 
 @shared_task
-def classic_checker_results_handler(
+def checker_results_handler(
         verdicts: List[models.CheckerVerdict],
         team: models.Team,
         task: models.Task,
@@ -52,7 +52,7 @@ def classic_checker_results_handler(
     """Parse returning verdicts and return the final one
 
         If there were any errors, the first one'll be returned
-        Otherwise, verdict of the CHECK action will be returned
+        Otherwise, verdict of the first (sequentially) action will be returned
     """
     check_verdict = None
     puts_verdicts = []
@@ -72,7 +72,13 @@ def classic_checker_results_handler(
         f"Verdicts: check: {check_verdict} puts {puts_verdicts} gets {gets_verdict}"
     )
 
-    parsed_verdicts = [check_verdict] + puts_verdicts + [gets_verdict]
+    parsed_verdicts = []
+    if check_verdict is not None:
+        parsed_verdicts.append(check_verdict)
+    parsed_verdicts.extend(puts_verdicts)
+    if gets_verdict is not None:
+        parsed_verdicts.append(gets_verdict)
+
     result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
     storage.tasks.update_task_status(
         task_id=task.id,

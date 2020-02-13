@@ -66,7 +66,7 @@ def run():
         task_defaults = {
             'env_path': global_config['env_path'],
             'default_score': global_config['default_score'],
-            'get_period': global_config['round_time'],
+            'get_period': global_config.get('get_period', global_config['round_time']),
             'checker_returns_flag_id': True,
             'gevent_optimized': False,
         }

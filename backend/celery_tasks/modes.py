@@ -10,7 +10,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def apply_classic(team: models.Team, task: models.Task, round: int) -> bool:
+def run_full_round(team: models.Team, task: models.Task, round: int) -> bool:
     params = {
         'time_limit': task.checker_timeout + 5,
         'link_error': celery_tasks.handlers.exception_callback,
@@ -33,7 +33,7 @@ def apply_classic(team: models.Team, task: models.Task, round: int) -> bool:
         for _ in range(task.gets)
     ])
 
-    handler = celery_tasks.handlers.classic_checker_results_handler.s(**kwargs)
+    handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
 
     scheme = chain(check, group([celery_tasks.actions.noop, puts, gets]), handler)
     scheme.apply_async()
@@ -42,5 +42,45 @@ def apply_classic(team: models.Team, task: models.Task, round: int) -> bool:
 
 
 @shared_task
-def apply_blitz(team: models.Team, task: models.Task, round: int) -> bool:
-    raise NotImplementedError
+def run_puts_round(team: models.Team, task: models.Task, round: int) -> bool:
+    params = {
+        'time_limit': task.checker_timeout + 5,
+        'link_error': celery_tasks.handlers.exception_callback,
+    }
+    kwargs = {
+        'team': team,
+        'task': task,
+        'round': round,
+    }
+    puts = group([
+        celery_tasks.actions.put_action.s(_checker_verdict_code=None, **kwargs).set(**params)
+        for _ in range(task.puts)
+    ])
+    handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
+    scheme = chain(puts, handler)
+    scheme.apply_async()
+
+    return True
+
+
+@shared_task
+def run_check_gets_round(team: models.Team, task: models.Task, round: int) -> bool:
+    params = {
+        'time_limit': task.checker_timeout + 5,
+        'link_error': celery_tasks.handlers.exception_callback,
+    }
+    kwargs = {
+        'team': team,
+        'task': task,
+        'round': round,
+    }
+    check = celery_tasks.actions.check_action.s(**kwargs).set(**params)
+    gets = chain(*[
+        celery_tasks.actions.get_action.s(**kwargs).set(**params)
+        for _ in range(task.gets)
+    ])
+    handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
+    scheme = chain(check, group([celery_tasks.actions.noop, gets]), handler)
+    scheme.apply_async()
+
+    return True
