@@ -11,13 +11,13 @@ from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = """
 UPDATE teamtasks SET status = %s, public_message = %s, private_message = %s, command = %s, 
-up_rounds = up_rounds + %s
-WHERE task_id = %s AND team_id = %s AND round = %s
+checks_passed = checks_passed + %s, checks = checks + 1
+WHERE task_id = %s AND team_id = %s AND round >= %s
 """
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
-INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, up_rounds) 
-SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, up_rounds FROM teamtasks 
+INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, checks_passed, checks) 
+SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks FROM teamtasks 
     WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
     ORDER BY round DESC LIMIT 1;
 """

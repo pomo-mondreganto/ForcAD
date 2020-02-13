@@ -9,9 +9,10 @@ celery_config = config.get_celery_config()
 app = Celery(
     __name__,
     include=[
-        'celery_tasks.tasks',
+        'celery_tasks.auxiliary',
         'celery_tasks.actions',
         'celery_tasks.handlers',
+        'celery_tasks.modes',
     ],
 )
 

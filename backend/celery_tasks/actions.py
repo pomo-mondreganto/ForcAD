@@ -4,7 +4,7 @@ import secrets
 from celery import shared_task
 
 import storage
-from celery_tasks.tasks import logger
+from celery_tasks.auxiliary import logger
 from helplib import models, flags, checkers
 from helplib.status import TaskStatus
 

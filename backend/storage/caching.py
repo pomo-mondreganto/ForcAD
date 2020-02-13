@@ -142,11 +142,7 @@ def cache_last_flags(round: int, pipeline):
 
 
 def cache_teamtasks(round: int):
-    """Put "teamtasks" table data for the specified round from database to cache
-        :param round: round to cache
-
-    This function caches full game state for specified round
-    """
+    """Put "teamtasks" table data for the specified round from database to cache"""
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
         results = curs.fetchall()

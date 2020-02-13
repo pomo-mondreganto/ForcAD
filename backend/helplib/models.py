@@ -85,6 +85,7 @@ class Task(Model):
     gevent_optimized: bool
     env_path: str
     default_score: Optional[float]
+    get_period: int
 
     def __init__(self,
                  id: Optional[int],
@@ -97,6 +98,7 @@ class Task(Model):
                  checker_returns_flag_id: bool,
                  gevent_optimized: bool,
                  env_path: str,
+                 get_period: int,
                  default_score: Optional[float] = None):
         super(Task, self).__init__()
         self.id = id
@@ -110,6 +112,7 @@ class Task(Model):
         self.gevent_optimized = gevent_optimized
         self.env_path = env_path
         self.default_score = default_score
+        self.get_period = get_period
 
     def to_dict(self):
         return {
@@ -124,6 +127,7 @@ class Task(Model):
             'gevent_optimized': self.gevent_optimized,
             'env_path': self.env_path,
             'default_score': self.default_score,
+            'get_period': self.get_period,
         }
 
     def to_dict_for_participants(self):
@@ -256,9 +260,6 @@ class CheckerVerdict(Model):
 class GlobalConfig(Model):
     """Model representing global config"""
     id: Optional[int]
-    checkers_path: str
-    default_score: float
-    env_path: str
     flag_lifetime: int
     game_hardness: float
     inflation: bool
@@ -267,9 +268,6 @@ class GlobalConfig(Model):
 
     def __init__(self,
                  id: Optional[int],
-                 checkers_path: str,
-                 default_score: float,
-                 env_path: str,
                  flag_lifetime: int,
                  game_hardness: float,
                  inflation: bool,
@@ -277,9 +275,6 @@ class GlobalConfig(Model):
                  game_mode: str):
         super(GlobalConfig, self).__init__()
         self.id = id
-        self.checkers_path = checkers_path
-        self.default_score = default_score
-        self.env_path = env_path
         self.flag_lifetime = flag_lifetime
         self.game_hardness = game_hardness
         self.inflation = inflation
@@ -289,9 +284,6 @@ class GlobalConfig(Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'checkers_path': self.checkers_path,
-            'default_score': self.default_score,
-            'env_path': self.env_path,
             'flag_lifetime': self.flag_lifetime,
             'game_hardness': self.game_hardness,
             'inflation': self.inflation,

@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS Tasks
     places                  INTEGER,
     checker_timeout         INTEGER,
     checker_returns_flag_id INTEGER,
-    gevent_optimized        INTEGER
+    gevent_optimized        INTEGER,
+    get_period              INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks
@@ -49,7 +50,6 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     stolen          INTEGER       DEFAULT 0,
     lost            INTEGER       DEFAULT 0,
     score           FLOAT         DEFAULT 0,
-    up_rounds       INTEGER       DEFAULT 0,
     checks          INTEGER       DEFAULT 0,
     checks_passed   INTEGER       DEFAULT 0,
     public_message  TEXT NOT NULL DEFAULT '',
@@ -63,9 +63,6 @@ CREATE TABLE IF NOT EXISTS GlobalConfig
     id            SERIAL PRIMARY KEY,
     game_running  BOOLEAN    DEFAULT false,
     real_round    INTEGER    DEFAULT 0,
-    checkers_path VARCHAR(256),
-    default_score FLOAT,
-    env_path      VARCHAR(256),
     flag_lifetime INTEGER,
     game_hardness FLOAT,
     inflation     BOOLEAN,
