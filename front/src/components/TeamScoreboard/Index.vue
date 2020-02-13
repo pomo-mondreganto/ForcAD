@@ -51,7 +51,7 @@
                             <strong>SLA</strong>:
                             {{
                                 (
-                                    (100.0 * checks_passed) /
+                                    (100.0 * checksPassed) /
                                     Math.max(checks, 1)
                                 ).toFixed(2)
                             }}%
