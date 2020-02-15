@@ -1,12 +1,11 @@
 import json
 
-import aioredis
-import redis
 from typing import List, Optional
 
 import helplib
 import storage
 from helplib import models
+from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = """
@@ -17,28 +16,22 @@ WHERE task_id = %s AND team_id = %s AND round >= %s
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
 INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, checks_passed, checks) 
-SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks FROM teamtasks 
-    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
-    ORDER BY round DESC LIMIT 1;
+SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks 
+FROM teamtasks 
+WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
+ORDER BY round DESC LIMIT 1 FOR NO KEY UPDATE;
 """
 
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        while True:
-            try:
-                pipeline.watch('tasks:cached')
-                cached = pipeline.exists('tasks:cached')
-
-                pipeline.multi()
-                if not cached:
-                    caching.cache_tasks(pipeline)
-
-                pipeline.execute()
-                break
-            except redis.WatchError:
-                continue
+        cache_helper(
+            pipeline=pipeline,
+            cache_key='tasks:cached',
+            cache_func=caching.cache_tasks,
+            cache_args=(pipeline,),
+        )
 
         tasks, = pipeline.smembers('tasks').execute()
         tasks = list(models.Task.from_json(task) for task in tasks)
@@ -51,21 +44,11 @@ async def get_tasks_async(loop) -> List[models.Task]:
 
     redis_aio = await storage.get_async_redis_storage(loop)
 
-    while True:
-        try:
-            await redis_aio.watch('tasks:cached')
-            cached = await redis_aio.exists('tasks:cached')
-
-            tr = redis_aio.multi_exec()
-            if not cached:
-                await caching.cache_tasks_async(tr)
-
-            await tr.execute()
-            await redis_aio.unwatch()
-        except (aioredis.MultiExecError, aioredis.WatchVariableError):
-            continue
-        else:
-            break
+    await async_cache_helper(
+        redis_aio=redis_aio,
+        cache_key='tasks:cached',
+        cache_func=caching.cache_tasks_async,
+    )
 
     tasks = await redis_aio.smembers('tasks')
     tasks = list(models.Task.from_json(task) for task in tasks)
@@ -157,25 +140,16 @@ def get_teamtasks_of_team(team_id: int, current_round: int) -> Optional[List[dic
         ).execute()
 
         if not cached:
-            while True:
-                try:
-                    pipeline.watch(f'teamtasks:team:{team_id}:round:{current_round}:cached')
-
-                    cached = pipeline.exists(f'teamtasks:team:{team_id}:round:{current_round}:cached')
-
-                    pipeline.multi()
-
-                    if not cached:
-                        caching.cache_teamtasks_for_team(
-                            team_id=team_id,
-                            current_round=current_round,
-                            pipeline=pipeline,
-                        )
-
-                    pipeline.execute()
-                    break
-                except redis.WatchError:
-                    continue
+            cache_helper(
+                pipeline=pipeline,
+                cache_key=f'teamtasks:team:{team_id}:round:{current_round}:cached',
+                cache_func=caching.cache_teamtasks_for_team,
+                cache_kwargs={
+                    'team_id': team_id,
+                    'current_round': current_round,
+                    'pipeline': pipeline,
+                },
+            )
             result, = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}').execute()
 
     try:

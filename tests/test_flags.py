@@ -1,11 +1,11 @@
 import os
+from unittest import TestCase
+
+import requests
 import socket
 import subprocess
 import sys
 import time
-from unittest import TestCase
-
-import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -142,7 +142,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('invalid', res)
 
-        wait_rounds(1)
+        wait_rounds(1.5)
 
         teams = self.get_teams()
         all_stolen = 0

@@ -82,7 +82,7 @@ FLUSHALL in redis, but that can lead to a round of unavailable scoreboard.
 Platform has a somewhat-flexible rating system. Basically, rating system is a class that's initialized by 2 floats: 
 current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
 victim rating changes respectively. Having read that, you can easily replace default rating system in 
-[C rating system](backend/rs_implementation/rating_system.c) by your own brand-new one. Default rating system is 
+[C rating system](backend/fast_rs/rs.c) by your own brand-new one. Default rating system is 
 based on Elo rating and performs quite well in practice. **game_hardness** and **inflation** configuration variables 
 can be set in `global` block in `config.yml`, the first one sets how much points team is earning for an attack 
 (the higher the hardness, the bigger the rating change is), and the second one states is there's an "inflation" of 

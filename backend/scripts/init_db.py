@@ -89,8 +89,8 @@ def run():
                     task.places,
                     task.checker_timeout,
                     task.env_path,
-                    int(task.checker_returns_flag_id),
-                    int(task.gevent_optimized),
+                    task.checker_returns_flag_id,
+                    task.gevent_optimized,
                     task.get_period,
                 )
             )

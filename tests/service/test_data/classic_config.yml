@@ -1,0 +1,76 @@
+flower:
+  password: secret
+  username: system_admin
+
+global:
+  timezone: Europe/Moscow
+  checkers_path: /checkers/
+  default_score: 2500
+  env_path: /checkers/bin/
+  flag_lifetime: 5
+  game_hardness: 3000.0
+  inflation: true
+  round_time: 20
+  start_time: 2019-11-30 15:30:00+03:00
+  game_mode: classic
+
+storages:
+  db:
+    dbname: system_db
+    host: postgres
+    password: secret
+    port: 5432
+    user: system_admin
+
+  redis:
+    db: 0
+    host: redis
+    port: 6379
+    password: secret
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    vhost: forcad
+    user: system_admin
+    password: secret
+
+tasks:
+  - checker: test_service/checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gets: 2
+    name: test_basic_service
+    places: 5
+    puts: 2
+
+  - checker: test_service/gevent_checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gevent_optimized: true
+    gets: 2
+    name: test_gevent_service_1
+    places: 5
+    puts: 2
+
+  - checker: test_service/gevent_checker.py
+    checker_returns_flag_id: true
+    checker_timeout: 10
+    gevent_optimized: true
+    gets: 2
+    name: test_gevent_service_2
+    places: 5
+    puts: 2
+
+teams:
+  - ip: test_service
+    name: "Test working team 1"
+
+  - ip: test_service
+    name: "Test working team 2"
+
+  - ip: test_service
+    name: "Test working team 3"
+
+  - ip: 127.0.0.1
+    name: "Test unreachable team"
