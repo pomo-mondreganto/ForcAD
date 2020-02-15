@@ -1,5 +1,4 @@
-import json
-
+from kombu.utils import json
 from typing import List, Optional
 
 import helplib

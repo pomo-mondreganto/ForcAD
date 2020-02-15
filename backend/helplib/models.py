@@ -1,6 +1,5 @@
-import json
-
 import yaml
+from kombu.utils import json
 from typing import Optional, List
 
 import helplib.status

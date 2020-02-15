@@ -1,4 +1,4 @@
-import json
+from kombu.utils import json
 
 import helplib
 import storage
@@ -15,8 +15,6 @@ WITH flag_ids AS (
 SELECT flag_id FROM stolenflags 
 WHERE flag_id IN (SELECT id from flag_ids) AND attacker_id = %s
 """
-
-_SELECT_LAST_TEAM_FLAGS_QUERY = "SELECT id from flags WHERE round >= %s AND team_id = %s"
 
 _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
 
@@ -89,27 +87,6 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
     pipeline.set(f'team:{team_id}:cached:stolen', 1)
 
 
-def cache_last_owned(team_id: int, round: int, pipeline):
-    """Put owned flags for team from last "flag_lifetime" rounds to cache
-
-        :param team_id: flag owner team id
-        :param round: current round
-        :param pipeline: redis connection to add command to
-
-    Just adds commands to pipeline stack, don't forget to execute afterwards
-    """
-    game_config = storage.game.get_current_global_config()
-
-    with storage.db_cursor() as (conn, curs):
-        curs.execute(_SELECT_LAST_TEAM_FLAGS_QUERY, (round - game_config.flag_lifetime, team_id))
-        flags = curs.fetchall()
-
-    pipeline.delete(f'team:{team_id}:cached:owned', f'team:{team_id}:owned_flags')
-    if flags:
-        pipeline.sadd(f'team:{team_id}:owned_flags', *[flag_id for flag_id, in flags])
-    pipeline.set(f'team:{team_id}:cached:owned', 1)
-
-
 def cache_last_flags(round: int, pipeline):
     """Put all generated flags from last "flag_lifetime" rounds to cache
 
@@ -119,24 +96,25 @@ def cache_last_flags(round: int, pipeline):
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     game_config = storage.game.get_current_global_config()
+    expires = game_config.flag_lifetime * game_config.round_time * 2  # can be smaller
 
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY, (round - game_config.flag_lifetime,))
         flags = curs.fetchall()
 
     pipeline.delete('flags:cached')
-    flag_models = []
-    for flag_dict in flags:
-        flag = helplib.models.Flag.from_dict(flag_dict)
-        flag_models.append(flag)
+    flag_models = list(helplib.models.Flag.from_dict(data) for data in flags)
 
     if flag_models:
         pipeline.delete(*[f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}' for flag in flag_models])
 
     for flag in flag_models:
-        pipeline.set(f'flag:id:{flag.id}', flag.to_json())
-        pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
-        pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
+        pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
+        pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
+
+        round_flags_key = f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+        pipeline.sadd(round_flags_key, flag.id)
+        pipeline.expire(round_flags_key, expires)
 
     pipeline.set('flags:cached', 1)
 
@@ -147,10 +125,13 @@ def cache_teamtasks(round: int):
         curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
         results = curs.fetchall()
 
+    game_config = storage.game.get_current_global_config()
+    expire = game_config.round_time * 2  # can be smaller
+
     data = json.dumps(results)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.set(f'teamtasks:{round}', data)
-        pipeline.set(f'teamtasks:{round}:cached', 1)
+        pipeline.set(f'teamtasks:{round}', data, ex=expire)
+        pipeline.set(f'teamtasks:{round}:cached', 1, ex=expire)
         pipeline.execute()
 
 
@@ -171,9 +152,12 @@ def cache_teamtasks_for_team(team_id: int, current_round: int, pipeline):
         )
         results = curs.fetchall()
 
+    game_config = storage.game.get_current_global_config()
+    expire = game_config.round_time * 2  # can be smaller
+
     data = json.dumps(results)
-    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data)
-    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1)
+    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data, ex=expire)
+    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1, ex=expire)
 
 
 def cache_global_config(pipeline):

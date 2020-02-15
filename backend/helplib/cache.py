@@ -20,6 +20,7 @@ def cache_helper(pipeline,
     if on_cached_kwargs is None:
         on_cached_kwargs = dict()
 
+    was_changed = False
     while True:
         try:
             pipeline.watch(cache_key)
@@ -28,6 +29,7 @@ def cache_helper(pipeline,
             pipeline.multi()
 
             if not cached:
+                was_changed = True
                 cache_func(*cache_args, **cache_kwargs)
             elif on_cached is not None:
                 on_cached(*on_cached_args, **on_cached_kwargs)
@@ -37,6 +39,8 @@ def cache_helper(pipeline,
             continue
         else:
             break
+
+    return was_changed
 
 
 async def async_cache_helper(redis_aio, cache_key, cache_func, cache_args=None, cache_kwargs=None):

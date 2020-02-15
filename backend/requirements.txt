@@ -48,6 +48,7 @@ rfc3986==1.3.2
 sanic==19.12.2
 Sanic-Cors==0.10.0b1
 Sanic-Plugins-Framework==0.9.0b1
+simplejson==3.17.0
 six==1.14.0
 sniffio==1.1.0
 terminaltables==3.1.0

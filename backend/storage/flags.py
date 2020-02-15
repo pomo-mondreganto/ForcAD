@@ -71,19 +71,16 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
         flag.id, = curs.fetchone()
         conn.commit()
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cache_helper(
-            pipeline=pipeline,
-            cache_key=f'team:{flag.team_id}:cached:owned',
-            cache_func=caching.cache_last_owned,
-            cache_args=(flag.team_id, flag.round, pipeline),
-            on_cached=pipeline.sadd,
-            on_cached_args=(f'team:{flag.team_id}:owned_flags', flag.id),
-        )
+    game_config = storage.game.get_current_global_config()
+    expires = game_config.flag_lifetime * game_config.round_time * 2  # can be smaller
 
-        pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
-        pipeline.set(f'flag:id:{flag.id}', flag.to_json())
-        pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        round_flags_key = f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+        pipeline.sadd(round_flags_key, flag.id)
+        pipeline.expire(round_flags_key, expires)
+
+        pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
+        pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
         pipeline.execute()
 
     return flag
@@ -113,7 +110,7 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helplib.model
         flag_exists, flag_json = pipeline.execute()
 
     if not flag_exists:
-        raise helplib.exceptions.FlagSubmitException('Invalid flag')
+        raise helplib.exceptions.FlagSubmitException('Flag is invalid or too old')
 
     flag = helplib.models.Flag.from_json(flag_json)
 

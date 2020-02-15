@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import asyncio
-import json
+from kombu.utils import json
 
 from sanic import Sanic
 from sanic.response import json as json_response, html
