@@ -98,7 +98,7 @@ AS
     LANGUAGE C STRICT
                ROWS 1;
 
-CREATE OR REPLACE FUNCTION recalculate_rating(attacker_id INTEGER, victim_id INTEGER, tid INTEGER)
+CREATE OR REPLACE FUNCTION recalculate_rating(att_id INTEGER, vic_id INTEGER, t_id INTEGER, f_id INTEGER)
     RETURNS TABLE
             (
                 attacker_delta FLOAT,
@@ -118,33 +118,33 @@ BEGIN
     SELECT real_round, game_hardness, inflation FROM globalconfig WHERE id = 1 INTO rround, hardness, inflate;
 
 --     avoid deadlocks by locking min(attacker, victim), then max(attacker, victim)
-    if attacker_id < victim_id THEN
+    if att_id < vic_id THEN
         SELECT score
         FROM teamtasks
-        WHERE team_id = attacker_id
-          AND task_id = tid
+        WHERE team_id = att_id
+          AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO attacker_score;
 
         SELECT score
         FROM teamtasks
-        WHERE team_id = victim_id
-          AND task_id = tid
+        WHERE team_id = vic_id
+          AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO victim_score;
 
     ELSE
         SELECT score
         FROM teamtasks
-        WHERE team_id = victim_id
-          AND task_id = tid
+        WHERE team_id = vic_id
+          AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO victim_score;
 
         SELECT score
         FROM teamtasks
-        WHERE team_id = attacker_id
-          AND task_id = tid
+        WHERE team_id = att_id
+          AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO attacker_score;
 
@@ -153,8 +153,21 @@ BEGIN
 
     SELECT * FROM calculate(attacker_score, victim_score, hardness, inflate) INTO att_d, vic_d;
 
-    UPDATE teamtasks SET score = score + att_d WHERE team_id = attacker_id AND task_id = tid AND round >= rround;
-    UPDATE teamtasks SET score = score + vic_d WHERE team_id = victim_id AND task_id = tid AND round >= rround;
+    INSERT INTO stolenflags (attacker_id, flag_id) VALUES (att_id, f_id);
+
+    UPDATE teamtasks
+    SET stolen = stolen + 1,
+        score  = score + att_d
+    WHERE team_id = att_id
+      AND task_id = t_id
+      AND round >= rround;
+
+    UPDATE teamtasks
+    SET lost  = lost + 1,
+        score = score + vic_d
+    WHERE team_id = att_id
+      AND task_id = t_id
+      AND round >= rround;
 
     attacker_delta := att_d;
     victim_delta := vic_d;

@@ -3,7 +3,7 @@ import json
 from typing import List, Optional
 
 import storage
-from helplib import models, locking, flags
+from helplib import models, flags
 from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
 
@@ -78,19 +78,16 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
     """
 
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        with locking.acquire_redis_lock(pipeline, f'attack:{attacker_id}:{flag_str}:lock'):
-            flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
-
-        victim_id = flag.team_id
+        flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
 
         with storage.db_cursor() as (conn, curs):
-            curs.callproc("recalculate_rating", (attacker_id, victim_id, flag.task_id))
+            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
             attacker_delta, victim_delta = curs.fetchone()
             conn.commit()
 
         flag_data = {
             'attacker_id': attacker_id,
-            'victim_id': victim_id,
+            'victim_id': flag.team_id,
             'task_id': flag.task_id,
             'attacker_delta': attacker_delta,
             'victim_delta': victim_delta,
