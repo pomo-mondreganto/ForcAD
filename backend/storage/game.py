@@ -1,9 +1,9 @@
-import redis
 import time
 from typing import Optional
 
 import storage
 from helplib import models
+from helplib.cache import cache_helper
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
@@ -111,19 +111,12 @@ def get_db_global_config() -> models.GlobalConfig:
 def get_current_global_config() -> models.GlobalConfig:
     """Get global config from cache is cached, otherwise cache it"""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        while True:
-            try:
-                pipeline.watch('global_config:cached')
-                cached = pipeline.exists('global_config:cached')
-
-                pipeline.multi()
-                if not cached:
-                    storage.caching.cache_global_config(pipeline)
-
-                pipeline.execute()
-                break
-            except redis.WatchError:
-                continue
+        cache_helper(
+            pipeline=pipeline,
+            cache_key='global_config:cached',
+            cache_func=storage.caching.cache_global_config,
+            cache_args=(pipeline,),
+        )
 
         result, = pipeline.get('global_config').execute()
         global_config = models.GlobalConfig.from_json(result)

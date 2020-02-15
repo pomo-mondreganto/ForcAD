@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS Tasks
     puts                    INTEGER,
     places                  INTEGER,
     checker_timeout         INTEGER,
-    checker_returns_flag_id INTEGER,
-    gevent_optimized        INTEGER,
+    checker_returns_flag_id BOOLEAN,
+    gevent_optimized        BOOLEAN,
     get_period              INTEGER DEFAULT 0
 );
 
@@ -81,3 +81,83 @@ CREATE INDEX IF NOT EXISTS idx_stolenflags_attacker_flag_id
 
 CREATE INDEX IF NOT EXISTS idx_flags_team_round
     ON Flags (round, team_id);
+
+
+DROP FUNCTION IF EXISTS calculate(FLOAT, FLOAT, FLOAT, BOOLEAN);
+DROP FUNCTION IF EXISTS recalculate_rating(INTEGER, INTEGER, INTEGER, INTEGER);
+
+CREATE OR REPLACE FUNCTION calculate(FLOAT, FLOAT, FLOAT, BOOLEAN)
+    RETURNS TABLE
+            (
+                attacker_delta FLOAT,
+                victim_delta   FLOAT
+            )
+AS
+'rs.so',
+'calculate'
+    LANGUAGE C STRICT
+               ROWS 1;
+
+CREATE OR REPLACE FUNCTION recalculate_rating(attacker_id INTEGER, victim_id INTEGER, tid INTEGER)
+    RETURNS TABLE
+            (
+                attacker_delta FLOAT,
+                victim_delta   FLOAT
+            )
+AS
+$$
+DECLARE
+    rround         INTEGER;
+    hardness       FLOAT;
+    inflate        BOOLEAN;
+    attacker_score FLOAT;
+    victim_score   FLOAT;
+    att_d          FLOAT;
+    vic_d          FLOAT;
+BEGIN
+    SELECT real_round, game_hardness, inflation FROM globalconfig WHERE id = 1 INTO rround, hardness, inflate;
+
+--     avoid deadlocks by locking min(attacker, victim), then max(attacker, victim)
+    if attacker_id < victim_id THEN
+        SELECT score
+        FROM teamtasks
+        WHERE team_id = attacker_id
+          AND task_id = tid
+          AND round = rround FOR NO KEY UPDATE
+        INTO attacker_score;
+
+        SELECT score
+        FROM teamtasks
+        WHERE team_id = victim_id
+          AND task_id = tid
+          AND round = rround FOR NO KEY UPDATE
+        INTO victim_score;
+
+    ELSE
+        SELECT score
+        FROM teamtasks
+        WHERE team_id = victim_id
+          AND task_id = tid
+          AND round = rround FOR NO KEY UPDATE
+        INTO victim_score;
+
+        SELECT score
+        FROM teamtasks
+        WHERE team_id = attacker_id
+          AND task_id = tid
+          AND round = rround FOR NO KEY UPDATE
+        INTO attacker_score;
+
+    END IF;
+
+
+    SELECT * FROM calculate(attacker_score, victim_score, hardness, inflate) INTO att_d, vic_d;
+
+    UPDATE teamtasks SET score = score + att_d WHERE team_id = attacker_id AND task_id = tid AND round >= rround;
+    UPDATE teamtasks SET score = score + vic_d WHERE team_id = victim_id AND task_id = tid AND round >= rround;
+
+    attacker_delta := att_d;
+    victim_delta := vic_d;
+    RETURN NEXT;
+END;
+$$ LANGUAGE plpgsql ROWS 1;

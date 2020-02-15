@@ -122,7 +122,10 @@ services:
     restart: "no"
 
   postgres:
-    image: postgres:10.8-alpine
+    build:
+      context: .
+      dockerfile: docker_config/postgres/Dockerfile
+    image: ${FORCAD_REGISTRY}/forcad_postgres:${FORCAD_ARCH_TAG}
     volumes:
       - database:/var/lib/postgresql/data/
     env_file:
