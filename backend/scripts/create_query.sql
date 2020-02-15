@@ -132,7 +132,6 @@ BEGIN
           AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO victim_score;
-
     ELSE
         SELECT score
         FROM teamtasks
@@ -147,7 +146,6 @@ BEGIN
           AND task_id = t_id
           AND round = rround FOR NO KEY UPDATE
         INTO attacker_score;
-
     END IF;
 
 

@@ -16,9 +16,10 @@ WHERE task_id = %s AND team_id = %s AND round >= %s
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
 INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, checks_passed, checks) 
-SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks FROM teamtasks 
-    WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
-    ORDER BY round DESC LIMIT 1;
+SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks 
+FROM teamtasks 
+WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
+ORDER BY round DESC LIMIT 1 FOR NO KEY UPDATE;
 """
 
 

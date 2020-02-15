@@ -11,9 +11,9 @@ if 'TEST_TYPE' not in os.environ:
     TEST_TYPE = 'CLASSIC'
 else:
     TEST_TYPE = os.environ['TEST_TYPE']
-    print(f'TEST_TYPE: {TEST_TYPE}')
+    print('TEST_TYPE:', TEST_TYPE)
 
-TEST_CONFIG = os.path.join(TESTS_DIR, 'service/test_data', f'{TEST_TYPE.lower()}_config.yml')
+TEST_CONFIG = os.path.join(TESTS_DIR, 'service/test_data', TEST_TYPE.lower() + '_config.yml')
 
 dst = os.path.join(PROJECT_BASE, 'checkers/test_service')
 if os.path.exists(dst):
