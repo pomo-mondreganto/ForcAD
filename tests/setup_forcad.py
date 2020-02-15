@@ -5,8 +5,15 @@ import shutil
 # backend
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_BASE = os.path.dirname(TESTS_DIR)
-TEST_TYPE = os.environ.get('TEST_TYPE', 'CLASSIC').lower()
-TEST_CONFIG = os.path.join(TESTS_DIR, 'service/test_data', f'{TEST_TYPE}_config.yml')
+
+if 'TEST_TYPE' not in os.environ:
+    print('TEST_TYPE not found in environment. Using CLASSIC.')
+    TEST_TYPE = 'CLASSIC'
+else:
+    TEST_TYPE = os.environ['TEST_TYPE']
+    print(f'TEST_TYPE: {TEST_TYPE}')
+
+TEST_CONFIG = os.path.join(TESTS_DIR, 'service/test_data', f'{TEST_TYPE.lower()}_config.yml')
 
 dst = os.path.join(PROJECT_BASE, 'checkers/test_service')
 if os.path.exists(dst):
