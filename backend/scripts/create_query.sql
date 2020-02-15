@@ -165,7 +165,7 @@ BEGIN
     UPDATE teamtasks
     SET lost  = lost + 1,
         score = score + vic_d
-    WHERE team_id = att_id
+    WHERE team_id = vic_id
       AND task_id = t_id
       AND round >= rround;
 
