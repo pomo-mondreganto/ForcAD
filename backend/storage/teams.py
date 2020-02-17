@@ -76,22 +76,22 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         :return: attacker rating change
     """
 
+    flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
+
+    with storage.db_cursor() as (conn, curs):
+        curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
+        attacker_delta, victim_delta = curs.fetchone()
+        conn.commit()
+
+    flag_data = {
+        'attacker_id': attacker_id,
+        'victim_id': flag.team_id,
+        'task_id': flag.task_id,
+        'attacker_delta': attacker_delta,
+        'victim_delta': victim_delta,
+    }
+
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
-
-        with storage.db_cursor() as (conn, curs):
-            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
-            attacker_delta, victim_delta = curs.fetchone()
-            conn.commit()
-
-        flag_data = {
-            'attacker_id': attacker_id,
-            'victim_id': flag.team_id,
-            'task_id': flag.task_id,
-            'attacker_delta': attacker_delta,
-            'victim_delta': victim_delta,
-        }
-
         pipeline.publish('stolen_flags', json.dumps(flag_data)).execute()
 
     return attacker_delta
