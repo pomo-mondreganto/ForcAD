@@ -1,7 +1,3 @@
 checklib
 requests
 psycopg2-binary
-PyYAML
-aioredis
-redis
-kombu
