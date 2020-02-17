@@ -3,6 +3,7 @@
 import os
 import secrets
 
+import pytz
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,14 +29,18 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 
 _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
 
+_SET_TIMEZONE_QUERY = "SET TIME ZONE %s"
+
 
 def run():
     with storage.db_cursor() as (conn, curs):
+        file_config = config.AppConfig.get_main_config()
+
         create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
         create_query = open(create_query_path).read()
         curs.execute(create_query)
 
-        teams_config = config.get_teams_config()
+        teams_config = file_config['teams']
         teams = []
 
         for team_conf in teams_config:
@@ -45,7 +50,7 @@ def run():
             team.id, = curs.fetchone()
             teams.append(team)
 
-        tasks_config = config.get_tasks_config()
+        tasks_config = file_config['tasks']
         tasks = []
 
         global_defaults = {
@@ -56,9 +61,10 @@ def run():
             'inflation': True,
             'flag_lifetime': 5,
             'round_time': 60,
-            'timezone': 'Europe/Moscow',
+            'timezone': 'UTC',
         }
-        global_config = config.get_global_config()
+
+        global_config = file_config['global']
         for k, v in global_defaults.items():
             if k not in global_config:
                 global_defaults[k] = v
@@ -105,12 +111,13 @@ def run():
 
         curs.executemany(_TEAMTASK_INSERT_QUERY, data)
 
-        global_config.pop('start_time')
-        global_config.pop('timezone', None)
         global_config.pop('env_path', None)
         global_config.pop('default_score', None)
         global_config.pop('checkers_path', None)
         global_config.pop('get_period', None)
+
+        tz = pytz.timezone(global_config['timezone'])
+        global_config['start_time'] = tz.localize(global_config['start_time'])
 
         keys = global_config.keys()
         columns = ','.join(keys)
@@ -119,7 +126,6 @@ def run():
             _CONFIG_INITIALIZATION_QUERY.format(columns=columns, values=values),
             global_config,
         )
-        global_config['id'], = curs.fetchone()
 
         conn.commit()
 

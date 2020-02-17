@@ -1,3 +1,4 @@
+import datetime
 import yaml
 from kombu.utils import json
 from typing import Optional, List
@@ -264,6 +265,11 @@ class GlobalConfig(Model):
     inflation: bool
     round_time: int
     game_mode: str
+    timezone: str
+    start_time: datetime.datetime
+
+    real_round: Optional[int]
+    game_running: Optional[bool]
 
     def __init__(self,
                  id: Optional[int],
@@ -271,7 +277,11 @@ class GlobalConfig(Model):
                  game_hardness: float,
                  inflation: bool,
                  round_time: int,
-                 game_mode: str):
+                 game_mode: str,
+                 timezone: str,
+                 start_time: datetime.datetime,
+                 real_round: Optional[int] = None,
+                 game_running: Optional[bool] = None):
         super(GlobalConfig, self).__init__()
         self.id = id
         self.flag_lifetime = flag_lifetime
@@ -279,6 +289,10 @@ class GlobalConfig(Model):
         self.inflation = inflation
         self.round_time = round_time
         self.game_mode = game_mode
+        self.timezone = timezone
+        self.start_time = start_time
+        self.real_round = real_round
+        self.game_running = game_running
 
     def to_dict(self):
         return {
@@ -288,4 +302,11 @@ class GlobalConfig(Model):
             'inflation': self.inflation,
             'round_time': self.round_time,
             'game_mode': self.game_mode,
+            'timezone': self.timezone,
+            'start_time': self.start_time,
+            'real_round': self.real_round,
+            'game_running': self.game_running,
         }
+
+    def __str__(self):
+        return str(self.to_dict())

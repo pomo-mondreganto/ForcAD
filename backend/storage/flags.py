@@ -29,6 +29,7 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
         raise helplib.exceptions.FlagSubmitException('Flag is your own')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        # optimization of redis request count
         cached_stolen = pipeline.exists(f'team:{attacker}:cached:stolen').execute()
 
         if not cached_stolen:
@@ -148,18 +149,16 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     """
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('flags:cached').execute()
-        if not cached:
-            cache_helper(
-                pipeline=pipeline,
-                cache_key='flags:cached',
-                cache_func=caching.cache_last_flags,
-                cache_args=(current_round, pipeline),
-            )
+        cache_helper(
+            pipeline=pipeline,
+            cache_key='flags:cached',
+            cache_func=caching.cache_last_flags,
+            cache_args=(current_round, pipeline),
+        )
 
         flags, = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
         try:
-            flag_id = int(secrets.choice(list(flags)).decode())
-        except (ValueError, IndexError, AttributeError):
+            flag_id = int(secrets.choice(list(flags)))
+        except (ValueError, IndexError, TypeError):
             return None
     return get_flag_by_id(flag_id, current_round)

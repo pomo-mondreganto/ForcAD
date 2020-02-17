@@ -57,8 +57,8 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         team_id, = pipeline.get(f'team:token:{token}').execute()
 
     try:
-        team_id = int(team_id.decode())
-    except (ValueError, AttributeError):
+        team_id = int(team_id)
+    except (ValueError, TypeError):
         return None
     else:
         return team_id

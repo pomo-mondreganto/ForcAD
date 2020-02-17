@@ -1,16 +1,17 @@
 from kombu.utils import json
 from typing import List, Optional
 
-import helplib
 import storage
 from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
+from helplib.status import TaskStatus
 from storage import caching
 
 _UPDATE_TEAMTASKS_STATUS_QUERY = """
 UPDATE teamtasks SET status = %s, public_message = %s, private_message = %s, command = %s, 
 checks_passed = checks_passed + %s, checks = checks + 1
 WHERE task_id = %s AND team_id = %s AND round >= %s
+RETURNING *
 """
 
 _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
@@ -20,6 +21,8 @@ FROM teamtasks
 WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
 ORDER BY round DESC LIMIT 1 FOR NO KEY UPDATE;
 """
+
+_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s ORDER BY id"
 
 
 def get_tasks() -> List[models.Task]:
@@ -64,15 +67,18 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
-    if checker_verdict.status == helplib.status.TaskStatus.UP:
+    public = checker_verdict.public_message
+    if checker_verdict.status == TaskStatus.UP:
         add = 1
+        if checker_verdict.action.upper() == 'PUT':
+            public = 'OK'
 
-    with storage.db_cursor() as (conn, curs):
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(
             _UPDATE_TEAMTASKS_STATUS_QUERY,
             (
                 checker_verdict.status.value,
-                checker_verdict.public_message,
+                public,
                 checker_verdict.private_message,
                 checker_verdict.command,
                 add,
@@ -81,8 +87,12 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
                 round,
             )
         )
-
+        data = curs.fetchone()
         conn.commit()
+
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=20, approximate=False)
+        pipeline.execute()
 
 
 def get_teamtasks(round: int) -> Optional[List[dict]]:
@@ -99,7 +109,7 @@ def get_teamtasks(round: int) -> Optional[List[dict]]:
     if not cached:
         return None
 
-    teamtasks = json.loads(result.decode())
+    teamtasks = json.loads(result)
     return teamtasks
 
 
@@ -125,47 +135,32 @@ def get_teamtasks_for_participants(round: int) -> Optional[List[dict]]:
         :param round: current round
         :return: dictionary of team tasks or None
     """
-    teamtasks = get_teamtasks(round=round)
-    return filter_teamtasks_for_participants(teamtasks)
+    return filter_teamtasks_for_participants(get_teamtasks(round=round))
 
 
-def get_teamtasks_of_team(team_id: int, current_round: int) -> Optional[List[dict]]:
-    """Fetch teamtasks history for a team, cache if necessary"""
+def get_teamtasks_of_team(team_id: int) -> Optional[List[dict]]:
+    """Fetch teamtasks for team for each task"""
+    tasks = get_tasks()
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, result = pipeline.exists(
-            f'teamtasks:team:{team_id}:round:{current_round}:cached',
-        ).get(
-            f'teamtasks:team:{team_id}:round:{current_round}',
-        ).execute()
+        for task in tasks:
+            pipeline.xrange(f'teamtasks:{team_id}:{task.id}')
 
-        if not cached:
-            cache_helper(
-                pipeline=pipeline,
-                cache_key=f'teamtasks:team:{team_id}:round:{current_round}:cached',
-                cache_func=caching.cache_teamtasks_for_team,
-                cache_kwargs={
-                    'team_id': team_id,
-                    'current_round': current_round,
-                    'pipeline': pipeline,
-                },
-            )
-            result, = pipeline.get(f'teamtasks:team:{team_id}:round:{current_round}').execute()
+        data = pipeline.execute()
 
-    try:
-        result = result.decode()
-        teamtasks = json.loads(result)
-    except (UnicodeDecodeError, AttributeError, json.decoder.JSONDecodeError):
-        teamtasks = None
+    data = sum(data, [])
+    results = []
+    for timestamp, record in data:
+        record['timestamp'] = timestamp
+        results.append(record)
 
-    return teamtasks
+    return results
 
 
-def get_teamtasks_of_team_for_participants(team_id: int, current_round: int) -> Optional[List[dict]]:
+def get_teamtasks_of_team_for_participants(team_id: int) -> Optional[List[dict]]:
     """Fetch teamtasks history for a team, cache if necessary, with private message stripped"""
     return filter_teamtasks_for_participants(
         get_teamtasks_of_team(
             team_id=team_id,
-            current_round=current_round,
         )
     )
 

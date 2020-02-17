@@ -65,9 +65,7 @@ class RoundProcessor(Task):
         # But all teamtasks with round >= real_round are updated in the attack handler
         # So both old and new teamtasks will be updated properly
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-            pipeline.set('round', finished_round)
-            pipeline.set('real_round', finished_round + 1)
-            pipeline.execute()
+            pipeline.set('real_round', finished_round + 1).execute()
 
     def run(self, *args, **kwargs):
         """Process new round
@@ -87,6 +85,9 @@ class RoundProcessor(Task):
         if self.should_update_round():
             self.update_round(current_round)
             round_to_check = current_round + 1
+        elif not round_to_check:
+            logger.info("Not processing, round is 0")
+            return
 
         if self.should_update_game_state():
             self.update_game_state(current_round)

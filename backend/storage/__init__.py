@@ -48,7 +48,7 @@ def get_redis_storage():
 
     if not _redis_storage:
         redis_config = config.get_storage_config()['redis']
-        _redis_storage = redis.StrictRedis(**redis_config)
+        _redis_storage = redis.StrictRedis(**redis_config, decode_responses=True)
 
     return _redis_storage
 

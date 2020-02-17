@@ -2,6 +2,8 @@ import os
 
 import yaml
 
+import storage
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_DIR = os.path.join(BASE_DIR, 'config')
 CONFIG_FILENAME = 'config.yml'
@@ -33,17 +35,9 @@ def get_global_config() -> dict:
     return AppConfig.get_main_config()['global']
 
 
-def get_teams_config() -> list:
-    return AppConfig.get_main_config()['teams']
-
-
-def get_tasks_config() -> list:
-    return AppConfig.get_main_config()['tasks']
-
-
 def get_celery_config() -> dict:
     storages = get_storage_config()
-    global_conf = get_global_config()
+    game_config = storage.game.get_current_global_config()
 
     redis_host = storages['redis'].get('host', 'redis')
     redis_port = storages['redis'].get('port', 6379)
@@ -69,7 +63,7 @@ def get_celery_config() -> dict:
         'result_backend': result_backend,
         'result_serializer': 'pickle',
         'task_serializer': 'pickle',
-        'timezone': global_conf['timezone'],
+        'timezone': game_config.timezone,
         'worker_prefetch_multiplier': 1,
     }
 

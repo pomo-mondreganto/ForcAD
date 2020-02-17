@@ -13,20 +13,7 @@ _SET_GAME_RUNNING_QUERY = 'UPDATE globalconfig SET game_running = %s WHERE id=1'
 
 _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
 
-_GET_GLOBAL_CONFIG_QUERY = 'SELECT * from globalconfig WHERE id=1'
-
-
-def get_current_round() -> int:
-    """Get current round, returns -1 if round not in cache"""
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        round, = pipeline.get('round').execute()
-
-    try:
-        round = int(round.decode())
-    except (AttributeError, ValueError):
-        return -1
-    else:
-        return round
+_GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
 
 
 def get_round_start(round: int) -> int:
@@ -34,8 +21,8 @@ def get_round_start(round: int) -> int:
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         start_time, = pipeline.get(f'round:{round}:start_time').execute()
     try:
-        start_time = int(start_time.decode())
-    except (AttributeError, UnicodeDecodeError, ValueError):
+        start_time = int(start_time)
+    except (ValueError, TypeError):
         start_time = 0
     return start_time
 
@@ -55,11 +42,10 @@ def get_real_round() -> int:
         round, = pipeline.get('real_round').execute()
 
     try:
-        round = int(round.decode())
-    except (AttributeError, ValueError):
+        round = int(round)
+    except (ValueError, TypeError):
         return -1
-    else:
-        return round
+    return round
 
 
 def get_real_round_from_db() -> int:
@@ -97,13 +83,10 @@ def get_game_running() -> bool:
 
 
 def get_db_global_config() -> models.GlobalConfig:
-    """Get global config from database as it is. Do not use it to fetch round or game_running"""
+    """Get global config from database as it is"""
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_GET_GLOBAL_CONFIG_QUERY)
         result = curs.fetchone()
-
-    result.pop('game_running')
-    result.pop('real_round')
 
     return models.GlobalConfig.from_dict(result)
 
@@ -124,28 +107,8 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
-async def get_current_round_async(loop) -> int:
-    """Get current round (asynchronous version)"""
-    redis_pool = await storage.get_async_redis_storage(loop)
-    round = await redis_pool.get('round')
-
-    try:
-        round = round.decode()
-        return int(round)
-    except (ValueError, AttributeError):
-        return -1
-
-
-def construct_game_state(round: Optional[int] = None) -> Optional[models.GameState]:
-    """Get game state for current round
-
-        :param round: specify round to query manually. Otherwise, it'll be taken from cache
-    """
-    if round is None:
-        round = get_current_round()
-        if not round:
-            return None
-
+def construct_game_state(round: int) -> Optional[models.GameState]:
+    """Get game state for specified round"""
     team_tasks = storage.tasks.get_teamtasks_for_participants(round)
     if not team_tasks:
         return None
@@ -160,9 +123,8 @@ async def get_game_state_async(loop) -> Optional[models.GameState]:
     redis_pool = await storage.get_async_redis_storage(loop)
     state = await redis_pool.get('game_state')
     try:
-        state = state.decode()
         state = models.GameState.from_json(state)
-    except AttributeError:
+    except TypeError:
         return None
-    else:
-        return state
+
+    return state

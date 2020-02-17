@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS StolenFlags
     id          SERIAL PRIMARY KEY,
     flag_id     INTEGER NOT NULL,
     attacker_id INTEGER NOT NULL,
+    submit_time TIMESTAMP WITH TIME ZONE,
     UNIQUE (flag_id, attacker_id)
 );
 
@@ -61,13 +62,15 @@ CREATE TABLE IF NOT EXISTS TeamTasks
 CREATE TABLE IF NOT EXISTS GlobalConfig
 (
     id            SERIAL PRIMARY KEY,
-    game_running  BOOLEAN    DEFAULT false,
-    real_round    INTEGER    DEFAULT 0,
+    game_running  BOOLEAN     DEFAULT false,
+    real_round    INTEGER     DEFAULT 0,
     flag_lifetime INTEGER,
     game_hardness FLOAT,
     inflation     BOOLEAN,
     round_time    INTEGER,
-    game_mode     VARCHAR(8) DEFAULT 'classic'
+    game_mode     VARCHAR(8)  DEFAULT 'classic',
+    timezone      VARCHAR(32) DEFAULT 'UTC',
+    start_time    TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX IF NOT EXISTS idx_teamtasks_team_task_ids
@@ -151,7 +154,7 @@ BEGIN
 
     SELECT * FROM calculate(attacker_score, victim_score, hardness, inflate) INTO att_d, vic_d;
 
-    INSERT INTO stolenflags (attacker_id, flag_id) VALUES (att_id, f_id);
+    INSERT INTO stolenflags (attacker_id, flag_id, submit_time) VALUES (att_id, f_id, now());
 
     UPDATE teamtasks
     SET stolen = stolen + 1,

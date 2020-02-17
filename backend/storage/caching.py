@@ -135,31 +135,6 @@ def cache_teamtasks(round: int):
         pipeline.execute()
 
 
-def cache_teamtasks_for_team(team_id: int, current_round: int, pipeline):
-    """Put "teamtasks" for specified team table data for the specified round from database to cache
-
-        :param team_id: team id
-        :param current_round: round to cache
-        :param pipeline: redis connection to add command to
-    """
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(
-            _SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY,
-            (
-                team_id,
-                current_round,
-            )
-        )
-        results = curs.fetchall()
-
-    game_config = storage.game.get_current_global_config()
-    expire = game_config.round_time * 2  # can be smaller
-
-    data = json.dumps(results)
-    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}', data, ex=expire)
-    pipeline.set(f'teamtasks:team:{team_id}:round:{current_round}:cached', 1, ex=expire)
-
-
 def cache_global_config(pipeline):
     """Put global config to cache (without round or game_running)"""
     global_config = storage.game.get_db_global_config()
