@@ -1,11 +1,14 @@
 import os
 
 import subprocess
+import sys
 import time
-import yaml
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+sys.path.insert(0, BACKEND_DIR)
+
+import config
 
 DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
 INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
@@ -23,11 +26,7 @@ def wait_for_container(name):
 
 
 def wait_rounds(rounds):
-    conf_path = os.path.join(BACKEND_DIR, 'config/test_config.yml')
-    with open(conf_path) as f:
-        main_config = yaml.load(f, Loader=yaml.FullLoader)
-
-    round_time = main_config['global']['round_time']
+    round_time = config.get_global_config()['round_time']
     time.sleep(rounds * round_time)
 
 
