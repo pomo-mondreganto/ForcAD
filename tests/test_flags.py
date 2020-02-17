@@ -165,7 +165,7 @@ class FlagSubmitTestCase(TestCase):
                             int(z[:z.find('-')]), int(z[z.find('-') + 1:])
                         )
                     )(x['timestamp']),
-                )[0],
+                )[-1],
                 per_task.values(),
             ))
 
