@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from unittest import TestCase
 
 import requests
@@ -149,15 +150,27 @@ class FlagSubmitTestCase(TestCase):
         all_lost = 0
         for team in teams:
             hist = self.get_team_history(team['id'])
-            last_round = max(map(lambda x: int(x['round']), hist))
+            per_task = defaultdict(list)
 
             for each in hist:
                 if 'working' not in team['name']:
                     self.assertEqual(int(each['lost']), 0)
+                per_task[each['task_id']].append(each)
 
-                if int(each['round']) == last_round:
-                    all_stolen += int(each['stolen'])
-                    all_lost += int(each['lost'])
+            per_task = list(map(
+                lambda y: sorted(
+                    y,
+                    key=lambda x: (
+                        lambda z: (
+                            int(z[:z.find('-')]), int(z[z.find('-') + 1:])
+                        )
+                    )(x['timestamp']),
+                )[0],
+                per_task.values(),
+            ))
+
+            all_stolen += sum(map(lambda x: int(x['stolen']), per_task))
+            all_lost += sum(map(lambda x: int(x['lost']), per_task))
 
         self.assertEqual(all_stolen, len(ok_flags))
         self.assertEqual(all_lost, len(ok_flags))
