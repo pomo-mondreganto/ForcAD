@@ -1,9 +1,9 @@
 import os
-import sys
-import time
 from unittest import TestCase
 
 import requests
+import sys
+import time
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
@@ -41,10 +41,10 @@ class GameStatusTestCase(TestCase):
             if 'working' in team['name']:
                 hist = self.get_team_history(team['id'])
                 for each in hist:
-                    if each['round'] != 0:
-                        self.assertEqual(each['status'], 101)
+                    if each['round'] != '0':
+                        self.assertEqual(each['status'], '101')
             else:
                 hist = self.get_team_history(team['id'])
                 for each in hist:
-                    if each['round'] != 0:
-                        self.assertNotEqual(each['status'], 101)
+                    if each['round'] != '0':
+                        self.assertNotEqual(each['status'], '101')

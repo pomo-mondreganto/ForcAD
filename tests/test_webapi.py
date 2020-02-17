@@ -49,7 +49,7 @@ class WebApiTestCase(TestCase):
         for teamtask in data:
             self.assertIn('message', teamtask)
             self.assertIn('team_id', teamtask)
-            self.assertEqual(teamtask['team_id'], 1)
+            self.assertEqual(teamtask['team_id'], '1')
             self.assertIn('task_id', teamtask)
             self.assertIn('stolen', teamtask)
             self.assertIn('lost', teamtask)

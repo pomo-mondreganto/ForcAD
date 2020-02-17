@@ -149,15 +149,15 @@ class FlagSubmitTestCase(TestCase):
         all_lost = 0
         for team in teams:
             hist = self.get_team_history(team['id'])
-            last_round = max(map(lambda x: x['round'], hist))
+            last_round = max(map(lambda x: int(x['round']), hist))
 
             for each in hist:
                 if 'working' not in team['name']:
-                    self.assertEqual(each['lost'], 0)
+                    self.assertEqual(int(each['lost']), 0)
 
                 if each['round'] == last_round:
-                    all_stolen += each['stolen']
-                    all_lost += each['lost']
+                    all_stolen += int(each['stolen'])
+                    all_lost += int(each['lost'])
 
         self.assertEqual(all_stolen, len(ok_flags))
         self.assertEqual(all_lost, len(ok_flags))
