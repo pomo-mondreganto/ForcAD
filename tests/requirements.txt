@@ -1,3 +1,4 @@
 checklib
 requests
 psycopg2-binary
+PyYAML==5.1
