@@ -2,6 +2,7 @@ import os
 
 import subprocess
 import time
+import yaml
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
