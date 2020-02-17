@@ -155,7 +155,7 @@ class FlagSubmitTestCase(TestCase):
                 if 'working' not in team['name']:
                     self.assertEqual(int(each['lost']), 0)
 
-                if each['round'] == last_round:
+                if int(each['round']) == last_round:
                     all_stolen += int(each['stolen'])
                     all_lost += int(each['lost'])
 
