@@ -16,6 +16,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   celerybeat:
@@ -28,6 +29,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   flower:
@@ -40,7 +42,8 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
-      - docker_config/celery/flower_environment.env
+      - ./docker_config/celery/flower_environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   initializer:
@@ -50,6 +53,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     environment:
       - TEST=1
     restart: "no"
@@ -61,6 +65,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     environment:
       - TEST=1
     tty: true
@@ -83,6 +88,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     environment:
       - TEST=1
     ports:
@@ -96,6 +102,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     environment:
       - TEST=1
     ports:
@@ -111,6 +118,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     environment:
       - TEST=1
     ports:

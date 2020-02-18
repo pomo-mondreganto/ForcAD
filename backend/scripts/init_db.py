@@ -10,9 +10,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import storage
-import config
+import yaml
 
 from helplib import models
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_FILENAME = 'config.yml'
+
+if os.environ.get('TEST'):
+    CONFIG_FILENAME = 'test_config.yml'
+elif os.environ.get('LOCAL'):
+    CONFIG_FILENAME = 'local_config.yml'
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
@@ -33,9 +42,11 @@ _SET_TIMEZONE_QUERY = "SET TIME ZONE %s"
 
 
 def run():
-    with storage.db_cursor() as (conn, curs):
-        file_config = config.AppConfig.get_main_config()
+    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
+    with open(conf_path) as f:
+        file_config = yaml.load(f, Loader=yaml.FullLoader)
 
+    with storage.db_cursor() as (conn, curs):
         create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
         create_query = open(create_query_path).read()
         curs.execute(create_query)
@@ -62,6 +73,7 @@ def run():
             'flag_lifetime': 5,
             'round_time': 60,
             'timezone': 'UTC',
+            'game_mode': 'classic',
         }
 
         global_config = file_config['global']
@@ -133,8 +145,13 @@ def run():
     game_state = storage.game.construct_game_state(round=0)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())
-        pipeline.publish('scoreboard', game_state.to_json())
         pipeline.execute()
+
+    storage.get_wro_sio_manager().emit(
+        event='update_scoreboard',
+        data={'data': game_state.to_json()},
+        namespace='/game_events',
+    )
 
 
 if __name__ == '__main__':

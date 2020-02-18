@@ -11,14 +11,12 @@ from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
 sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, TESTS_DIR)
 
 import config
-
-
-def wait_rounds(rounds):
-    round_time = config.get_global_config()['round_time']
-    time.sleep(rounds * round_time)
+from helpers import wait_rounds
 
 
 class FlagSubmitTestCase(TestCase):
@@ -34,7 +32,7 @@ class FlagSubmitTestCase(TestCase):
             else:
                 self.unreachable_token = token
 
-        database_config = config.get_storage_config()['db']
+        database_config = config.get_db_config()
         database_config['host'] = '127.0.0.1'
         self.db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
 

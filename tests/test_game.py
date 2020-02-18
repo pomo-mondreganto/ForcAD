@@ -3,18 +3,14 @@ from unittest import TestCase
 
 import requests
 import sys
-import time
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
 sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, TESTS_DIR)
 
-import config
-
-
-def wait_rounds(rounds):
-    round_time = config.get_global_config()['round_time']
-    time.sleep(rounds * round_time)
+from helpers import wait_rounds
 
 
 class GameStatusTestCase(TestCase):

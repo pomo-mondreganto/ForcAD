@@ -49,9 +49,14 @@ class RoundProcessor(Task):
         else:
             logger.info(f'Publishing scoreboard for round {current_round}')
             with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-                pipeline.publish('scoreboard', game_state.to_json())
                 pipeline.set('game_state', game_state.to_json())
                 pipeline.execute()
+
+            storage.get_wro_sio_manager().emit(
+                event='update_scoreboard',
+                data={'data': game_state.to_json()},
+                namespace='/game_events',
+            )
 
     @staticmethod
     def update_round(finished_round):

@@ -36,20 +36,21 @@ def setup_db(config):
         'postgres',
         'environment.env',
     )
+
     db_config = config['storages']['db']
-    postgres_host = db_config['host']
-    postgres_port = db_config['port']
-    postgres_user = db_config['user']
-    postgres_password = db_config['password']
-    postgres_db = db_config['dbname']
+    host = db_config['host']
+    port = db_config['port']
+    user = db_config['user']
+    password = db_config['password']
+    db = db_config['dbname']
 
     postgres_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        'POSTGRES_HOST={postgres_host}'.format(postgres_host=postgres_host),
-        'POSTGRES_PORT={postgres_port}'.format(postgres_port=postgres_port),
-        'POSTGRES_USER={postgres_user}'.format(postgres_user=postgres_user),
-        'POSTGRES_PASSWORD={postgres_password}'.format(postgres_password=postgres_password),
-        'POSTGRES_DB={postgres_db}'.format(postgres_db=postgres_db),
+        'POSTGRES_HOST={host}'.format(host=host),
+        'POSTGRES_PORT={port}'.format(port=port),
+        'POSTGRES_USER={user}'.format(user=user),
+        'POSTGRES_PASSWORD={password}'.format(password=password),
+        'POSTGRES_DB={db}'.format(db=db),
     ]
 
     with open(postgres_env_path, 'w') as f:
@@ -64,11 +65,16 @@ def setup_redis(config):
         'environment.env',
     )
 
-    redis_pass = config['storages']['redis'].get('password', None)
+    redis_config = config['storages']['redis']
+    host = redis_config.get('host', 'redis')
+    port = redis_config.get('port', 6379)
+    password = redis_config.get('password', None)
 
     redis_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        'REDIS_PASSWORD={redis_pass}'.format(redis_pass=redis_pass),
+        'REDIS_HOST={host}'.format(host=host),
+        'REDIS_PORT={port}'.format(port=port),
+        'REDIS_PASSWORD={password}'.format(password=password),
     ]
 
     with open(redis_env_path, 'w') as f:
@@ -83,8 +89,9 @@ def setup_flower(config):
         'flower_environment.env',
     )
 
-    flower_username = config['flower']['username']
-    flower_password = config['flower']['password']
+    flower_config = config['flower']
+    flower_username = flower_config['username']
+    flower_password = flower_config['password']
     flower_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         'FLOWER_BASIC_AUTH={flower_username}:{flower_password}'.format(
@@ -106,18 +113,23 @@ def setup_rabbitmq(config):
     )
 
     rabbitmq_config = config['storages']['rabbitmq']
+    host = rabbitmq_config.get('host', 'rabbitmq')
+    port = rabbitmq_config.get('port', 5672)
     user = rabbitmq_config['user']
     password = rabbitmq_config['password']
     vhost = rabbitmq_config['vhost']
-    config_data = [
+
+    rabbitmq_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
+        'RABBITMQ_HOST={host}'.format(host=host),
+        'RABBITMQ_PORT={port}'.format(port=port),
         'RABBITMQ_DEFAULT_USER={user}'.format(user=user),
         'RABBITMQ_DEFAULT_PASS={password}'.format(password=password),
         'RABBITMQ_DEFAULT_VHOST={vhost}'.format(vhost=vhost),
     ]
 
     with open(rabbitmq_env_path, 'w') as f:
-        f.write('\n'.join(config_data))
+        f.write('\n'.join(rabbitmq_config))
 
 
 def setup_config(*_args, **_kwargs):

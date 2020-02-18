@@ -91,7 +91,10 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         'victim_delta': victim_delta,
     }
 
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        pipeline.publish('stolen_flags', json.dumps(flag_data)).execute()
+    storage.get_wro_sio_manager().emit(
+        event='flag_stolen',
+        data={'data': json.dumps(flag_data)},
+        namespace='/game_events',
+    )
 
     return attacker_delta

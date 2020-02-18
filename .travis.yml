@@ -25,6 +25,7 @@ install:
   - ./control.py build
 
 before_script:
+  - export $(find . -name "environment.env" -exec egrep -v '^#' {} \; | xargs)
   - ./control.py start
   - python tests/wait_for_start.py
 

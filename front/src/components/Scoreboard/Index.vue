@@ -71,22 +71,22 @@
 </template>
 
 <script>
-import io from 'socket.io-client';
-import { serverUrl } from '@/config';
-import Task from '@/models/task';
-import Team from '@/models/team';
+    import io from 'socket.io-client';
+    import {serverUrl} from '@/config';
+    import Task from '@/models/task';
+    import Team from '@/models/team';
 
-export default {
-    props: {
-        updateRound: Function,
-    },
+    export default {
+        props: {
+            updateRound: Function,
+        },
 
-    data: function() {
-        return {
-            error: null,
-            server: null,
-            tasks: null,
-            teams: null,
+        data: function () {
+            return {
+                error: null,
+                server: null,
+                tasks: null,
+                teams: null,
         };
     },
 
@@ -97,7 +97,7 @@ export default {
     },
 
     created: function() {
-        this.server = io(`${serverUrl}/api/sio_interface`, {
+        this.server = io(`${serverUrl}/game_events`, {
             forceNew: true,
         });
         this.server.on('connect_error', () => {

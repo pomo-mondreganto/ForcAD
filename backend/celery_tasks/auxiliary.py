@@ -33,8 +33,13 @@ def startup(**_kwargs):
                 else:
                     logger.info(f"Initializing game_state with {game_state.to_dict()}")
                     pipeline.set('game_state', game_state.to_json())
-                    pipeline.publish('scoreboard', game_state.to_json())
                     pipeline.execute()
+
+                    storage.get_wro_sio_manager().emit(
+                        event='update_scoreboard',
+                        data={'data': game_state.to_json()},
+                        namespace='/game_events',
+                    )
 
 
 @shared_task
@@ -62,5 +67,10 @@ def start_game():
         else:
             logger.info(f"Initializing game_state with {game_state.to_dict()}")
             pipeline.set('game_state', game_state.to_json())
-            pipeline.publish('scoreboard', game_state.to_json())
             pipeline.execute()
+
+            storage.get_wro_sio_manager().emit(
+                event='update_scoreboard',
+                data={'data': game_state.to_json()},
+                namespace='/game_events',
+            )
