@@ -84,7 +84,8 @@ async def get_game_config(_request):
 # noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
 async def get_team_history(_request, team_id):
-    teamtasks = storage.tasks.get_teamtasks_of_team_for_participants(team_id=team_id)
+    teamtasks = storage.tasks.get_teamtasks_of_team(team_id=team_id)
+    teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return json_response(teamtasks)
 
 

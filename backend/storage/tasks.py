@@ -1,5 +1,4 @@
-from kombu.utils import json
-from typing import List, Optional
+from typing import List
 
 import storage
 from helplib import models
@@ -91,26 +90,62 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         conn.commit()
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=20, approximate=False)
-        pipeline.execute()
+        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50, approximate=False).execute()
 
 
-def get_teamtasks(round: int) -> Optional[List[dict]]:
-    """Fetch team tasks for current specified round
-
-        :param round: current round
+def get_last_teamtasks() -> List[dict]:
+    """Fetch team tasks, last for each team for each task
         :return: dictionary of team tasks or None
     """
+    teams = storage.teams.get_teams()
+    tasks = storage.tasks.get_tasks()
+
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.get(f'teamtasks:{round}:cached')
-        pipeline.get(f'teamtasks:{round}')
-        cached, result = pipeline.execute()
+        for team in teams:
+            for task in tasks:
+                pipeline.xrange(f'teamtasks:{team.id}:{task.id}', count=1)
+        data = pipeline.execute()
 
-    if not cached:
-        return None
+    data = sum(data, [])
 
-    teamtasks = json.loads(result)
-    return teamtasks
+    results = []
+    for timestamp, record in data:
+        record['timestamp'] = timestamp
+        results.append(record)
+
+    process_teamtasks(results)
+
+    return results
+
+
+def get_teamtasks_from_db(round: int) -> List[dict]:
+    """Fetch team tasks for current specified round from database
+        :return: dictionary of team tasks or None
+    """
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
+        data = curs.fetchall()
+
+    return data
+
+
+def get_teamtasks_of_team(team_id: int) -> List[dict]:
+    """Fetch teamtasks for team for each task"""
+    tasks = get_tasks()
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        for task in tasks:
+            pipeline.xrange(f'teamtasks:{team_id}:{task.id}')
+
+        data = pipeline.execute()
+
+    data = sum(data, [])
+    results = []
+    for timestamp, record in data:
+        record['timestamp'] = timestamp
+        results.append(record)
+
+    process_teamtasks(results)
+    return results
 
 
 def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
@@ -129,40 +164,15 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
     return result
 
 
-def get_teamtasks_for_participants(round: int) -> Optional[List[dict]]:
-    """Fetch team tasks for current specified round, with private message removed
-
-        :param round: current round
-        :return: dictionary of team tasks or None
-    """
-    return filter_teamtasks_for_participants(get_teamtasks(round=round))
-
-
-def get_teamtasks_of_team(team_id: int) -> Optional[List[dict]]:
-    """Fetch teamtasks for team for each task"""
-    tasks = get_tasks()
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        for task in tasks:
-            pipeline.xrange(f'teamtasks:{team_id}:{task.id}')
-
-        data = pipeline.execute()
-
-    data = sum(data, [])
-    results = []
-    for timestamp, record in data:
-        record['timestamp'] = timestamp
-        results.append(record)
-
-    return results
-
-
-def get_teamtasks_of_team_for_participants(team_id: int) -> Optional[List[dict]]:
-    """Fetch teamtasks history for a team, cache if necessary, with private message stripped"""
-    return filter_teamtasks_for_participants(
-        get_teamtasks_of_team(
-            team_id=team_id,
-        )
+def process_teamtasks(teamtasks: List[dict]):
+    casts = (
+        (['id', 'round', 'team_id', 'task_id', 'checks', 'checks_passed'], int),
+        (['score'], float),
     )
+    for each in teamtasks:
+        for keys, t in casts:
+            for key in keys:
+                each[key] = t(each[key])
 
 
 def initialize_teamtasks(round: int):

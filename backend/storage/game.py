@@ -107,14 +107,23 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
-def construct_game_state(round: int) -> Optional[models.GameState]:
-    """Get game state for specified round"""
-    team_tasks = storage.tasks.get_teamtasks_for_participants(round)
-    if not team_tasks:
-        return None
+def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
+    """Get game state for specified round with teamtasks from db"""
+    teamtasks = storage.tasks.get_teamtasks_from_db(round=round)
+    teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
     round_start = get_round_start(round)
-    state = models.GameState(round_start=round_start, round=round, team_tasks=team_tasks)
+    state = models.GameState(round_start=round_start, round=round, team_tasks=teamtasks)
+    return state
+
+
+def construct_latest_game_state(round: int) -> Optional[models.GameState]:
+    """Get game state from latest teamtasks from redis stream"""
+    teamtasks = storage.tasks.get_last_teamtasks()
+    teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
+
+    round_start = get_round_start(round)
+    state = models.GameState(round_start=round_start, round=round, team_tasks=teamtasks)
     return state
 
 

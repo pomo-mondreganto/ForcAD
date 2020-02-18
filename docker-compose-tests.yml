@@ -95,35 +95,35 @@ services:
       - 31337:31337
     restart: "no"
 
-  socat_flag_submitter:
-    build:
-      context: .
-      dockerfile: docker_config/socat_flag_submitter/Dockerfile.fast
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    environment:
-      - TEST=1
-    ports:
-      - 31338:31338
-    tty: true
-    pids_limit: 100
-    restart: "no"
-
-  tcp_flag_submitter:
-    build:
-      context: .
-      dockerfile: docker_config/tcp_flag_submitter/Dockerfile.fast
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    environment:
-      - TEST=1
-    ports:
-      - 31339:31339
-    restart: "no"
+  #  socat_flag_submitter:
+  #    build:
+  #      context: .
+  #      dockerfile: docker_config/socat_flag_submitter/Dockerfile.fast
+  #    env_file:
+  #      - ./docker_config/postgres/environment.env
+  #      - ./docker_config/redis/environment.env
+  #      - ./docker_config/rabbitmq/environment.env
+  #    environment:
+  #      - TEST=1
+  #    ports:
+  #      - 31338:31338
+  #    tty: true
+  #    pids_limit: 100
+  #    restart: "no"
+  #
+  #  tcp_flag_submitter:
+  #    build:
+  #      context: .
+  #      dockerfile: docker_config/tcp_flag_submitter/Dockerfile.fast
+  #    env_file:
+  #      - ./docker_config/postgres/environment.env
+  #      - ./docker_config/redis/environment.env
+  #      - ./docker_config/rabbitmq/environment.env
+  #    environment:
+  #      - TEST=1
+  #    ports:
+  #      - 31339:31339
+  #    restart: "no"
 
   nginx:
     build:

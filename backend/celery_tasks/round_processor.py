@@ -8,11 +8,12 @@ from typing import Optional
 
 import celery_tasks.modes
 import storage
+from helplib import locking
 
 logger = get_task_logger(__name__)
 
 _FULL_UPDATE_ROUND_TYPES = ['full', 'puts']
-_GS_UPDATE_ROUND_TYPES = ['full', 'puts']
+_GS_UPDATE_ROUND_TYPES = ['full', 'puts', 'check_gets']
 
 
 def get_round_processor(round_type: str, task_id: Optional[int] = None):
@@ -40,23 +41,21 @@ class RoundProcessor(Task):
 
     @staticmethod
     def update_game_state(current_round):
-        if current_round:
-            storage.caching.cache_teamtasks(round=current_round)
+        if not current_round:
+            return
 
-        game_state = storage.game.construct_game_state(round=current_round)
-        if not game_state:
-            logger.warning(f'Game state is missing for round {current_round}, skipping')
-        else:
-            logger.info(f'Publishing scoreboard for round {current_round}')
-            with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-                pipeline.set('game_state', game_state.to_json())
-                pipeline.execute()
+        game_state = storage.game.construct_latest_game_state(round=current_round)
 
-            storage.get_wro_sio_manager().emit(
-                event='update_scoreboard',
-                data={'data': game_state.to_json()},
-                namespace='/game_events',
-            )
+        logger.info(f'Publishing scoreboard for round {current_round}')
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            pipeline.set('game_state', game_state.to_json())
+            pipeline.execute()
+
+        storage.get_wro_sio_manager().emit(
+            event='update_scoreboard',
+            data={'data': game_state.to_json()},
+            namespace='/game_events',
+        )
 
     @staticmethod
     def update_round(finished_round):
@@ -76,7 +75,7 @@ class RoundProcessor(Task):
         """Process new round
             Updates current round variable, then processes all teams.
             This function also caches previous state and notifies frontend of a new round (for classic game mode).
-            Only one instance of process_round is to be be run!
+            Only one instance of process_round that updates round is to be be run!
         """
 
         game_running = storage.game.get_game_running()
@@ -84,13 +83,16 @@ class RoundProcessor(Task):
             logger.info('Game is not running, exiting')
             return
 
-        current_round = storage.game.get_real_round_from_db()
-        round_to_check = current_round
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            with locking.acquire_redis_lock(pipeline, 'round_update:lock'):
+                current_round = storage.game.get_real_round_from_db()
+                round_to_check = current_round
 
-        if self.should_update_round():
-            self.update_round(current_round)
-            round_to_check = current_round + 1
-        elif not round_to_check:
+                if self.should_update_round():
+                    self.update_round(current_round)
+                    round_to_check = current_round + 1
+
+        if not round_to_check:
             logger.info("Not processing, round is 0")
             return
 
