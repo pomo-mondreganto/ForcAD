@@ -3,8 +3,8 @@ from typing import Optional
 import helplib
 from helplib import models
 from helplib.commands import run_generic_command
-from helplib.status import TaskStatus
 from helplib.thread_actions import run_generic_action_in_thread
+from helplib.types import TaskStatus, Action
 
 
 def first_error_or_first_verdict(verdicts: [models.CheckerVerdict]) -> Optional[models.CheckerVerdict]:
@@ -55,7 +55,7 @@ class CheckerRunner:
 
         return run_generic_command(
             command=check_command,
-            command_type='CHECK',
+            action=Action.CHECK,
             env_path=self.task.env_path,
             timeout=self.task.checker_timeout,
             team_name=self.team.name,
@@ -76,7 +76,7 @@ class CheckerRunner:
 
         return run_generic_command(
             command=put_command,
-            command_type='PUT',
+            action=Action.PUT,
             env_path=self.task.env_path,
             timeout=self.task.checker_timeout,
             team_name=self.team.name,
@@ -97,7 +97,7 @@ class CheckerRunner:
 
         return run_generic_command(
             command=get_command,
-            command_type='GET',
+            action=Action.GET,
             env_path=self.task.env_path,
             timeout=self.task.checker_timeout,
             team_name=self.team.name,
@@ -110,7 +110,7 @@ class CheckerRunner:
         return run_generic_action_in_thread(
             checker_path=self.task.checker,
             task_name=self.task.name,
-            action_name='CHECK',
+            action=Action.CHECK,
             host=self.team.ip,
             team_name=self.team.name,
             timeout=self.task.checker_timeout,
@@ -131,7 +131,7 @@ class CheckerRunner:
         return run_generic_action_in_thread(
             checker_path=self.task.checker,
             task_name=self.task.name,
-            action_name='PUT',
+            action=Action.PUT,
             host=self.team.ip,
             team_name=self.team.name,
             timeout=self.task.checker_timeout,
@@ -152,7 +152,7 @@ class CheckerRunner:
         return run_generic_action_in_thread(
             checker_path=self.task.checker,
             task_name=self.task.name,
-            action_name='GET',
+            action=Action.GET,
             host=self.team.ip,
             team_name=self.team.name,
             timeout=self.task.checker_timeout,

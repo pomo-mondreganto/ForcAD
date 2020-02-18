@@ -55,8 +55,8 @@ def start_game():
                 logger.info('Game already started')
                 return
 
-        storage.game.set_round_start(round=0)
-        storage.game.set_game_running(True)
+            storage.game.set_round_start(round=0)
+            storage.game.set_game_running(True)
 
         game_state = storage.game.construct_game_state_from_db(round=0)
         if not game_state:

@@ -15,3 +15,17 @@ class TaskStatus(enum.Enum):
     @property
     def counter(self):
         return self.value
+
+
+class Action(enum.Enum):
+    """Checker action Enum"""
+    CHECK = 0
+    PUT = 1
+    GET = 2
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def counter(self):
+        return self.value

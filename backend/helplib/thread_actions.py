@@ -4,17 +4,18 @@ from traceback import format_exc
 import gevent
 
 import helplib
+from helplib.types import Action, TaskStatus
 
 
-def set_verdict_error(verdict, action_name, message):
-    verdict.status = helplib.status.TaskStatus.CHECK_FAILED
-    verdict.public_message = f'{action_name} failed'
+def set_verdict_error(verdict, action, message):
+    verdict.status = TaskStatus.CHECK_FAILED
+    verdict.public_message = f'{action} failed'
     verdict.private_message = message
 
 
 def run_generic_action_in_thread(checker_path: str,
                                  task_name: str,
-                                 action_name: str,
+                                 action: Action,
                                  host: str,
                                  team_name: str,
                                  timeout: int,
@@ -23,11 +24,11 @@ def run_generic_action_in_thread(checker_path: str,
                                  logger):
 
     verdict = helplib.models.CheckerVerdict(
-        command=f'checker.{action_name.lower()}()',
-        action=action_name,
-        status=helplib.status.TaskStatus.CHECK_FAILED,
-        public_message=f'{action_name} pending',
-        private_message=f'{action_name} pending',
+        command=f'checker.{action}()',
+        action=action,
+        status=TaskStatus.CHECK_FAILED,
+        public_message=f'{action} pending',
+        private_message=f'{action} pending',
     )
 
     try:
@@ -48,39 +49,31 @@ def run_generic_action_in_thread(checker_path: str,
 
         logger.critical(message)
 
-        set_verdict_error(
-            verdict=verdict,
-            action_name=action_name,
-            message=message,
-        )
+        set_verdict_error(verdict=verdict, action=action, message=message)
         return verdict
 
     try:
         with gevent.Timeout(timeout, helplib.exceptions.CheckerTimeoutException):
-            checker.action(action_name.lower(), *action_args, **action_kwargs)
+            checker.action(action.name.lower(), *action_args, **action_kwargs)
 
     except finished_exception:
         try:
-            verdict.status = helplib.status.TaskStatus(checker.status)
+            verdict.status = TaskStatus(checker.status)
         except ValueError:
             mess = f'Invalid TaskStatus: {checker.status} for team `{team_name}` task `{task_name}`'
             logger.error(mess)
 
-            set_verdict_error(
-                verdict=verdict,
-                action_name=action_name,
-                message=mess,
-            )
+            set_verdict_error(verdict=verdict, action=action, message=mess)
         else:
             verdict.public_message = checker.public
             verdict.private_message = checker.private
 
     except helplib.exceptions.CheckerTimeoutException:
-        logger.warning(f'{action_name} action for team `{team_name}` task {task_name} timed out')
+        logger.warning(f'{action} action for team `{team_name}` task {task_name} timed out')
 
-        verdict.status = helplib.status.TaskStatus.DOWN
+        verdict.status = TaskStatus.DOWN
         verdict.public_message = 'Checker timed out'
-        verdict.private_message = f'Checker for {action_name} timed out'
+        verdict.private_message = f'Checker for {action} timed out'
 
     except BaseException as e:
         tb = format_exc()
@@ -89,22 +82,13 @@ def run_generic_action_in_thread(checker_path: str,
         log_func = logger.warning
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
             log_func = logger.error
-        log_func(f'{action_name} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
+        log_func(f'{action} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
 
-        set_verdict_error(
-            verdict=verdict,
-            action_name=action_name,
-            message=exc,
-        )
+        set_verdict_error(verdict=verdict, action=action, message=exc)
 
     else:
         mess = 'Checker did not raise CheckFinished'
         logger.error(mess)
-
-        set_verdict_error(
-            verdict=verdict,
-            action_name=action_name,
-            message=mess,
-        )
+        set_verdict_error(verdict=verdict, action=action, message=mess)
 
     return verdict

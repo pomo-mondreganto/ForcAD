@@ -109,7 +109,7 @@ def get_current_global_config() -> models.GlobalConfig:
 
 def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
     """Get game state for specified round with teamtasks from db"""
-    teamtasks = storage.tasks.get_teamtasks_from_db(round=round)
+    teamtasks = storage.tasks.get_teamtasks_from_db()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
     round_start = get_round_start(round)

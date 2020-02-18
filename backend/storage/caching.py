@@ -1,5 +1,3 @@
-from kombu.utils import json
-
 import helplib
 import storage
 from helplib import models
@@ -17,9 +15,6 @@ WHERE flag_id IN (SELECT id from flag_ids) AND attacker_id = %s
 """
 
 _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
-
-_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s ORDER BY id"
-_SELECT_TEAMTASKS_FOR_TEAM_WITH_ROUND_QUERY = "SELECT * from teamtasks WHERE team_id = %s AND round <= %s ORDER BY id"
 
 
 def cache_teams(pipeline):
@@ -117,22 +112,6 @@ def cache_last_flags(round: int, pipeline):
         pipeline.expire(round_flags_key, expires)
 
     pipeline.set('flags:cached', 1)
-
-
-def cache_teamtasks(round: int):
-    """Put "teamtasks" table data for the specified round from database to cache"""
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
-        results = curs.fetchall()
-
-    game_config = storage.game.get_current_global_config()
-    expire = game_config.round_time * 2  # can be smaller
-
-    data = json.dumps(results)
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.set(f'teamtasks:{round}', data, ex=expire)
-        pipeline.set(f'teamtasks:{round}:cached', 1, ex=expire)
-        pipeline.execute()
 
 
 def cache_global_config(pipeline):

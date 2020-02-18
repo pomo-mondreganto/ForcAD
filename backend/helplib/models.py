@@ -3,7 +3,7 @@ import yaml
 from kombu.utils import json
 from typing import Optional, List
 
-import helplib.status
+from helplib.types import Action, TaskStatus
 
 
 class Model(object):
@@ -223,22 +223,22 @@ class CheckerVerdict(Model):
     private_message: str
     public_message: str
     command: str
-    status: helplib.status.TaskStatus
-    action: str
+    status: TaskStatus
+    action: Action
 
     def __init__(self,
                  private_message: str,
                  public_message: str,
                  command: str,
-                 action: str,
-                 status: helplib.status.TaskStatus):
+                 action: Action,
+                 status: TaskStatus):
         super(CheckerVerdict, self).__init__()
         self.private_message = private_message
         self.public_message = public_message
         self.command = command
 
         if isinstance(status, int):
-            self.status = helplib.status.TaskStatus(status)
+            self.status = TaskStatus(status)
         else:
             self.status = status
 

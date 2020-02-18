@@ -63,7 +63,6 @@ class RoundProcessor(Task):
 
         storage.game.set_round_start(round=finished_round + 1)
         storage.game.update_real_round_in_db(new_round=finished_round + 1)
-        storage.tasks.initialize_teamtasks(round=finished_round + 1)
 
         # Might think there's a RC here (I thought so too)
         # But all teamtasks with round >= real_round are updated in the attack handler

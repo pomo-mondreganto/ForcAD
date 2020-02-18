@@ -36,9 +36,7 @@ INSERT INTO Tasks
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 '''
 
-_TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
-
-_SET_TIMEZONE_QUERY = "SET TIME ZONE %s"
+_TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, score, status) VALUES (%s, %s, %s, %s)"
 
 
 def run():
@@ -47,9 +45,15 @@ def run():
         file_config = yaml.load(f, Loader=yaml.FullLoader)
 
     with storage.db_cursor() as (conn, curs):
-        create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
-        create_query = open(create_query_path).read()
-        curs.execute(create_query)
+        create_tables_path = os.path.join(SCRIPTS_DIR, 'create_tables.sql')
+        with open(create_tables_path) as f:
+            create_tables_query = f.read()
+        curs.execute(create_tables_query)
+
+        create_functions_path = os.path.join(SCRIPTS_DIR, 'create_functions.sql')
+        with open(create_functions_path) as f:
+            create_functions_query = f.read()
+        curs.execute(create_functions_query)
 
         teams_config = file_config['teams']
         teams = []
@@ -116,7 +120,7 @@ def run():
             tasks.append(task)
 
         data = [
-            (task.id, team.id, 0, task.default_score, -1)
+            (task.id, team.id, task.default_score, -1)
             for team in teams
             for task in tasks
         ]
@@ -141,7 +145,6 @@ def run():
 
         conn.commit()
 
-    storage.caching.cache_teamtasks(round=0)
     game_state = storage.game.construct_game_state_from_db(round=0)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())

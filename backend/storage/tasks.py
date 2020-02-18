@@ -3,25 +3,10 @@ from typing import List
 import storage
 from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
-from helplib.status import TaskStatus
+from helplib.types import TaskStatus, Action
 from storage import caching
 
-_UPDATE_TEAMTASKS_STATUS_QUERY = """
-UPDATE teamtasks SET status = %s, public_message = %s, private_message = %s, command = %s, 
-checks_passed = checks_passed + %s, checks = checks + 1
-WHERE task_id = %s AND team_id = %s AND round >= %s
-RETURNING *
-"""
-
-_INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY = """
-INSERT INTO TeamTasks (task_id, team_id, round, score, stolen, lost, checks_passed, checks) 
-SELECT %(task_id)s, %(team_id)s, %(round)s, score, stolen, lost, checks_passed, checks 
-FROM teamtasks 
-WHERE task_id = %(task_id)s AND team_id = %(team_id)s AND round <= %(round)s - 1
-ORDER BY round DESC LIMIT 1 FOR NO KEY UPDATE;
-"""
-
-_SELECT_TEAMTASKS_BY_ROUND_QUERY = "SELECT * from teamtasks WHERE round = %s ORDER BY id"
+_SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
 
 def get_tasks() -> List[models.Task]:
@@ -60,30 +45,30 @@ async def get_tasks_async(loop) -> List[models.Task]:
 def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
     """ Update task status in database
 
-        :param task_id: task id
-        :param team_id: team id
-        :param round: round to update table for
+        :param task_id:
+        :param team_id:
+        :param round:
         :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
     public = checker_verdict.public_message
     if checker_verdict.status == TaskStatus.UP:
         add = 1
-        if checker_verdict.action.upper() == 'PUT':
+        if checker_verdict.action == Action.PUT:
             public = 'OK'
 
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(
-            _UPDATE_TEAMTASKS_STATUS_QUERY,
+        curs.callproc(
+            'update_teamtasks_status',
             (
+                round,
+                team_id,
+                task_id,
                 checker_verdict.status.value,
+                add,
                 public,
                 checker_verdict.private_message,
                 checker_verdict.command,
-                add,
-                task_id,
-                team_id,
-                round,
             )
         )
         data = curs.fetchone()
@@ -118,19 +103,19 @@ def get_last_teamtasks() -> List[dict]:
     return results
 
 
-def get_teamtasks_from_db(round: int) -> List[dict]:
-    """Fetch team tasks for current specified round from database
+def get_teamtasks_from_db() -> List[dict]:
+    """Fetch current team tasks from database
         :return: dictionary of team tasks or None
     """
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(_SELECT_TEAMTASKS_BY_ROUND_QUERY, (round,))
+        curs.execute(_SELECT_TEAMTASKS_QUERY)
         data = curs.fetchall()
 
     return data
 
 
 def get_teamtasks_of_team(team_id: int) -> List[dict]:
-    """Fetch teamtasks for team for each task"""
+    """Fetch teamtasks for team for all tasks"""
     tasks = get_tasks()
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         for task in tasks:
@@ -165,37 +150,10 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
 
 def process_teamtasks(teamtasks: List[dict]):
     casts = (
-        (['id', 'round', 'team_id', 'task_id', 'checks', 'checks_passed'], int),
+        (['id', 'team_id', 'task_id', 'checks', 'checks_passed'], int),
         (['score'], float),
     )
     for each in teamtasks:
         for keys, t in casts:
             for key in keys:
                 each[key] = t(each[key])
-
-
-def initialize_teamtasks(round: int):
-    """Add blank entries to "teamtasks" table for a new round
-
-        :param round: round to create entries for
-    """
-
-    teams = storage.teams.get_teams()
-    tasks = storage.tasks.get_tasks()
-
-    with storage.db_cursor() as (conn, curs):
-        data = [
-            {
-                'task_id': task.id,
-                'team_id': team.id,
-                'round': round,
-            }
-            for team in teams
-            for task in tasks
-        ]
-
-        curs.executemany(
-            _INITIALIZE_TEAMTASKS_FROM_PREVIOUS_QUERY,
-            data,
-        )
-        conn.commit()
