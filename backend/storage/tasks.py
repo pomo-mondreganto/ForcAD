@@ -144,7 +144,6 @@ def get_teamtasks_of_team(team_id: int) -> List[dict]:
         record['timestamp'] = timestamp
         results.append(record)
 
-    process_teamtasks(results)
     return results
 
 
