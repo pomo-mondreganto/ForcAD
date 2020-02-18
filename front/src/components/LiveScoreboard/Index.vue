@@ -14,19 +14,19 @@
 </template>
 
 <script>
-    import {serverUrl} from '@/config';
-    import io from 'socket.io-client';
+import { serverUrl } from '@/config';
+import io from 'socket.io-client';
 
-    export default {
-        data: function () {
-            return {
-                error: null,
-                server: null,
-                teams: null,
-                tasks: null,
-                events: [],
-            };
-        },
+export default {
+    data: function() {
+        return {
+            error: null,
+            server: null,
+            teams: null,
+            tasks: null,
+            events: [],
+        };
+    },
 
     created: async function() {
         try {
