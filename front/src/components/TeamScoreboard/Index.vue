@@ -16,7 +16,7 @@
         <div>
             <div class="row" v-for="state in states" :key="state.tasks[0].id">
                 <div class="number">
-                    {{ state.tasks[0].round }}
+                    {{ state.tasks[0].checks }}
                 </div>
                 <div class="team">
                     <div class="team-name">{{ team.name }}</div>
