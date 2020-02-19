@@ -119,4 +119,4 @@ def cache_global_config(pipeline):
     global_config = storage.game.get_db_global_config()
     data = global_config.to_json()
     pipeline.set('global_config', data)
-    pipeline.set('global_config:cached', data)
+    pipeline.set('global_config:cached', 1)

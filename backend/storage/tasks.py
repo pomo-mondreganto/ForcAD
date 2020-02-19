@@ -88,7 +88,7 @@ def get_last_teamtasks() -> List[dict]:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         for team in teams:
             for task in tasks:
-                pipeline.xrange(f'teamtasks:{team.id}:{task.id}', count=1)
+                pipeline.xrevrange(f'teamtasks:{team.id}:{task.id}', count=1)
         data = pipeline.execute()
 
     data = sum(data, [])
@@ -119,7 +119,7 @@ def get_teamtasks_of_team(team_id: int) -> List[dict]:
     tasks = get_tasks()
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         for task in tasks:
-            pipeline.xrange(f'teamtasks:{team_id}:{task.id}')
+            pipeline.xrevrange(f'teamtasks:{team_id}:{task.id}')
 
         data = pipeline.execute()
 
