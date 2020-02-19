@@ -54,7 +54,6 @@ class WebApiTestCase(TestCase):
             self.assertIn('stolen', teamtask)
             self.assertIn('lost', teamtask)
             self.assertIn('status', teamtask)
-            self.assertIn('round', teamtask)
 
             self.assertNotIn('public_message', teamtask)
             self.assertNotIn('private_message', teamtask)
