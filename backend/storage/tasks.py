@@ -74,6 +74,7 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         data = curs.fetchone()
         conn.commit()
 
+    data['round'] = round
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50, approximate=False).execute()
 
@@ -150,7 +151,7 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
 
 def process_teamtasks(teamtasks: List[dict]):
     casts = (
-        (['id', 'team_id', 'task_id', 'checks', 'checks_passed'], int),
+        (['id', 'team_id', 'task_id', 'checks', 'checks_passed', 'round'], int),
         (['score'], float),
     )
     for each in teamtasks:
