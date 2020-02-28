@@ -30,12 +30,12 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         # optimization of redis request count
-        cached_stolen = pipeline.exists(f'team:{attacker}:cached:stolen').execute()
+        cached_stolen = pipeline.exists(f'team:{attacker}:stolen_flags:cached').execute()
 
         if not cached_stolen:
             cache_helper(
                 pipeline=pipeline,
-                cache_key=f'team:{attacker}:cached:stolen',
+                cache_key=f'team:{attacker}:stolen_flags:cached',
                 cache_func=caching.cache_last_stolen,
                 cache_args=(attacker, round, pipeline),
             )

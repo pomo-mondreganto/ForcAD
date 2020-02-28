@@ -76,10 +76,10 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         curs.execute(_SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY, (round - game_config.flag_lifetime, team_id))
         flags = curs.fetchall()
 
-    pipeline.delete(f'team:{team_id}:cached:stolen', f'team:{team_id}:stolen_flags')
+    pipeline.delete(f'team:{team_id}:stolen_flags:cached', f'team:{team_id}:stolen_flags')
     if flags:
         pipeline.sadd(f'team:{team_id}:stolen_flags', *[flag_id for flag_id, in flags])
-    pipeline.set(f'team:{team_id}:cached:stolen', 1)
+    pipeline.set(f'team:{team_id}:stolen_flags:cached', 1)
 
 
 def cache_last_flags(round: int, pipeline):
