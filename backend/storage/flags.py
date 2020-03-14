@@ -29,12 +29,13 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
         raise helplib.exceptions.FlagSubmitException('Flag is your own')
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached_stolen = pipeline.exists(f'team:{attacker}:cached:stolen').execute()
+        # optimization of redis request count
+        cached_stolen = pipeline.exists(f'team:{attacker}:stolen_flags:cached').execute()
 
         if not cached_stolen:
             cache_helper(
                 pipeline=pipeline,
-                cache_key=f'team:{attacker}:cached:stolen',
+                cache_key=f'team:{attacker}:stolen_flags:cached',
                 cache_func=caching.cache_last_stolen,
                 cache_args=(attacker, round, pipeline),
             )
@@ -71,19 +72,16 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
         flag.id, = curs.fetchone()
         conn.commit()
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cache_helper(
-            pipeline=pipeline,
-            cache_key=f'team:{flag.team_id}:cached:owned',
-            cache_func=caching.cache_last_owned,
-            cache_args=(flag.team_id, flag.round, pipeline),
-            on_cached=pipeline.sadd,
-            on_cached_args=(f'team:{flag.team_id}:owned_flags', flag.id),
-        )
+    game_config = storage.game.get_current_global_config()
+    expires = game_config.flag_lifetime * game_config.round_time * 2  # can be smaller
 
-        pipeline.sadd(f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}', flag.id)
-        pipeline.set(f'flag:id:{flag.id}', flag.to_json())
-        pipeline.set(f'flag:str:{flag.flag}', flag.to_json())
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        round_flags_key = f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+        pipeline.sadd(round_flags_key, flag.id)
+        pipeline.expire(round_flags_key, expires)
+
+        pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
+        pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
         pipeline.execute()
 
     return flag
@@ -113,7 +111,7 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helplib.model
         flag_exists, flag_json = pipeline.execute()
 
     if not flag_exists:
-        raise helplib.exceptions.FlagSubmitException('Invalid flag')
+        raise helplib.exceptions.FlagSubmitException('Flag is invalid or too old')
 
     flag = helplib.models.Flag.from_json(flag_json)
 
@@ -151,18 +149,16 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     """
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('flags:cached').execute()
-        if not cached:
-            cache_helper(
-                pipeline=pipeline,
-                cache_key='flags:cached',
-                cache_func=caching.cache_last_flags,
-                cache_args=(current_round, pipeline),
-            )
+        cache_helper(
+            pipeline=pipeline,
+            cache_key='flags:cached',
+            cache_func=caching.cache_last_flags,
+            cache_args=(current_round, pipeline),
+        )
 
         flags, = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
         try:
-            flag_id = int(secrets.choice(list(flags)).decode())
-        except (ValueError, IndexError, AttributeError):
+            flag_id = int(secrets.choice(list(flags)))
+        except (ValueError, IndexError, TypeError):
             return None
     return get_flag_by_id(flag_id, current_round)

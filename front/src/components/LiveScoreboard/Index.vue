@@ -43,7 +43,7 @@ export default {
             return;
         }
 
-        this.server = io(`${serverUrl}/api/sio_interface`, {
+        this.server = io(`${serverUrl}/game_events`, {
             forceNew: true,
         });
         this.server.on('connect_error', () => {

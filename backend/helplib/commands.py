@@ -5,7 +5,7 @@ import subprocess
 from typing import List
 
 import helplib
-from helplib.status import TaskStatus
+from helplib.types import TaskStatus, Action
 
 
 def run_command_gracefully(*popenargs,
@@ -86,7 +86,7 @@ def get_patched_environ(env_path: str):
 
 
 def run_generic_command(command: List,
-                        command_type: str,
+                        action: Action,
                         env_path: str,
                         timeout: int,
                         team_name: str,
@@ -94,7 +94,7 @@ def run_generic_command(command: List,
     """Run generic checker command, calls "run_command_gracefully" and handles exceptions
 
     :param command: command to run
-    :param command_type: type of command (for logging)
+    :param action: type of command (for logging)
     :param env_path: path to insert into environment
     :param timeout: "soft" command timeout
     :param team_name: team name for logging
@@ -113,7 +113,7 @@ def run_generic_command(command: List,
 
         if killed:
             logger.warning(
-                f'Process was forcefully killed during {command_type} '
+                f'Process was forcefully killed during {action} '
                 f'for team {team_name} task '
             )
 
@@ -123,7 +123,7 @@ def run_generic_command(command: List,
             private_message = result.stderr[:1024].decode().strip()
             if status == TaskStatus.CHECK_FAILED:
                 logger.warning(
-                    f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
+                    f'{action} for team {team_name} failed with exit code {result.returncode},'
                     f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
                 )
         except ValueError as e:
@@ -131,13 +131,13 @@ def run_generic_command(command: List,
             public_message = 'Check failed'
             private_message = f'Check failed with ValueError: {str(e)}'
             logger.warning(
-                f'{command_type.upper()} for team {team_name} failed with exit code {result.returncode},'
+                f'{action} for team {team_name} failed with exit code {result.returncode},'
                 f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
             )
 
     except subprocess.TimeoutExpired:
         status = TaskStatus.DOWN
-        private_message = f'{command_type.upper()} timeout (killed by ForcAD)'
+        private_message = f'{action} timeout (killed by ForcAD)'
         public_message = 'Timeout'
 
     command_str = ' '.join(shlex.quote(x) for x in command)
@@ -145,7 +145,7 @@ def run_generic_command(command: List,
         public_message=public_message,
         private_message=private_message,
         command=command_str,
-        action=command_type,
+        action=action,
         status=status
     )
 

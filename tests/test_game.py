@@ -1,20 +1,16 @@
 import os
 import sys
-import time
 from unittest import TestCase
 
 import requests
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
 sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, TESTS_DIR)
 
-import config
-
-
-def wait_rounds(rounds):
-    round_time = config.get_global_config()['round_time']
-    time.sleep(rounds * round_time)
+from helpers import wait_rounds
 
 
 class GameStatusTestCase(TestCase):
@@ -41,10 +37,8 @@ class GameStatusTestCase(TestCase):
             if 'working' in team['name']:
                 hist = self.get_team_history(team['id'])
                 for each in hist:
-                    if each['round'] != 0:
-                        self.assertEqual(each['status'], 101)
+                    self.assertIn(each['status'], ['-1', '101'])
             else:
                 hist = self.get_team_history(team['id'])
                 for each in hist:
-                    if each['round'] != 0:
-                        self.assertNotEqual(each['status'], 101)
+                    self.assertNotEqual(each['status'], '101')

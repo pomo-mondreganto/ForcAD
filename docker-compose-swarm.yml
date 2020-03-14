@@ -15,6 +15,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: on-failure
 
   celerybeat:
@@ -27,6 +28,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: on-failure
 
   flower:
@@ -38,8 +40,9 @@ services:
       - CELERY_CONTAINER_TYPE=flower
     env_file:
       - ./docker_config/postgres/environment.env
-      - docker_config/celery/flower_environment.env
+      - ./docker_config/celery/flower_environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: on-failure
 
 
@@ -51,6 +54,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: on-failure
 
   webapi:
@@ -61,6 +65,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     restart: on-failure
     tty: true
 
@@ -85,6 +90,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
+      - ./docker_config/rabbitmq/environment.env
     ports:
       - 31337:31337
     restart: on-failure

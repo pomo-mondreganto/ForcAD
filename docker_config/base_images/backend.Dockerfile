@@ -2,7 +2,8 @@ FROM python:3.7
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y libpq-dev
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y libpq-dev
 
 ADD backend/requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt

@@ -6,7 +6,7 @@ from celery import shared_task
 import storage
 from celery_tasks.auxiliary import logger
 from helplib import models, flags, checkers
-from helplib.status import TaskStatus
+from helplib.types import TaskStatus, Action
 
 
 @shared_task
@@ -68,12 +68,12 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     """
     if prev_verdict.status != TaskStatus.UP:
-        if prev_verdict.action == 'GET':
+        if prev_verdict.action == Action.GET:
             return prev_verdict
 
         # to avoid returning CHECK verdict
         new_verdict = models.CheckerVerdict(
-            action='GET',
+            action=Action.GET,
             status=prev_verdict.status,
             command='',
             public_message='Skipped GET, previous action failed',
@@ -93,7 +93,7 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
         status=TaskStatus.UP,
         public_message='',
         private_message='',
-        action='GET',
+        action=Action.GET,
         command="",
     )
 

@@ -2,7 +2,6 @@ from celery import shared_task
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
 
-import config
 import storage
 from helplib import locking
 
@@ -12,28 +11,33 @@ logger = get_task_logger(__name__)
 @worker_ready.connect
 def startup(**_kwargs):
     """Task to run on start of celery, schedules game start"""
-    game_config = config.get_global_config()
+    game_config = storage.game.get_current_global_config()
 
     logger.info(f'Received game config: {game_config}')
 
-    round = storage.game.get_real_round()
-    if not round or round == -1:
-        logger.info("Game is not running, initializing...")
-        start_game.apply_async(
-            eta=game_config['start_time'],
-        )
+    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
+            already_started = storage.game.get_game_running()
 
-        storage.caching.cache_teamtasks(round=0)
+            if not already_started:
+                logger.info("Game is not running, initializing...")
+                start_game.apply_async(
+                    eta=game_config.start_time,
+                )
 
-        game_state = storage.game.construct_game_state(round=0)
-        if not game_state:
-            logger.warning('Initial game_state missing')
-        else:
-            with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-                logger.info(f"Initializing game_state with {game_state.to_dict()}")
-                pipeline.set('game_state', game_state.to_json())
-                pipeline.publish('scoreboard', game_state.to_json())
-                pipeline.execute()
+                game_state = storage.game.construct_game_state_from_db(round=0)
+                if not game_state:
+                    logger.warning('Initial game_state missing')
+                else:
+                    logger.info(f"Initializing game_state with {game_state.to_dict()}")
+                    pipeline.set('game_state', game_state.to_json())
+                    pipeline.execute()
+
+                    storage.get_wro_sio_manager().emit(
+                        event='update_scoreboard',
+                        data={'data': game_state.to_json()},
+                        namespace='/game_events',
+                    )
 
 
 @shared_task
@@ -50,16 +54,20 @@ def start_game():
             if already_started:
                 logger.info('Game already started')
                 return
+
+            storage.game.set_round_start(round=0)
             storage.game.set_game_running(True)
 
-    storage.caching.cache_teamtasks(round=0)
-
-    game_state = storage.game.construct_game_state(round=0)
-    if not game_state:
-        logger.warning('Initial game_state missing')
-    else:
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        game_state = storage.game.construct_game_state_from_db(round=0)
+        if not game_state:
+            logger.warning('Initial game_state missing')
+        else:
             logger.info(f"Initializing game_state with {game_state.to_dict()}")
             pipeline.set('game_state', game_state.to_json())
-            pipeline.publish('scoreboard', game_state.to_json())
             pipeline.execute()
+
+            storage.get_wro_sio_manager().emit(
+                event='update_scoreboard',
+                data={'data': game_state.to_json()},
+                namespace='/game_events',
+            )

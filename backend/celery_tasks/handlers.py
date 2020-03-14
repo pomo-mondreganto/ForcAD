@@ -4,7 +4,7 @@ from typing import List
 
 import storage.tasks
 from helplib import models, checkers
-from helplib.status import TaskStatus
+from helplib.types import TaskStatus, Action
 
 logger = get_task_logger(__name__)
 
@@ -12,14 +12,16 @@ logger = get_task_logger(__name__)
 @shared_task
 def exception_callback(result, exc, traceback):
     action_name = result.task.split('.')[-1].split('_')[0].upper()
-    if action_name == 'CHECK':
+    action = Action[action_name]
+
+    if action == Action.CHECK:
         prev_verdict = None
         team, task, round = result.args
     else:
         prev_verdict, team, task, round = result.args
 
     logger.error(
-        f"Task exception handler was called for team {team} task {task}, "
+        f"Task exception handler was called for team {team} task {task}, round {round}, "
         f"exception {repr(exc)}, traceback\n{traceback}"
     )
 
@@ -27,11 +29,11 @@ def exception_callback(result, exc, traceback):
         verdict = prev_verdict
     else:
         verdict = models.CheckerVerdict(
-            action=action_name,
+            action=action,
             status=TaskStatus.CHECK_FAILED,
             command='',
-            public_message=f'{action_name} failed',
-            private_message=f'Exception on {action_name}: {repr(exc)}\n{traceback}'
+            public_message=f'{action} failed',
+            private_message=f'Exception on {action}: {repr(exc)}\n{traceback}'
         )
 
     storage.tasks.update_task_status(
@@ -58,17 +60,17 @@ def checker_results_handler(
     puts_verdicts = []
     gets_verdict = None
     for verdict in verdicts:
-        if verdict.action.upper() == 'CHECK':
+        if verdict.action == Action.CHECK:
             check_verdict = verdict
-        elif verdict.action.upper() == 'GET':
+        elif verdict.action == Action.GET:
             gets_verdict = verdict
-        elif verdict.action.upper() == 'PUT':
+        elif verdict.action == Action.PUT:
             puts_verdicts.append(verdict)
         else:
             logger.error(f'Got invalid verdict action: {verdict.to_dict()}')
 
     logger.info(
-        f"Finished testing team `{team.name}` task `{task.name}`. "
+        f"Finished testing team `{team.name}` task `{task.name}` round {round}. "
         f"Verdicts: check: {check_verdict} puts {puts_verdicts} gets {gets_verdict}"
     )
 

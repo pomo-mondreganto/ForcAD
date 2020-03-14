@@ -3,15 +3,25 @@
 import os
 import secrets
 
+import pytz
 import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import storage
-import config
+import yaml
 
 from helplib import models
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_FILENAME = 'config.yml'
+
+if os.environ.get('TEST'):
+    CONFIG_FILENAME = 'test_config.yml'
+elif os.environ.get('LOCAL'):
+    CONFIG_FILENAME = 'local_config.yml'
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
@@ -26,16 +36,26 @@ INSERT INTO Tasks
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 '''
 
-_TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, round, score, status) VALUES (%s, %s, %s, %s, %s)"
+_TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, score, status) VALUES (%s, %s, %s, %s)"
 
 
 def run():
-    with storage.db_cursor() as (conn, curs):
-        create_query_path = os.path.join(SCRIPTS_DIR, 'create_query.sql')
-        create_query = open(create_query_path).read()
-        curs.execute(create_query)
+    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
+    with open(conf_path) as f:
+        file_config = yaml.load(f, Loader=yaml.FullLoader)
 
-        teams_config = config.get_teams_config()
+    with storage.db_cursor() as (conn, curs):
+        create_tables_path = os.path.join(SCRIPTS_DIR, 'create_tables.sql')
+        with open(create_tables_path) as f:
+            create_tables_query = f.read()
+        curs.execute(create_tables_query)
+
+        create_functions_path = os.path.join(SCRIPTS_DIR, 'create_functions.sql')
+        with open(create_functions_path) as f:
+            create_functions_query = f.read()
+        curs.execute(create_functions_query)
+
+        teams_config = file_config['teams']
         teams = []
 
         for team_conf in teams_config:
@@ -45,7 +65,7 @@ def run():
             team.id, = curs.fetchone()
             teams.append(team)
 
-        tasks_config = config.get_tasks_config()
+        tasks_config = file_config['tasks']
         tasks = []
 
         global_defaults = {
@@ -56,9 +76,11 @@ def run():
             'inflation': True,
             'flag_lifetime': 5,
             'round_time': 60,
-            'timezone': 'Europe/Moscow',
+            'timezone': 'UTC',
+            'game_mode': 'classic',
         }
-        global_config = config.get_global_config()
+
+        global_config = file_config['global']
         for k, v in global_defaults.items():
             if k not in global_config:
                 global_defaults[k] = v
@@ -98,19 +120,20 @@ def run():
             tasks.append(task)
 
         data = [
-            (task.id, team.id, 0, task.default_score, -1)
+            (task.id, team.id, task.default_score, -1)
             for team in teams
             for task in tasks
         ]
 
         curs.executemany(_TEAMTASK_INSERT_QUERY, data)
 
-        global_config.pop('start_time')
-        global_config.pop('timezone', None)
         global_config.pop('env_path', None)
         global_config.pop('default_score', None)
         global_config.pop('checkers_path', None)
         global_config.pop('get_period', None)
+
+        tz = pytz.timezone(global_config['timezone'])
+        global_config['start_time'] = tz.localize(global_config['start_time'])
 
         keys = global_config.keys()
         columns = ','.join(keys)
@@ -119,16 +142,19 @@ def run():
             _CONFIG_INITIALIZATION_QUERY.format(columns=columns, values=values),
             global_config,
         )
-        global_config['id'], = curs.fetchone()
 
         conn.commit()
 
-    storage.caching.cache_teamtasks(round=0)
-    game_state = storage.game.construct_game_state(round=0)
+    game_state = storage.game.construct_game_state_from_db(round=0)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())
-        pipeline.publish('scoreboard', game_state.to_json())
         pipeline.execute()
+
+    storage.get_wro_sio_manager().emit(
+        event='update_scoreboard',
+        data={'data': game_state.to_json()},
+        namespace='/game_events',
+    )
 
 
 if __name__ == '__main__':

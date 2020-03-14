@@ -3,7 +3,7 @@ class FlagSubmitException(Exception):
 
 
 class LockedException(Exception):
-    """Exception raised when team is locked for rating update"""
+    """Exception raised by redis distributed lock"""
 
 
 class CheckerTimeoutException(Exception):

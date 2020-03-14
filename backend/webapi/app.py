@@ -6,56 +6,31 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import asyncio
-import json
+from kombu.utils import json
 
 from sanic import Sanic
 from sanic.response import json as json_response, html
 from sanic_cors import CORS
-from aioredis.pubsub import Receiver
 
 import storage
 import socketio
 
+sio_manager = storage.get_async_sio_manager()
 sio = socketio.AsyncServer(
     async_mode='sanic',
+    client_manager=sio_manager,
     cors_allowed_origins=[],
 )
 
-app = Sanic()
+app = Sanic('forcad_api')
 app.enable_websocket(True)
 CORS(app, supports_credentials=True, automatic_options=True)
 
 sio.attach(app)
 
 
-@app.listener('before_server_start')
-async def before_server_start(_sanic, loop):
-    mpsc = Receiver(loop=loop)
-    redis = await storage.get_async_redis_storage(loop, always_create_new=True)
-    await redis.subscribe(
-        mpsc.channel('scoreboard'),
-        mpsc.channel('stolen_flags'),
-    )
-    sio.start_background_task(background_task, mpsc)
-
-
-async def background_task(mpsc):
-    async for channel, msg in mpsc.iter():
-        try:
-            message = msg.decode()
-        except AttributeError:
-            pass
-        else:
-            if channel.name == b'stolen_flags':
-                print('Emitting flag stolen event')
-                await sio.emit('flag_stolen', {'data': message}, namespace='/api/sio_interface')
-            elif channel.name == b'scoreboard':
-                print('Emitting scoreboard event')
-                await sio.emit('update_scoreboard', {'data': message}, namespace='/api/sio_interface')
-
-
-@sio.on('connect', namespace='/api/sio_interface')
-async def handle_connect(_sid, _environ):
+@sio.on('connect', namespace='/game_events')
+async def handle_connect(sid, _environ):
     loop = asyncio.get_event_loop()
     game_state = await storage.game.get_game_state_async(loop)
 
@@ -80,10 +55,9 @@ async def handle_connect(_sid, _environ):
 
     await sio.emit(
         'init_scoreboard',
-        {
-            'data': json.dumps(data_to_send),
-        },
-        namespace='/api/sio_interface'
+        {'data': json.dumps(data_to_send)},
+        namespace='/game_events',
+        room=sid,
     )
 
 
@@ -110,8 +84,8 @@ async def get_game_config(_request):
 # noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
 async def get_team_history(_request, team_id):
-    round = storage.game.get_current_round()
-    teamtasks = storage.tasks.get_teamtasks_of_team_for_participants(team_id=team_id, current_round=round)
+    teamtasks = storage.tasks.get_teamtasks_of_team(team_id=team_id)
+    teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return json_response(teamtasks)
 
 

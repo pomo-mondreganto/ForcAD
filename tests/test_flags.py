@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from unittest import TestCase
 
 import requests
@@ -10,14 +11,12 @@ from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
+TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
 sys.path.insert(0, BACKEND_DIR)
+sys.path.insert(0, TESTS_DIR)
 
 import config
-
-
-def wait_rounds(rounds):
-    round_time = config.get_global_config()['round_time']
-    time.sleep(rounds * round_time)
+from helpers import wait_rounds
 
 
 class FlagSubmitTestCase(TestCase):
@@ -33,7 +32,7 @@ class FlagSubmitTestCase(TestCase):
             else:
                 self.unreachable_token = token
 
-        database_config = config.get_storage_config()['db']
+        database_config = config.get_db_config()
         database_config['host'] = '127.0.0.1'
         self.db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
 
@@ -149,15 +148,27 @@ class FlagSubmitTestCase(TestCase):
         all_lost = 0
         for team in teams:
             hist = self.get_team_history(team['id'])
-            last_round = max(map(lambda x: x['round'], hist))
+            per_task = defaultdict(list)
 
             for each in hist:
                 if 'working' not in team['name']:
-                    self.assertEqual(each['lost'], 0)
+                    self.assertEqual(int(each['lost']), 0)
+                per_task[each['task_id']].append(each)
 
-                if each['round'] == last_round:
-                    all_stolen += each['stolen']
-                    all_lost += each['lost']
+            per_task = list(map(
+                lambda y: sorted(
+                    y,
+                    key=lambda x: (
+                        lambda z: (
+                            int(z[:z.find('-')]), int(z[z.find('-') + 1:])
+                        )
+                    )(x['timestamp']),
+                )[-1],
+                per_task.values(),
+            ))
+
+            all_stolen += sum(map(lambda x: int(x['stolen']), per_task))
+            all_lost += sum(map(lambda x: int(x['lost']), per_task))
 
         self.assertEqual(all_stolen, len(ok_flags))
         self.assertEqual(all_lost, len(ok_flags))

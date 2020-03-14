@@ -1,5 +1,4 @@
-import json
-
+from kombu.utils import json
 from typing import List, Optional
 
 import storage
@@ -58,8 +57,8 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         team_id, = pipeline.get(f'team:token:{token}').execute()
 
     try:
-        team_id = int(team_id.decode())
-    except (ValueError, AttributeError):
+        team_id = int(team_id)
+    except (ValueError, TypeError):
         return None
     else:
         return team_id
@@ -77,22 +76,25 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         :return: attacker rating change
     """
 
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
+    flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
 
-        with storage.db_cursor() as (conn, curs):
-            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
-            attacker_delta, victim_delta = curs.fetchone()
-            conn.commit()
+    with storage.db_cursor() as (conn, curs):
+        curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
+        attacker_delta, victim_delta = curs.fetchone()
+        conn.commit()
 
-        flag_data = {
-            'attacker_id': attacker_id,
-            'victim_id': flag.team_id,
-            'task_id': flag.task_id,
-            'attacker_delta': attacker_delta,
-            'victim_delta': victim_delta,
-        }
+    flag_data = {
+        'attacker_id': attacker_id,
+        'victim_id': flag.team_id,
+        'task_id': flag.task_id,
+        'attacker_delta': attacker_delta,
+        'victim_delta': victim_delta,
+    }
 
-        pipeline.publish('stolen_flags', json.dumps(flag_data)).execute()
+    storage.get_wro_sio_manager().emit(
+        event='flag_stolen',
+        data={'data': json.dumps(flag_data)},
+        namespace='/game_events',
+    )
 
     return attacker_delta

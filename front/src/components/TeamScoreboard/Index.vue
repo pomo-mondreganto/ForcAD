@@ -16,7 +16,7 @@
         <div>
             <div class="row" v-for="state in states" :key="state.tasks[0].id">
                 <div class="number">
-                    {{ state.tasks[0].round }}
+                    {{ state.tasks[0].checks }}
                 </div>
                 <div class="team">
                     <div class="team-name">{{ team.name }}</div>
@@ -84,6 +84,7 @@ export default {
             teamId: null,
             tasks: null,
             round: 0,
+            by_task: [],
         };
     },
 
@@ -96,27 +97,63 @@ export default {
             const { data: tasks } = await this.$http.get(
                 `${serverUrl}/api/tasks/`
             );
-            const { data: states } = await this.$http.get(
+            let { data: states } = await this.$http.get(
                 `${serverUrl}/api/teams/${this.teamId}`
             );
             this.team = teams.filter(({ id }) => id == this.teamId)[0];
             this.tasks = tasks.sort(({ id: idA }, { id: idB }) => idA - idB);
+
             this.round = states.reduce(
                 (acc, { round }) => Math.max(acc, round),
                 0
             );
             this.updateRound(this.round);
+
+            states = states.map(x => ({
+                id: Number(x.id),
+                round: Number(x.round),
+                task_id: Number(x.task_id),
+                team_id: Number(x.team_id),
+                status: x.status,
+                stolen: x.stolen,
+                lost: x.lost,
+                score: Number(x.score),
+                checks: Number(x.checks),
+                checks_passed: Number(x.checks_passed),
+                timestamp_secs: Number(
+                    x.timestamp.slice(0, x.timestamp.indexOf('-'))
+                ),
+                timestamp_num: Number(
+                    x.timestamp.slice(x.timestamp.indexOf('-') + 1)
+                ),
+                message: x.message,
+            }));
+
+            states = states.sort(
+                (
+                    { timestamp_secs: tss1, timestamp_num: tsn1 },
+                    { timestamp_secs: tss2, timestamp_num: tsn2 }
+                ) => {
+                    if (tss1 === tss2) {
+                        return tsn2 - tsn1;
+                    }
+                    return tss2 - tss1;
+                }
+            );
+
+            this.by_task = tasks.map(() => []);
+            for (const state of states) {
+                this.by_task[state.task_id - 1].push(state);
+            }
+
+            let row_count = Math.min(...this.by_task.map(x => x.length));
+
             this.states = [];
-            for (let i = this.round; i >= 0; i -= 1) {
+            for (let i = 0; i < row_count; i += 1) {
                 this.states.push({
-                    tasks: states
-                        .filter(({ round }) => round === i)
-                        .sort(
-                            ({ task_id: taskIdA }, { task_id: taskIdB }) =>
-                                taskIdA - taskIdB
-                        ),
-                    score: states
-                        .filter(({ round }) => round === i)
+                    tasks: this.by_task.map(x => x[i]),
+                    score: this.by_task
+                        .map(x => x[i])
                         .reduce(
                             (
                                 acc,
@@ -128,11 +165,7 @@ export default {
                         ),
                 });
             }
-
-            this.states = this.states.filter(
-                state => state.tasks.length == this.states[0].tasks.length
-            );
-        } catch {
+        } catch (e) {
             this.error = "Can't connect to server";
         }
     },
