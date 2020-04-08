@@ -37,26 +37,24 @@ storages:
 
 tasks:
   - checker: test_service/checker.py
-    checker_returns_flag_id: true
     checker_timeout: 10
+    checker_type: hackerdom
     gets: 2
     name: test_basic_service
     places: 5
     puts: 2
 
   - checker: test_service/gevent_checker.py
-    checker_returns_flag_id: true
     checker_timeout: 10
-    gevent_optimized: true
+    checker_type: forcad_gevent
     gets: 2
     name: test_gevent_service_1
     places: 5
     puts: 2
 
   - checker: test_service/gevent_checker.py
-    checker_returns_flag_id: true
     checker_timeout: 10
-    gevent_optimized: true
+    checker_type: forcad_gevent
     gets: 2
     name: test_gevent_service_2
     places: 5

@@ -81,8 +81,7 @@ class Task(Model):
     puts: int
     places: int
     checker_timeout: int
-    checker_returns_flag_id: bool
-    gevent_optimized: bool
+    checker_type: str
     env_path: str
     default_score: Optional[float]
     get_period: int
@@ -95,8 +94,7 @@ class Task(Model):
                  puts: int,
                  places: int,
                  checker_timeout: int,
-                 checker_returns_flag_id: bool,
-                 gevent_optimized: bool,
+                 checker_type: str,
                  env_path: str,
                  get_period: int,
                  default_score: Optional[float] = None):
@@ -108,8 +106,7 @@ class Task(Model):
         self.puts = puts
         self.places = places
         self.checker_timeout = checker_timeout
-        self.checker_returns_flag_id = checker_returns_flag_id
-        self.gevent_optimized = gevent_optimized
+        self.checker_type = checker_type
         self.env_path = env_path
         self.default_score = default_score
         self.get_period = get_period
@@ -123,8 +120,7 @@ class Task(Model):
             'puts': self.puts,
             'places': self.places,
             'checker_timeout': self.checker_timeout,
-            'checker_returns_flag_id': self.checker_returns_flag_id,
-            'gevent_optimized': self.gevent_optimized,
+            'checker_type': self.checker_type,
             'env_path': self.env_path,
             'default_score': self.default_score,
             'get_period': self.get_period,
@@ -138,6 +134,19 @@ class Task(Model):
 
     def to_json_for_participants(self):
         return json.dumps(self.to_dict_for_participants())
+
+    @property
+    def is_checker_gevent_optimized(self):
+        return self.checker_type == 'forcad_gevent'
+
+    @property
+    def checker_returns_flag_id(self):
+        return self.checker_type in ['hackerdom', 'forcad_gevent']
+
+    def get_verdict_flag_id(self, in_flag_id: str, verdict: 'CheckerVerdict'):
+        if self.checker_type == 'hackerdom_nfr':
+            return in_flag_id
+        return verdict.public_message
 
     def __str__(self):
         return f"Task({self.id, self.name})"

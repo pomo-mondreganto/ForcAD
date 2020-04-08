@@ -28,17 +28,16 @@ CREATE TABLE IF NOT EXISTS StolenFlags
 
 CREATE TABLE IF NOT EXISTS Tasks
 (
-    id                      SERIAL PRIMARY KEY,
-    name                    VARCHAR(255),
-    checker                 VARCHAR(1024),
-    env_path                VARCHAR(1024),
-    gets                    INTEGER,
-    puts                    INTEGER,
-    places                  INTEGER,
-    checker_timeout         INTEGER,
-    checker_returns_flag_id BOOLEAN,
-    gevent_optimized        BOOLEAN,
-    get_period              INTEGER DEFAULT 0
+    id              SERIAL PRIMARY KEY,
+    name            VARCHAR(255),
+    checker         VARCHAR(1024),
+    env_path        VARCHAR(1024),
+    gets            INTEGER,
+    puts            INTEGER,
+    places          INTEGER,
+    checker_timeout INTEGER,
+    checker_type    VARCHAR(16) DEFAULT 'hackerdom',
+    get_period      INTEGER     DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks

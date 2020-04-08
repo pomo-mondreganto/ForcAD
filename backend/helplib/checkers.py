@@ -31,17 +31,17 @@ class CheckerRunner:
         self.flag = flag
 
     def check(self) -> helplib.models.CheckerVerdict:
-        if self.task.gevent_optimized:
+        if self.task.is_checker_gevent_optimized:
             return self._check_in_thread()
         return self._check_as_process()
 
     def put(self) -> helplib.models.CheckerVerdict:
-        if self.task.gevent_optimized:
+        if self.task.is_checker_gevent_optimized:
             return self._put_in_thread()
         return self._put_as_process()
 
     def get(self) -> helplib.models.CheckerVerdict:
-        if self.task.gevent_optimized:
+        if self.task.is_checker_gevent_optimized:
             return self._get_in_thread()
         return self._get_as_process()
 

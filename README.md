@@ -147,9 +147,8 @@ teams:
 ```yaml
 tasks:
 - checker: collacode/checker.py
-  checker_returns_flag_id: true
+  checker_type: forcad_gevent
   checker_timeout: 30
-  gevent_optimized: true
   default_score: 1500
   gets: 3
   name: collacode
@@ -157,7 +156,7 @@ tasks:
   puts: 3
 
 - checker: tiktak/checker.py
-  checker_returns_flag_id: true
+  checker_type: hackerdom
   checker_timeout: 30
   gets: 2
   name: tiktak
@@ -165,7 +164,7 @@ tasks:
   puts: 2
 ``` 
 
-`gevent_optimized` is an experimental feature to make checkers faster. Don't use it if you're not absolutely sure 
+`forcad_gevent` is an experimental checker type to make checkers faster. Don't use it if you're not absolutely sure 
 you know how it works. Example checker is [here](tests/service/checker/gevent_checker.py).
  
 
@@ -193,8 +192,11 @@ Checker-related configuration variables:
 `puts` and `gets`), I recommend setting `round_time` at least 4 times greater than the maximum checker timeout 
 if possible. 
 
-- `checker_returns_flag_id`: whether the checker returns new `flag_id` for the `GET` action for this flag, or the 
-passed `flag_id` should be used when getting flag (see more in [checker writing](#writing-a-checker) section)
+- `checker_type`: type of checker (see more in [checker writing](#writing-a-checker) section). Possible values:
+  - `hackerdom`: classic Hackerdom-style checker, `flag_id` from `PUT` is taken from `stdout` 
+  - `hackerdom_nfr`: classic Hackerdom-style checker, `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
+  That way, `flag_id` is used to seed the random generator in checkers so it would return the same values for `GET` and `PUT`
+  - `forcad_gevent`: experimental. See gevent checker in tests to find more.  
 
 - `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there.
@@ -251,7 +253,7 @@ Example invocation: `/checkers/task/check.py put 127.0.0.1 <flag_id> <flag> <vul
 If the checker returns `flag_id` (see [checker config](#checkers)), it should write some data 
 which helps to access flag later (username, password, etc) to `stdout` (that data will be the `flag_id` passed to `GET`
 action). Otherwise, it ought to use `flag_id` as some "seed" to generate such data (on the next invocation `flag_id` 
-will be the same if `checker_returns_flag_id` is set to `false`).
+will be the same if `checker_type` is set to `hackerdom_nfr`).
 
 `PUT` **is run** even if `CHECK` failed
 

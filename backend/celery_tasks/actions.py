@@ -45,9 +45,7 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
     verdict = runner.put()
 
     if verdict.status == TaskStatus.UP:
-        if task.checker_returns_flag_id:
-            flag.flag_data = verdict.public_message
-
+        flag.flag_data = task.get_verdict_flag_id(in_flag_id=flag.flag_data, verdict=verdict)
         storage.flags.add_flag(flag)
 
     return verdict

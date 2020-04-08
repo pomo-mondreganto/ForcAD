@@ -32,8 +32,8 @@ _TEAM_INSERT_QUERY = 'INSERT INTO Teams (name, ip, token) VALUES (%s, %s, %s) RE
 
 _TASK_INSERT_QUERY = '''
 INSERT INTO Tasks 
-(name, checker, gets, puts, places, checker_timeout, env_path, checker_returns_flag_id, gevent_optimized, get_period) 
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+(name, checker, gets, puts, places, checker_timeout, env_path, checker_type, get_period) 
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
 '''
 
 _TEAMTASK_INSERT_QUERY = "INSERT INTO TeamTasks (task_id, team_id, score, status) VALUES (%s, %s, %s, %s)"
@@ -89,8 +89,7 @@ def run():
             'env_path': global_config['env_path'],
             'default_score': global_config['default_score'],
             'get_period': global_config.get('get_period', global_config['round_time']),
-            'checker_returns_flag_id': True,
-            'gevent_optimized': False,
+            'checker_type': 'hackerdom',
         }
 
         for task_conf in tasks_config:
@@ -111,8 +110,7 @@ def run():
                     task.places,
                     task.checker_timeout,
                     task.env_path,
-                    task.checker_returns_flag_id,
-                    task.gevent_optimized,
+                    task.checker_type,
                     task.get_period,
                 )
             )
