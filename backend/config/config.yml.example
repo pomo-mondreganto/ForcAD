@@ -11,8 +11,9 @@ global:
   game_hardness: 3000.0
   inflation: true
   round_time: 20
-  start_time: 2019-11-30 15:30:00+03:00
-  game_mode: classic
+  start_time: 2019-11-30 15:30:00
+  game_mode: blitz
+  get_period: 10
 
 storages:
   db:
