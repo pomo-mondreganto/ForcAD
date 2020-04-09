@@ -9,13 +9,14 @@ CREATE TABLE IF NOT EXISTS Teams
 
 CREATE TABLE IF NOT EXISTS Flags
 (
-    id          SERIAL PRIMARY KEY,
-    flag        VARCHAR(32) UNIQUE NOT NULL DEFAULT '',
-    team_id     INTEGER            NOT NULL,
-    task_id     INTEGER            NOT NULL,
-    round       INTEGER            NOT NULL,
-    flag_data   TEXT               NOT NULL,
-    vuln_number INTEGER
+    id                SERIAL PRIMARY KEY,
+    flag              VARCHAR(32) UNIQUE NOT NULL DEFAULT '',
+    team_id           INTEGER            NOT NULL,
+    task_id           INTEGER            NOT NULL,
+    round             INTEGER            NOT NULL,
+    public_flag_data  TEXT               NOT NULL,
+    private_flag_data TEXT               NOT NULL,
+    vuln_number       INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS StolenFlags
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS Tasks
     puts            INTEGER,
     places          INTEGER,
     checker_timeout INTEGER,
-    checker_type    VARCHAR(16) DEFAULT 'hackerdom',
+    checker_type    VARCHAR(32) DEFAULT 'hackerdom',
     get_period      INTEGER     DEFAULT 0
 );
 
@@ -90,5 +91,8 @@ CREATE TABLE IF NOT EXISTS GlobalConfig
     start_time    TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX IF NOT EXISTS idx_flags_team_round
+CREATE INDEX IF NOT EXISTS idx_flags_round_team
     ON Flags (round, team_id);
+
+CREATE INDEX IF NOT EXISTS idx_flags_round_task
+    ON Flags (round, task_id);

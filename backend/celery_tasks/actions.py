@@ -37,7 +37,7 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         task_id=task.id,
         round=round,
     )
-    flag.flag_data = secrets.token_hex(20)
+    flag.private_flag_data = secrets.token_hex(20)
     flag.vuln_number = place
 
     runner = checkers.CheckerRunner(team=team, task=task, flag=flag, logger=logger)
@@ -45,7 +45,7 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
     verdict = runner.put()
 
     if verdict.status == TaskStatus.UP:
-        flag.flag_data = task.get_verdict_flag_id(in_flag_id=flag.flag_data, verdict=verdict)
+        flag = task.set_flag_data(flag, verdict)
         storage.flags.add_flag(flag)
 
     return verdict

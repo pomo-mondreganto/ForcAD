@@ -140,20 +140,35 @@ class Task(Model):
         return json.dumps(self.to_dict_for_participants())
 
     @property
+    def checker_tags(self):
+        return self.checker_type.split('_')
+
+    @property
     def is_checker_gevent_optimized(self):
-        return self.checker_type == 'forcad_gevent'
+        return 'gevent' in self.checker_tags
 
     @property
     def checker_returns_flag_id(self):
-        return self.checker_type in ['hackerdom', 'forcad_gevent']
+        return 'nfr' not in self.checker_tags
 
-    def get_verdict_flag_id(self, in_flag_id: str, verdict: 'CheckerVerdict'):
-        if self.checker_type == 'hackerdom_nfr':
-            return in_flag_id
-        return verdict.public_message
+    @property
+    def checker_provides_public_flag_data(self):
+        return 'pfr' in self.checker_tags
+
+    def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict'):
+        if not self.checker_returns_flag_id:
+            pass
+        elif self.checker_provides_public_flag_data:
+            flag.public_flag_data = verdict.public_message
+            flag.private_flag_data = verdict.private_message
+        else:
+            flag.public_flag_data = ''
+            flag.private_flag_data = verdict.public_message
+
+        return flag
 
     def __str__(self):
-        return f"Task({self.id, self.name})"
+        return f"Task({self.id}, {self.name})"
 
 
 class Flag(Model):
@@ -166,7 +181,8 @@ class Flag(Model):
     team_id: int
     task_id: int
     flag: str
-    flag_data: Optional[str]
+    public_flag_data: Optional[str]
+    private_flag_data: Optional[str]
     vuln_number: Optional[int]
 
     def __init__(self,
@@ -175,14 +191,16 @@ class Flag(Model):
                  task_id: int,
                  flag: str,
                  round: int,
-                 flag_data: Optional[str],
+                 public_flag_data: Optional[str],
+                 private_flag_data: Optional[str],
                  vuln_number: Optional[int]):
         super(Flag, self).__init__()
         self.id = id
         self.team_id = team_id
         self.flag = flag
         self.round = round
-        self.flag_data = flag_data
+        self.public_flag_data = public_flag_data
+        self.private_flag_data = private_flag_data
         self.task_id = task_id
         self.vuln_number = vuln_number
 
@@ -193,16 +211,13 @@ class Flag(Model):
             'task_id': self.task_id,
             'flag': self.flag,
             'round': self.round,
-            'flag_data': self.flag_data,
+            'public_flag_data': self.public_flag_data,
+            'private_flag_data': self.private_flag_data,
             'vuln_number': self.vuln_number,
         }
 
     def __str__(self):
-        return (
-            f"Flag({self.id}, task {self.task_id}) "
-            f"{self.flag} of team {self.team_id} on round {self.round}, "
-            f"data {self.flag_data}, vuln {self.vuln_number}"
-        )
+        return f"Flag({self.id}, task {self.task_id}, team {self.team_id})"
 
 
 class GameState(Model):

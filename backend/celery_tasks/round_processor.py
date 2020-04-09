@@ -4,6 +4,7 @@ import itertools
 # noinspection PyProtectedMember
 from celery import Task
 from celery.utils.log import get_task_logger
+from kombu.utils import json
 from typing import Optional
 
 import celery_tasks.modes
@@ -70,6 +71,16 @@ class RoundProcessor(Task):
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
             pipeline.set('real_round', finished_round + 1).execute()
 
+    @staticmethod
+    def update_attack_data(current_round):
+        logger.info(f'Updating attack data contents for round {current_round}')
+
+        tasks = storage.tasks.get_tasks()
+        tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
+        flags = storage.flags.get_attack_data(current_round, tasks)
+        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+            pipeline.set('attack_data', json.dumps(flags)).execute()
+
     def run(self, *args, **kwargs):
         """Process new round
             Updates current round variable, then processes all teams.
@@ -90,6 +101,7 @@ class RoundProcessor(Task):
                 if self.should_update_round():
                     self.update_round(current_round)
                     round_to_check = current_round + 1
+                    self.update_attack_data(round_to_check)
 
         if not round_to_check:
             logger.info("Not processing, round is 0")

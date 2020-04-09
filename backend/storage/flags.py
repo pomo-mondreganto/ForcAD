@@ -1,6 +1,7 @@
 import secrets
+from collections import defaultdict
 
-from typing import Optional
+from typing import Optional, List, Dict
 
 import helplib
 import storage
@@ -8,8 +9,13 @@ from helplib.cache import cache_helper
 from storage import caching
 
 _INSERT_FLAG_QUERY = """
-INSERT INTO flags (flag, team_id, task_id, round, flag_data, vuln_number) 
-VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+INSERT INTO flags (flag, team_id, task_id, round, public_flag_data, private_flag_data, vuln_number) 
+VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+"""
+
+_GET_UNEXPIRED_FLAGS_QUERY = """
+SELECT task_id, public_flag_data FROM flags
+WHERE round >= %s AND task_id IN %s
 """
 
 
@@ -65,7 +71,8 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
                 flag.team_id,
                 flag.task_id,
                 flag.round,
-                flag.flag_data,
+                flag.public_flag_data,
+                flag.private_flag_data,
                 flag.vuln_number,
             )
         )
@@ -162,3 +169,25 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
         except (ValueError, IndexError, TypeError):
             return None
     return get_flag_by_id(flag_id, current_round)
+
+
+def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dict[str, List[str]]:
+    """Get unexpired flags for round in format {task.name: [flag.public_data]}"""
+    task_ids = tuple(task.id for task in tasks)
+    task_names = {task.id: task.name for task in tasks}
+
+    config = storage.game.get_current_global_config()
+    need_round = current_round - config.flag_lifetime
+
+    with storage.db_cursor() as (conn, curs):
+        curs.execute(
+            _GET_UNEXPIRED_FLAGS_QUERY,
+            (need_round, task_ids)
+        )
+        flags = curs.fetchall()
+
+    data = defaultdict(list)
+    for flag in flags:
+        data[task_names[flag[0]]].append(flag[1])
+
+    return data

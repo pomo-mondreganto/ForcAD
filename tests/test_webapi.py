@@ -12,6 +12,20 @@ class WebApiTestCase(TestCase):
         r = requests.get(f'{self.url}/api/status/')
         self.assertTrue(r.ok)
 
+    def test_attack_data_api(self):
+        r = requests.get(f'{self.url}/api/attack_data/')
+        self.assertTrue(r.ok)
+
+        data = r.json()
+        self.assertIsInstance(data, dict)
+
+        keys = list(data.keys())
+        self.assertGreater(len(keys), 0)
+
+        values = data[keys[0]]
+        self.assertIsInstance(values, list)
+        self.assertGreater(len(values), 0)
+
     def test_teams_api(self):
         r = requests.get(f'{self.url}/api/teams/')
         self.assertTrue(r.ok)

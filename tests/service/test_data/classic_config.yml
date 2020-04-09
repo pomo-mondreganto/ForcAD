@@ -48,15 +48,15 @@ tasks:
     checker_timeout: 10
     checker_type: forcad_gevent
     gets: 2
-    name: test_gevent_service_1
+    name: test_gevent_service
     places: 5
     puts: 2
 
   - checker: test_service/gevent_checker.py
     checker_timeout: 10
-    checker_type: forcad_gevent
+    checker_type: forcad_gevent_pfr
     gets: 2
-    name: test_gevent_service_2
+    name: test_gevent_service_pfr
     places: 5
     puts: 2
 

@@ -69,7 +69,7 @@ class CheckerRunner:
             self.task.checker,
             'put',
             self.team.ip,
-            self.flag.flag_data,
+            self.flag.private_flag_data,
             self.flag.flag,
             str(self.flag.vuln_number),
         ]
@@ -90,7 +90,7 @@ class CheckerRunner:
             self.task.checker,
             'get',
             self.team.ip,
-            self.flag.flag_data,
+            self.flag.private_flag_data,
             self.flag.flag,
             str(self.flag.vuln_number),
         ]
@@ -123,7 +123,7 @@ class CheckerRunner:
         """Check implementation, gevent-compatible"""
 
         kwargs = {
-            'flag_id': self.flag.flag_data,
+            'flag_id': self.flag.private_flag_data,
             'flag': self.flag.flag,
             'vuln': self.flag.vuln_number,
         }
@@ -144,7 +144,7 @@ class CheckerRunner:
         """Check implementation, gevent-compatible"""
 
         kwargs = {
-            'flag_id': self.flag.flag_data,
+            'flag_id': self.flag.private_flag_data,
             'flag': self.flag.flag,
             'vuln': self.flag.vuln_number,
         }

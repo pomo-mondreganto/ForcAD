@@ -9,7 +9,7 @@ import asyncio
 from kombu.utils import json
 
 from sanic import Sanic
-from sanic.response import json as json_response, html
+from sanic.response import json as json_response, html, text
 from sanic_cors import CORS
 
 import storage
@@ -43,6 +43,7 @@ async def handle_connect(sid, _environ):
     else:
         state = game_state.to_dict()
 
+    # TODO: make async
     game_config = storage.game.get_current_global_config()
     game_config = game_config.to_dict()
 
@@ -77,13 +78,21 @@ async def get_tasks(_request):
 
 @app.route('/api/config/')
 async def get_game_config(_request):
+    # TODO: make async
     game_config = storage.game.get_current_global_config()
     return json_response(game_config.to_dict())
+
+
+@app.route('/api/attack_data')
+async def serve_attack_data(_request):
+    attack_data = await storage.game.get_attack_data(asyncio.get_event_loop())
+    return text(attack_data, content_type='application/json')
 
 
 # noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
 async def get_team_history(_request, team_id):
+    # TODO: make async
     teamtasks = storage.tasks.get_teamtasks_of_team(team_id=team_id)
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return json_response(teamtasks)
