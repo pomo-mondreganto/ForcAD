@@ -24,7 +24,13 @@ class WebApiTestCase(TestCase):
             self.assertIn('id', team)
             self.assertIn('name', team)
             self.assertIn('ip', team)
+            self.assertIn('highlighted', team)
             self.assertNotIn('token', team)
+
+            if 'highlighted' in team['name']:
+                self.assertTrue(team['highlighted'])
+            else:
+                self.assertFalse(team['highlighted'])
 
     def test_tasks_api(self):
         r = requests.get(f'{self.url}/api/tasks/')

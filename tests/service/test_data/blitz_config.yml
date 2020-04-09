@@ -64,12 +64,14 @@ tasks:
 teams:
   - ip: test_service
     name: "Test working team 1"
+    highlighted: false
 
   - ip: test_service
     name: "Test working team 2"
 
   - ip: test_service
-    name: "Test working team 3"
+    name: "Test working team 3 highlighted"
+    highlighted: true
 
   - ip: 127.0.0.1
     name: "Test unreachable team"

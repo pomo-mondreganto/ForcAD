@@ -1,9 +1,10 @@
 CREATE TABLE IF NOT EXISTS Teams
 (
-    id    SERIAL PRIMARY KEY,
-    name  VARCHAR(255) NOT NULL DEFAULT '',
-    ip    VARCHAR(32)  NOT NULL,
-    token VARCHAR(16)  NOT NULL DEFAULT ''
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL DEFAULT '',
+    ip          VARCHAR(32)  NOT NULL,
+    token       VARCHAR(16)  NOT NULL DEFAULT '',
+    highlighted BOOLEAN               DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS Flags

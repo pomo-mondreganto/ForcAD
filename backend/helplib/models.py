@@ -42,13 +42,15 @@ class Team(Model):
     name: str
     ip: str
     token: str
+    highlighted: bool
 
-    def __init__(self, id: Optional[int], name: str, ip: str, token: str):
+    def __init__(self, id: Optional[int], name: str, ip: str, token: str, highlighted: bool):
         super(Team, self).__init__()
         self.id = id
         self.name = name
         self.ip = ip
         self.token = token
+        self.highlighted = highlighted
 
     def to_dict(self):
         return {
@@ -56,6 +58,7 @@ class Team(Model):
             'name': self.name,
             'ip': self.ip,
             'token': self.token,
+            'highlighted': self.highlighted,
         }
 
     def to_dict_for_participants(self):
@@ -63,6 +66,7 @@ class Team(Model):
             'id': self.id,
             'name': self.name,
             'ip': self.ip,
+            'highlighted': self.highlighted,
         }
 
     def __str__(self):
