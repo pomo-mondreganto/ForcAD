@@ -6,5 +6,5 @@ class LockedException(Exception):
     """Exception raised by redis distributed lock"""
 
 
-class CheckerTimeoutException(Exception):
+class CheckerTimeoutException(BaseException):
     """Exception raised by gevent-optimized checkers"""
