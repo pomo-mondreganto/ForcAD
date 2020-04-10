@@ -173,7 +173,7 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
 
 
 def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
-    """Get unexpired flags for round in format {task.name: [flag.public_data]}"""
+    """Get unexpired flags for round in format {task.name: {team.ip: [flag.public_data]}}"""
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}
 

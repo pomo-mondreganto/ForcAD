@@ -50,15 +50,12 @@ class WebApiTestCase(TestCase):
                 self.assertIsInstance(task_data, dict)
 
                 for team in teams:
-                    self.assertIn(team['ip'], task_data)
-                    team_data = task_data[team['ip']]
-
-                    self.assertIsInstance(team_data, list)
-
                     if 'working' in team['name']:
+                        self.assertIn(team['ip'], task_data)
+                        team_data = task_data[team['ip']]
+
+                        self.assertIsInstance(team_data, list)
                         self.assertGreater(len(team_data), 0)
-                    else:
-                        self.assertEqual(len(team_data), 0)
 
     def test_teams_api(self):
         data = self.get_team_list()
