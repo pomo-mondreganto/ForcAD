@@ -5,8 +5,8 @@ FROM pomomondreganto/forcad_base:latest
 # uncomment blocks to enable features
 ### pwntools dependencies ###
 ################
-#RUN apt-get install -y git libssl-dev libffi-dev build-essential
-#ENV PWNLIB_NOTERM=true
+RUN apt-get install -y git libssl-dev libffi-dev build-essential
+ENV PWNLIB_NOTERM=true
 ################
 
 ### selenium (chromedriver) dependencies (from https://github.com/joyzoursky/docker-python-chromedriver) ###

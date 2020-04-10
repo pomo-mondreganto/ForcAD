@@ -8,6 +8,26 @@ class WebApiTestCase(TestCase):
     def url(self):
         return 'http://127.0.0.1:8080'
 
+    def get_team_list(self):
+        r = requests.get(f'{self.url}/api/teams/')
+        self.assertTrue(r.ok)
+
+        data = r.json()
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+
+        return data
+
+    def get_task_list(self):
+        r = requests.get(f'{self.url}/api/tasks/')
+        self.assertTrue(r.ok)
+
+        data = r.json()
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+
+        return data
+
     def test_status_page(self):
         r = requests.get(f'{self.url}/api/status/')
         self.assertTrue(r.ok)
@@ -19,20 +39,29 @@ class WebApiTestCase(TestCase):
         data = r.json()
         self.assertIsInstance(data, dict)
 
-        keys = list(data.keys())
-        self.assertGreater(len(keys), 0)
+        teams = self.get_team_list()
+        tasks = self.get_task_list()
 
-        values = data[keys[0]]
-        self.assertIsInstance(values, list)
-        self.assertGreater(len(values), 0)
+        for task in tasks:
+            if 'pfr' in task['name']:
+                self.assertIn(task['name'], data)
+
+                task_data = data[task['name']]
+                self.assertIsInstance(task_data, dict)
+
+                for team in teams:
+                    self.assertIn(team['ip'], task_data)
+                    team_data = task_data[team['ip']]
+
+                    self.assertIsInstance(team_data, list)
+
+                    if 'working' in team['name']:
+                        self.assertGreater(len(team_data), 0)
+                    else:
+                        self.assertEqual(len(team_data), 0)
 
     def test_teams_api(self):
-        r = requests.get(f'{self.url}/api/teams/')
-        self.assertTrue(r.ok)
-
-        data = r.json()
-        self.assertIsInstance(data, list)
-        self.assertGreater(len(data), 0)
+        data = self.get_team_list()
 
         for team in data:
             self.assertIn('id', team)
@@ -47,12 +76,7 @@ class WebApiTestCase(TestCase):
                 self.assertFalse(team['highlighted'])
 
     def test_tasks_api(self):
-        r = requests.get(f'{self.url}/api/tasks/')
-        self.assertTrue(r.ok)
-
-        data = r.json()
-        self.assertIsInstance(data, list)
-        self.assertGreater(len(data), 0)
+        data = self.get_task_list()
 
         for task in data:
             self.assertIn('id', task)
