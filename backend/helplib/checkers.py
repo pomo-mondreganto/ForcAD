@@ -125,7 +125,7 @@ class CheckerRunner:
         kwargs = {
             'flag_id': self.flag.private_flag_data,
             'flag': self.flag.flag,
-            'vuln': self.flag.vuln_number,
+            'vuln': str(self.flag.vuln_number),
         }
 
         return run_generic_action_in_thread(
@@ -146,7 +146,7 @@ class CheckerRunner:
         kwargs = {
             'flag_id': self.flag.private_flag_data,
             'flag': self.flag.flag,
-            'vuln': self.flag.vuln_number,
+            'vuln': str(self.flag.vuln_number),
         }
 
         return run_generic_action_in_thread(

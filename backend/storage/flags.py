@@ -14,8 +14,9 @@ VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
 """
 
 _GET_UNEXPIRED_FLAGS_QUERY = """
-SELECT task_id, public_flag_data FROM flags
-WHERE round >= %s AND task_id IN %s
+SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
+INNER JOIN teams t on f.team_id = t.id
+WHERE f.round >= %s AND f.task_id IN %s
 """
 
 
@@ -171,7 +172,7 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     return get_flag_by_id(flag_id, current_round)
 
 
-def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dict[str, List[str]]:
+def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
     """Get unexpired flags for round in format {task.name: [flag.public_data]}"""
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}
@@ -186,8 +187,9 @@ def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dic
         )
         flags = curs.fetchall()
 
-    data = defaultdict(list)
+    data = {task_names[task_id]: defaultdict(list) for task_id in task_ids}
     for flag in flags:
-        data[task_names[flag[0]]].append(flag[1])
+        ip, task_id, flag_data = flag
+        data[task_names[task_id]][ip].append(flag_data)
 
     return data
