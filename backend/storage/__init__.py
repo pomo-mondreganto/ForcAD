@@ -65,6 +65,7 @@ async def _connect_async_redis(loop):
         db=db,
         password=redis_config.get('password', None),
         loop=loop,
+        encoding='utf-8',
     )
 
 

@@ -180,12 +180,15 @@ def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dic
     config = storage.game.get_current_global_config()
     need_round = current_round - config.flag_lifetime
 
-    with storage.db_cursor() as (conn, curs):
-        curs.execute(
-            _GET_UNEXPIRED_FLAGS_QUERY,
-            (need_round, task_ids)
-        )
-        flags = curs.fetchall()
+    if task_ids:
+        with storage.db_cursor() as (conn, curs):
+            curs.execute(
+                _GET_UNEXPIRED_FLAGS_QUERY,
+                (need_round, task_ids)
+            )
+            flags = curs.fetchall()
+    else:
+        flags = []
 
     data = {task_names[task_id]: defaultdict(list) for task_id in task_ids}
     for flag in flags:

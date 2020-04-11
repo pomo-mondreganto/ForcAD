@@ -3,7 +3,8 @@ from typing import Optional
 
 import storage
 from helplib import models
-from helplib.cache import cache_helper
+from helplib.cache import cache_helper, async_cache_helper
+from storage import caching
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
@@ -107,6 +108,22 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
+async def get_current_global_config_async(loop) -> models.GlobalConfig:
+    """Async version of get_current_global_config"""
+    redis_aio = await storage.get_async_redis_storage(loop)
+
+    await async_cache_helper(
+        redis_aio=redis_aio,
+        cache_key='global_config:cached',
+        cache_func=caching.cache_global_config,
+    )
+
+    result = await redis_aio.get('global_config')
+    global_config = models.GlobalConfig.from_json(result)
+
+    return global_config
+
+
 def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
     """Get game state for specified round with teamtasks from db"""
     teamtasks = storage.tasks.get_teamtasks_from_db()
@@ -143,6 +160,4 @@ async def get_attack_data(loop) -> str:
     """Get public flag ids for task that provide them"""
     redis_pool = await storage.get_async_redis_storage(loop)
     attack_data = await redis_pool.get('attack_data')
-    if attack_data:
-        return attack_data.decode()
-    return ''
+    return attack_data

@@ -43,8 +43,7 @@ async def handle_connect(sid, _environ):
     else:
         state = game_state.to_dict()
 
-    # TODO: make async
-    game_config = storage.game.get_current_global_config()
+    game_config = await storage.game.get_current_global_config_async(loop)
     game_config = game_config.to_dict()
 
     data_to_send = {
@@ -78,8 +77,7 @@ async def get_tasks(_request):
 
 @app.route('/api/config/')
 async def get_game_config(_request):
-    # TODO: make async
-    game_config = storage.game.get_current_global_config()
+    game_config = await storage.game.get_current_global_config_async(asyncio.get_event_loop())
     return json_response(game_config.to_dict())
 
 
@@ -92,8 +90,8 @@ async def serve_attack_data(_request):
 # noinspection PyUnresolvedReferences
 @app.route('/api/teams/<team_id:int>/')
 async def get_team_history(_request, team_id):
-    # TODO: make async
-    teamtasks = storage.tasks.get_teamtasks_of_team(team_id=team_id)
+    loop = asyncio.get_event_loop()
+    teamtasks = await storage.tasks.get_teamtasks_of_team_async(team_id=team_id, loop=loop)
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return json_response(teamtasks)
 

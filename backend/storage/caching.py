@@ -36,15 +36,10 @@ def cache_teams(pipeline):
     pipeline.set('teams:cached', 1)
 
 
-async def cache_teams_async(redis):
-    """Async version of cache_teams"""
-    return cache_teams(redis)
-
-
 def cache_tasks(pipeline):
     """Put "tasks" table data from database to cache
 
-    Just adds commands to pipeline stack, don't forget to execute afterwards
+    Just adds commands to pipeline stack (to support aioredis), don't forget to execute afterwards
     """
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_SELECT_ALL_TASKS_QUERY)
@@ -55,11 +50,6 @@ def cache_tasks(pipeline):
     if tasks:
         pipeline.sadd('tasks', *[task.to_json() for task in tasks])
     pipeline.set('tasks:cached', 1)
-
-
-async def cache_tasks_async(redis):
-    """Async version of cache_tasks"""
-    return cache_tasks(redis)
 
 
 def cache_last_stolen(team_id: int, round: int, pipeline):
