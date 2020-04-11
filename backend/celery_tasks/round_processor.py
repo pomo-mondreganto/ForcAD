@@ -47,6 +47,10 @@ class RoundProcessor(Task):
 
         game_state = storage.game.construct_latest_game_state(round=current_round)
 
+        if not game_state.team_tasks:
+            logger.info("Empty team tasks, not updating scoreboard")
+            return
+
         logger.info(f'Publishing scoreboard for round {current_round}')
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
             pipeline.set('game_state', game_state.to_json())
