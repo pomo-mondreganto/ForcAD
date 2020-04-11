@@ -14,7 +14,7 @@
             </div>
         </div>
         <div>
-            <div class="row" v-for="state in states" :key="state.tasks[0].id">
+            <div class="row" v-for="(state, index) in states" :key="index">
                 <div class="number">
                     {{ state.tasks[0].checks }}
                 </div>
@@ -39,6 +39,9 @@
                         } in state.tasks"
                         :key="id"
                         class="service-cell"
+                        :style="{
+                            'font-size': `${1 - tasks.length / 20}em`,
+                        }"
                         :class="`status-${status}`"
                     >
                         <button class="info">
@@ -75,6 +78,7 @@ import { serverUrl } from '@/config';
 export default {
     props: {
         updateRound: Function,
+        updateRoundStart: Function,
     },
 
     data: function() {
@@ -107,6 +111,7 @@ export default {
                 (acc, { round }) => Math.max(acc, round),
                 0
             );
+
             this.updateRound(this.round);
 
             states = states.map(x => ({
@@ -282,6 +287,7 @@ export default {
 }
 
 .info {
+    padding: 0;
     position: absolute;
     top: 0.5em;
     left: calc(100% - 2.5em - 0.5em);
@@ -299,6 +305,7 @@ export default {
 }
 
 .tooltip {
+    font-size: 0.7rem;
     left: 0;
     top: 0;
     transform: translateX(calc(-100%)) translateY(calc(-100% - 0.25em));

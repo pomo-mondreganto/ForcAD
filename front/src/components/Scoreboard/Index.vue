@@ -16,22 +16,41 @@
         <transition-group name="teams-list">
             <div
                 class="row"
-                v-for="({ name, score, tasks, ip, id }, index) in teams"
+                v-for="({ name, score, tasks, ip, id, highlighted },
+                index) in teams"
                 :key="name"
+                :class="[`top-${index + 1}`, highlighted ? 'highlighted' : '']"
             >
-                <div class="number" :class="`top-${index + 1}`">
-                    {{ index + 1 }}
-                </div>
-                <div
-                    class="team team-row"
-                    @click="openTeam(id)"
-                    :class="`top-${index + 1}`"
-                >
-                    <div class="team-name">{{ name }}</div>
-                    <div class="ip">{{ ip }}</div>
-                </div>
-                <div class="score" :class="`top-${index + 1}`">
-                    {{ score.toFixed(2) }}
+                <div class="team-group" :class="highlighted ? '' : 'pd-3'">
+                    <div
+                        class="number"
+                        :class="[
+                            `top-${index + 1}`,
+                            index > 2 ? 'default-team' : '',
+                        ]"
+                    >
+                        {{ index + 1 }}
+                    </div>
+                    <div
+                        class="team team-row"
+                        @click="openTeam(id)"
+                        :class="[
+                            `top-${index + 1}`,
+                            index > 2 ? 'default-team' : '',
+                        ]"
+                    >
+                        <div class="team-name">{{ name }}</div>
+                        <div class="ip">{{ ip }}</div>
+                    </div>
+                    <div
+                        class="score"
+                        :class="[
+                            `top-${index + 1}`,
+                            index > 2 ? 'default-team' : '',
+                        ]"
+                    >
+                        {{ score.toFixed(2) }}
+                    </div>
                 </div>
                 <div class="service">
                     <div
@@ -46,6 +65,9 @@
                         } in tasks"
                         :key="id"
                         class="service-cell"
+                        :style="{
+                            'font-size': `${1 - tasks.length / 20}em`,
+                        }"
                         :class="`status-${status}`"
                     >
                         <button class="info">
@@ -79,6 +101,8 @@ import Team from '@/models/team';
 export default {
     props: {
         updateRound: Function,
+        updateRoundStart: Function,
+        timer: Number,
     },
 
     data: function() {
@@ -87,11 +111,13 @@ export default {
             server: null,
             tasks: null,
             teams: null,
+            round_start: 0,
         };
     },
 
     methods: {
         openTeam: function(id) {
+            clearInterval(this.timer);
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
     },
@@ -106,11 +132,12 @@ export default {
         this.server.on('init_scoreboard', ({ data }) => {
             this.error = null;
             const {
-                state: { round, team_tasks: teamTasks },
+                state: { round_start, round, team_tasks: teamTasks },
                 tasks,
                 teams,
             } = JSON.parse(data);
 
+            this.updateRoundStart(round_start);
             this.updateRound(round);
             this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
             this.teams = teams
@@ -125,7 +152,10 @@ export default {
         });
         this.server.on('update_scoreboard', ({ data }) => {
             this.error = null;
-            const { round, team_tasks: teamTasks } = JSON.parse(data);
+            const { round, team_tasks: teamTasks, round_start } = JSON.parse(
+                data
+            );
+            this.updateRoundStart(round_start);
             this.updateRound(round);
             this.teams.forEach(team => {
                 team.update(teamTasks);
@@ -137,6 +167,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.pd-3 {
+    margin-left: 2px;
+}
+
+.default-team {
+    background-color: white;
+}
+
+.team-group {
+    flex: 7 1 20%;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
 .team-row {
     cursor: pointer;
 }
@@ -170,17 +214,25 @@ export default {
     text-align: center;
 
     & > * {
-        border-top: 1px solid #c6cad1;
         word-wrap: break-word;
         min-width: 0;
     }
 
-    & > :first-child {
-        border-left: 1px solid #c6cad1;
+    border-top: 1px solid #c6cad1;
+    border-left: 1px solid #c6cad1;
+    border-right: 1px solid #c6cad1;
+
+    &.highlighted > * {
+        padding-top: 3px;
+        padding-bottom: 3px;
     }
 
-    & > :last-child {
-        border-right: 1px solid #c6cad1;
+    &.highlighted > :first-child {
+        padding-left: 3px;
+    }
+
+    &.highlighted > :last-child {
+        padding-right: 3px;
     }
 }
 
@@ -254,6 +306,7 @@ export default {
 }
 
 .info {
+    padding: 0;
     position: absolute;
     top: 0.5em;
     left: calc(100% - 2.5em - 0.5em);
@@ -271,6 +324,7 @@ export default {
 }
 
 .tooltip {
+    font-size: 0.7rem;
     left: 0;
     top: 0;
     transform: translateX(calc(-100%)) translateY(calc(-100% - 0.25em));
@@ -289,5 +343,28 @@ export default {
 .info:hover .tooltip {
     opacity: 1;
     z-index: 1;
+}
+
+.highlighted {
+    transform: translateZ(0);
+    animation: rotate 5s infinite linear;
+    background: rgb(48, 255, 144); /* Old browsers */
+    background: linear-gradient(
+        to right,
+        rgba(48, 255, 144, 1) 0%,
+        rgba(237, 45, 237, 1) 25%,
+        rgba(201, 152, 38, 1) 50%,
+        rgba(48, 255, 230, 1) 75%,
+        rgba(48, 255, 144, 1) 100%
+    );
+}
+
+@keyframes rotate {
+    from {
+        background-position: -3000px;
+    }
+    to {
+        background-position: 0px;
+    }
 }
 </style>

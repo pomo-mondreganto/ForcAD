@@ -1,10 +1,11 @@
 import TeamTask from '@/models/teamTask';
 
 class Team {
-    constructor({ name, ip, id, teamTasks }) {
+    constructor({ name, ip, id, teamTasks, highlighted }) {
         this.name = name;
         this.ip = ip;
         this.id = id;
+        this.highlighted = highlighted;
         this.update(teamTasks);
     }
 
