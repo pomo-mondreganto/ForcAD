@@ -33,7 +33,7 @@ async def get_tasks_async(loop) -> List[models.Task]:
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='tasks:cached',
-        cache_func=caching.cache_tasks_async,
+        cache_func=caching.cache_tasks,
     )
 
     tasks = await redis_aio.smembers('tasks')
@@ -115,16 +115,18 @@ def get_teamtasks_from_db() -> List[dict]:
     return data
 
 
-def get_teamtasks_of_team(team_id: int) -> List[dict]:
+async def get_teamtasks_of_team_async(team_id: int, loop) -> List[dict]:
     """Fetch teamtasks for team for all tasks"""
-    tasks = get_tasks()
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        for task in tasks:
-            pipeline.xrevrange(f'teamtasks:{team_id}:{task.id}')
+    tasks = await get_tasks_async(loop)
+    redis_aio = await storage.get_async_redis_storage(loop)
+    tr = redis_aio.multi_exec()
 
-        data = pipeline.execute()
+    for task in tasks:
+        tr.xrevrange(f'teamtasks:{team_id}:{task.id}')
 
+    data = await tr.execute()
     data = sum(data, [])
+
     results = []
     for timestamp, record in data:
         record['timestamp'] = timestamp

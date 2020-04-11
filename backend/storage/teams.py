@@ -31,7 +31,7 @@ async def get_teams_async(loop) -> List[models.Team]:
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams:cached',
-        cache_func=caching.cache_teams_async,
+        cache_func=caching.cache_teams,
     )
 
     teams = await redis_aio.smembers('teams')

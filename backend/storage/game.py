@@ -3,7 +3,8 @@ from typing import Optional
 
 import storage
 from helplib import models
-from helplib.cache import cache_helper
+from helplib.cache import cache_helper, async_cache_helper
+from storage import caching
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
@@ -103,6 +104,22 @@ def get_current_global_config() -> models.GlobalConfig:
 
         result, = pipeline.get('global_config').execute()
         global_config = models.GlobalConfig.from_json(result)
+
+    return global_config
+
+
+async def get_current_global_config_async(loop) -> models.GlobalConfig:
+    """Async version of get_current_global_config"""
+    redis_aio = await storage.get_async_redis_storage(loop)
+
+    await async_cache_helper(
+        redis_aio=redis_aio,
+        cache_key='global_config:cached',
+        cache_func=caching.cache_global_config,
+    )
+
+    result = await redis_aio.get('global_config')
+    global_config = models.GlobalConfig.from_json(result)
 
     return global_config
 
