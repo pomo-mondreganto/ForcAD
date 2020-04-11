@@ -160,6 +160,4 @@ async def get_attack_data(loop) -> str:
     """Get public flag ids for task that provide them"""
     redis_pool = await storage.get_async_redis_storage(loop)
     attack_data = await redis_pool.get('attack_data')
-    if attack_data:
-        return attack_data.decode()
-    return ''
+    return attack_data
