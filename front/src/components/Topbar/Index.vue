@@ -1,13 +1,8 @@
 <template>
     <div class="topbar">
-        <router-link to="/live/" @click="go">Live</router-link>
-        <div class="progress-bar">
-            <div
-                class="progress-bar-progress"
-                :style="{ width: roundProgressInteger, visibility: visible }"
-            ></div>
-        </div>
-        <div>Round: {{ round }}</div>
+        <router-link class="tp" to="/live/" @click="go">Live</router-link>
+        <div class="progress-bar" :style="{ width: roundProgressInteger }" />
+        <div class="tp">Round: {{ round }}</div>
     </div>
 </template>
 
@@ -23,10 +18,6 @@ export default {
         roundProgressInteger: function() {
             return `${Math.floor(this.roundProgress * 100)}%`;
         },
-
-        visible: function() {
-            return this.roundProgress < 0.05 ? 'hidden' : 'visible';
-        },
     },
 
     methods: {
@@ -38,7 +29,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.tp {
+    z-index: 1;
+}
+
 .topbar {
+    position: relative;
     background: #bbbbbb55;
     padding: 1em;
 
@@ -50,20 +46,11 @@ export default {
 }
 
 .progress-bar {
-    border: 1px solid #838383;
-    border-radius: 10px;
-    height: 7px;
-    width: 70%;
-    margin: 0;
-}
-
-.progress-bar-progress {
-    background-color: #838383;
-    border: 1px solid #838383;
-    border-radius: 10px;
-    height: 7px;
-    margin: 0;
-    margin-top: -1px;
-    margin-left: -1px;
+    background-color: #00ff00;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.5;
 }
 </style>

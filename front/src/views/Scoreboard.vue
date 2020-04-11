@@ -72,7 +72,9 @@ export default {
                 this.roundProgress = 0;
             } else {
                 this.roundProgress =
-                    (new Date().getTime() / 1000 - this.roundStart) /
+                    (new Date().getTime() / 1000 -
+                        this.roundStart -
+                        this.roundTime) /
                     this.roundTime;
                 this.roundProgress = Math.min(this.roundProgress, 1);
             }
