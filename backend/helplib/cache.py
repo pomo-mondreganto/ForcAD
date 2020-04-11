@@ -55,7 +55,7 @@ async def async_cache_helper(redis_aio, cache_key, cache_func, cache_args=None, 
             cached = await redis_aio.exists(cache_key)
 
             tr = redis_aio.multi_exec()
-            cache_kwargs['redis'] = tr
+            cache_kwargs['pipeline'] = tr
             if not cached:
                 await cache_func(*cache_args, **cache_kwargs)
 
