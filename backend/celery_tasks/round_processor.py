@@ -4,7 +4,7 @@ import itertools
 # noinspection PyProtectedMember
 from celery import Task
 from celery.utils.log import get_task_logger
-from kombu.utils import json
+from kombu.utils import json as kjson
 from typing import Optional
 
 import celery_tasks.modes
@@ -83,7 +83,7 @@ class RoundProcessor(Task):
         tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
         flags = storage.flags.get_attack_data(current_round, tasks)
         with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-            pipeline.set('attack_data', json.dumps(flags)).execute()
+            pipeline.set('attack_data', kjson.dumps(flags)).execute()
 
     def run(self, *args, **kwargs):
         """Process new round

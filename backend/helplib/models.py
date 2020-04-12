@@ -1,6 +1,6 @@
 import datetime
 import yaml
-from kombu.utils import json
+from kombu.utils import json as kjson
 from typing import Optional, List
 
 from helplib.types import Action, TaskStatus
@@ -14,7 +14,7 @@ class Model(object):
 
     @classmethod
     def from_json(cls, json_str: str):
-        d = json.loads(json_str)
+        d = kjson.loads(json_str)
         return cls(**d)
 
     @classmethod
@@ -30,7 +30,7 @@ class Model(object):
         raise NotImplemented
 
     def to_json(self):
-        return json.dumps(self.to_dict())
+        return kjson.dumps(self.to_dict())
 
     def __repr__(self):
         return str(self)
@@ -137,7 +137,7 @@ class Task(Model):
         }
 
     def to_json_for_participants(self):
-        return json.dumps(self.to_dict_for_participants())
+        return kjson.dumps(self.to_dict_for_participants())
 
     @property
     def checker_tags(self):
