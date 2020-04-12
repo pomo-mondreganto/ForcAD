@@ -69,19 +69,6 @@ services:
     restart: on-failure
     tty: true
 
-  front_builder:
-    image: ${FORCAD_REGISTRY}/forcad_front_builder:${FORCAD_ARCH_TAG}
-    build:
-      context: .
-      dockerfile: docker_config/front_builder/Dockerfile
-    volumes:
-      - react_build:/react_build/
-    restart: on-failure
-    deploy:
-      placement:
-        constraints:
-          - node.labels.external == 1
-
   socat_flag_submitter:
     image: ${FORCAD_REGISTRY}/forcad_tcp_flag_submitter:${FORCAD_ARCH_TAG}
     build:

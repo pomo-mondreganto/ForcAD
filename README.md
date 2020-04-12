@@ -63,9 +63,6 @@ run 5-6 instances of `celery`).
 
 - **Webapi** provides api for react frontend
 
-- **Front builder** builds frontend sources and copies them to the volume, from which they're served by nginx. 
-It exits after it's finished 
-
 - **Nginx** acts as a routing proxy that unites frontend, api and flower
 
 - **Initializer** starts with the system, waits for the database to become available (all other containers wait for 

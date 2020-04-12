@@ -71,16 +71,6 @@ services:
     tty: true
     restart: "no"
 
-  front_builder:
-    build:
-      context: .
-      dockerfile: docker_config/front_builder/Dockerfile
-    volumes:
-      - front_build:/front_build/
-    environment:
-      - TEST=1
-    restart: "no"
-
   gevent_flag_submitter:
     build:
       context: .

@@ -13,7 +13,6 @@ from helpers import wait_rounds
 
 DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
 INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
-FRONT_BUILD_CONTAINER_NAME = 'forcad_front_builder_1'
 
 
 def wait_for_container(name):
@@ -28,7 +27,6 @@ def wait_for_container(name):
 
 def wait_all():
     wait_for_container(INITIALIZER_CONTAINER_NAME)
-    wait_for_container(FRONT_BUILD_CONTAINER_NAME)
     wait_rounds(2)
 
 
