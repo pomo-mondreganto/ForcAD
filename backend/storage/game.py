@@ -108,20 +108,14 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
-async def get_current_global_config_async(loop) -> models.GlobalConfig:
+async def global_config_async_getter(redis_aio, pipe):
     """Async version of get_current_global_config"""
-    redis_aio = await storage.get_async_redis_storage(loop)
-
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='global_config:cached',
         cache_func=caching.cache_global_config,
     )
-
-    result = await redis_aio.get('global_config')
-    global_config = models.GlobalConfig.from_json(result)
-
-    return global_config
+    pipe.get('global_config')
 
 
 def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
@@ -144,16 +138,9 @@ def construct_latest_game_state(round: int) -> Optional[models.GameState]:
     return state
 
 
-async def get_game_state_async(loop) -> Optional[models.GameState]:
+def game_state_getter(pipe):
     """Get game state for current round (asynchronous version)"""
-    redis_pool = await storage.get_async_redis_storage(loop)
-    state = await redis_pool.get('game_state')
-    try:
-        state = models.GameState.from_json(state)
-    except TypeError:
-        return None
-
-    return state
+    pipe.get('game_state')
 
 
 async def get_attack_data(loop) -> str:

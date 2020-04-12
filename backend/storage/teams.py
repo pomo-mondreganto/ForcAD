@@ -1,4 +1,3 @@
-from kombu.utils import json
 from typing import List, Optional
 
 import storage
@@ -23,21 +22,14 @@ def get_teams() -> List[models.Team]:
     return teams
 
 
-async def get_teams_async(loop) -> List[models.Team]:
+async def teams_async_getter(redis_aio, pipe):
     """Get list of teams registered in the database (asynchronous version)"""
-
-    redis_aio = await storage.get_async_redis_storage(loop)
-
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams:cached',
         cache_func=caching.cache_teams,
     )
-
-    teams = await redis_aio.smembers('teams')
-    teams = list(models.Team.from_json(team) for team in teams)
-
-    return teams
+    pipe.smembers('teams')
 
 
 def get_team_id_by_token(token: str) -> Optional[int]:
@@ -93,8 +85,8 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
 
     storage.get_wro_sio_manager().emit(
         event='flag_stolen',
-        data={'data': json.dumps(flag_data)},
-        namespace='/game_events',
+        data={'data': flag_data},
+        namespace='/live_events',
     )
 
     return attacker_delta

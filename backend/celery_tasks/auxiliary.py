@@ -35,7 +35,7 @@ def startup(**_kwargs):
 
                     storage.get_wro_sio_manager().emit(
                         event='update_scoreboard',
-                        data={'data': game_state.to_json()},
+                        data={'data': game_state.to_dict()},
                         namespace='/game_events',
                     )
 
@@ -68,6 +68,6 @@ def start_game():
 
             storage.get_wro_sio_manager().emit(
                 event='update_scoreboard',
-                data={'data': game_state.to_json()},
+                data={'data': game_state.to_dict()},
                 namespace='/game_events',
             )

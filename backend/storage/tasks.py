@@ -25,21 +25,14 @@ def get_tasks() -> List[models.Task]:
     return tasks
 
 
-async def get_tasks_async(loop) -> List[models.Task]:
+async def tasks_async_getter(redis_aio, pipe):
     """Get list of tasks registered in the database (asynchronous version)"""
-
-    redis_aio = await storage.get_async_redis_storage(loop)
-
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='tasks:cached',
         cache_func=caching.cache_tasks,
     )
-
-    tasks = await redis_aio.smembers('tasks')
-    tasks = list(models.Task.from_json(task) for task in tasks)
-
-    return tasks
+    pipe.smembers('tasks')
 
 
 def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
@@ -117,8 +110,12 @@ def get_teamtasks_from_db() -> List[dict]:
 
 async def get_teamtasks_of_team_async(team_id: int, loop) -> List[dict]:
     """Fetch teamtasks for team for all tasks"""
-    tasks = await get_tasks_async(loop)
     redis_aio = await storage.get_async_redis_storage(loop)
+    pipe = redis_aio.pipeline()
+    await storage.tasks.tasks_async_getter(redis_aio, pipe)
+    tasks, = await pipe.execute()
+    tasks = [models.Task.from_json(task) for task in tasks]
+
     tr = redis_aio.multi_exec()
 
     for task in tasks:

@@ -6,13 +6,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
 
 import asyncio
-from kombu.utils import json
 
 from sanic import Sanic
 from sanic.response import json as json_response, html, text
 from sanic_cors import CORS
 
 import storage
+from helplib import models
 import socketio
 
 sio_manager = storage.get_async_sio_manager()
@@ -32,19 +32,22 @@ sio.attach(app)
 @sio.on('connect', namespace='/game_events')
 async def handle_connect(sid, _environ):
     loop = asyncio.get_event_loop()
-    game_state = await storage.game.get_game_state_async(loop)
+    redis_aio = await storage.get_async_redis_storage(loop)
+    pipe = redis_aio.pipeline()
+    pipe.get('game_state')
+    await storage.teams.teams_async_getter(redis_aio, pipe)
+    await storage.tasks.tasks_async_getter(redis_aio, pipe)
+    await storage.game.global_config_async_getter(redis_aio, pipe)
+    state, teams, tasks, game_config = await pipe.execute()
 
-    teams = await storage.teams.get_teams_async(loop)
-    teams = [team.to_dict_for_participants() for team in teams]
-    tasks = await storage.tasks.get_tasks_async(loop)
-    tasks = [task.to_dict_for_participants() for task in tasks]
-    if not game_state:
-        state = ''
-    else:
-        state = game_state.to_dict()
+    try:
+        state = models.GameState.from_json(state).to_dict()
+    except TypeError:
+        state = None
 
-    game_config = await storage.game.get_current_global_config_async(loop)
-    game_config = game_config.to_dict()
+    teams = [models.Team.from_json(team).to_dict_for_participants() for team in teams]
+    tasks = [models.Task.from_json(task).to_dict_for_participants() for task in tasks]
+    game_config = models.GlobalConfig.from_json(game_config).to_dict()
 
     data_to_send = {
         'state': state,
@@ -55,7 +58,7 @@ async def handle_connect(sid, _environ):
 
     await sio.emit(
         'init_scoreboard',
-        {'data': json.dumps(data_to_send)},
+        {'data': data_to_send},
         namespace='/game_events',
         room=sid,
     )
@@ -63,22 +66,41 @@ async def handle_connect(sid, _environ):
 
 @app.route('/api/teams/')
 async def get_teams(_request):
-    teams = await storage.teams.get_teams_async(asyncio.get_event_loop())
-    teams = [team.to_dict_for_participants() for team in teams]
+    loop = asyncio.get_event_loop()
+    redis_aio = await storage.get_async_redis_storage(loop)
+    pipe = redis_aio.pipeline()
+
+    await storage.teams.teams_async_getter(redis_aio, pipe)
+    teams, = await pipe.execute()
+    teams = [models.Team.from_json(team).to_dict_for_participants() for team in teams]
+
     return json_response(teams)
 
 
 @app.route('/api/tasks/')
 async def get_tasks(_request):
-    tasks = await storage.tasks.get_tasks_async(asyncio.get_event_loop())
-    tasks = [task.to_dict_for_participants() for task in tasks]
+    loop = asyncio.get_event_loop()
+    redis_aio = await storage.get_async_redis_storage(loop)
+    pipe = redis_aio.pipeline()
+
+    await storage.tasks.tasks_async_getter(redis_aio, pipe)
+    tasks, = await pipe.execute()
+    tasks = [models.Task.from_json(task).to_dict_for_participants() for task in tasks]
+
     return json_response(tasks)
 
 
 @app.route('/api/config/')
 async def get_game_config(_request):
-    game_config = await storage.game.get_current_global_config_async(asyncio.get_event_loop())
-    return json_response(game_config.to_dict())
+    loop = asyncio.get_event_loop()
+    redis_aio = await storage.get_async_redis_storage(loop)
+    pipe = redis_aio.pipeline()
+
+    await storage.game.global_config_async_getter(redis_aio, pipe)
+    conf, = await pipe.execute()
+    conf = models.GlobalConfig.from_json(conf).to_dict()
+
+    return json_response(conf)
 
 
 @app.route('/api/attack_data')
