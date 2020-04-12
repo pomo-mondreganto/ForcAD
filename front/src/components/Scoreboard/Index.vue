@@ -1,16 +1,12 @@
 <template>
-    <div v-if="error !== null">
-        {{ error }}
-    </div>
+    <div v-if="error !== null">{{ error }}</div>
     <div v-else-if="teams !== null" class="table">
         <div class="row">
             <div class="number">#</div>
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
-                <div v-for="{ name } in tasks" :key="name" class="service-cell">
-                    {{ name }}
-                </div>
+                <div :key="name" class="service-cell" v-for="{ name } in tasks">{{ name }}</div>
             </div>
         </div>
         <transition-group name="teams-list">
@@ -28,9 +24,7 @@
                             `top-${index + 1}`,
                             index > 2 ? 'default-team' : '',
                         ]"
-                    >
-                        {{ index + 1 }}
-                    </div>
+                    >{{ index + 1 }}</div>
                     <div
                         class="team team-row"
                         @click="openTeam(id)"
@@ -48,9 +42,7 @@
                             `top-${index + 1}`,
                             index > 2 ? 'default-team' : '',
                         ]"
-                    >
-                        {{ score.toFixed(2) }}
-                    </div>
+                    >{{ score.toFixed(2) }}</div>
                 </div>
                 <div class="service">
                     <div
@@ -72,18 +64,19 @@
                     >
                         <button class="info">
                             <i class="fas fa-info-circle" />
-                            <span class="tooltip">
-                                {{ message === '' ? 'OK' : message }}
-                            </span>
+                            <span class="tooltip">{{ message === '' ? 'OK' : message }}</span>
                         </button>
                         <div class="sla">
-                            <strong>SLA</strong>: {{ sla.toFixed(2) }}%
+                            <strong>SLA</strong>
+                            : {{ sla.toFixed(2) }}%
                         </div>
                         <div class="fp">
-                            <strong>FP</strong>: {{ score.toFixed(2) }}
+                            <strong>FP</strong>
+                            : {{ score.toFixed(2) }}
                         </div>
                         <div class="flags">
-                            <i class="fas fa-flag" /> +{{ stolen }}/-{{ lost }}
+                            <i class="fas fa-flag" />
+                            +{{ stolen }}/-{{ lost }}
                         </div>
                     </div>
                 </div>
@@ -135,7 +128,7 @@ export default {
                 state: { round_start, round, team_tasks: teamTasks },
                 tasks,
                 teams,
-            } = JSON.parse(data);
+            } = data;
 
             this.updateRoundStart(round_start);
             this.updateRound(round);
@@ -152,9 +145,7 @@ export default {
         });
         this.server.on('update_scoreboard', ({ data }) => {
             this.error = null;
-            const { round, team_tasks: teamTasks, round_start } = JSON.parse(
-                data
-            );
+            const { round, team_tasks: teamTasks, round_start } = data;
             this.updateRoundStart(round_start);
             this.updateRound(round);
             this.teams.forEach(team => {

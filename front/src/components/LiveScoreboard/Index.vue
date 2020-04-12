@@ -1,13 +1,10 @@
 <template>
     <div class="flag" v-if="error !== null">{{ error }}</div>
     <div class="flag" v-else>
-        <div
-            v-for="({ attacker, victim, task, delta }, index) in events"
-            :key="index"
-        >
+        <div :key="index" v-for="({ attacker, victim, task, delta }, index) in events">
             <span class="mark">{{ attacker }}</span> stole a flag from
-            <span class="mark">{{ victim }}</span
-            >'s service <span class="mark">{{ task }}</span> and got
+            <span class="mark">{{ victim }}</span>'s service
+            <span class="mark">{{ task }}</span> and got
             <span class="mark">{{ delta }}</span> points
         </div>
     </div>
@@ -43,7 +40,7 @@ export default {
             return;
         }
 
-        this.server = io(`${serverUrl}/game_events`, {
+        this.server = io(`${serverUrl}/live_events`, {
             forceNew: true,
         });
         this.server.on('connect_error', () => {
@@ -56,7 +53,7 @@ export default {
                 victim_id: victimId,
                 task_id: taskId,
                 attacker_delta: delta,
-            } = JSON.parse(data);
+            } = data;
 
             this.events.unshift({
                 attacker: this.teams.filter(({ id }) => id === attackerId)[0]
