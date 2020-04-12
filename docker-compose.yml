@@ -85,32 +85,6 @@ services:
       - 31337:31337
     restart: on-failure
 
-  #  socat_flag_submitter:
-  #    build:
-  #      context: .
-  #      dockerfile: docker_config/socat_flag_submitter/Dockerfile
-  #    env_file:
-  #      - ./docker_config/postgres/environment.env
-  #      - ./docker_config/redis/environment.env
-  #      - ./docker_config/rabbitmq/environment.env
-  #    ports:
-  #      - 31338:31338
-  #    restart: on-failure
-  #    tty: true
-  #    pids_limit: 100
-  #
-  #  tcp_flag_submitter:
-  #    build:
-  #      context: .
-  #      dockerfile: docker_config/tcp_flag_submitter/Dockerfile
-  #    env_file:
-  #      - ./docker_config/postgres/environment.env
-  #      - ./docker_config/redis/environment.env
-  #      - ./docker_config/rabbitmq/environment.env
-  #    ports:
-  #      - 31339:31339
-  #    restart: on-failure
-
   nginx:
     build:
       context: .

@@ -45,7 +45,7 @@ or send tokens privately. Tokens have one upside: all requests can be masquerade
 
 Platform consists of several modules: 
 
-- **TCP flag submitter** (over `socat` on port 31338 or python tcp server on port 31337, both perform well). 
+- **TCP flag submitter** (python tcp server on port 31337). 
 For each connection send team token in the first line, then flags, each in a new line. 
 
 - **Celerybeat** sends round start events to `celery`.
