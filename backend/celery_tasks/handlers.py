@@ -14,11 +14,13 @@ def exception_callback(result, exc, traceback):
     action_name = result.task.split('.')[-1].split('_')[0].upper()
     action = Action[action_name]
 
+    kw = result.kwargs
+    team, task, round = kw['team'], kw['task'], kw['round']
+
     if action == Action.CHECK:
         prev_verdict = None
-        team, task, round = result.args
     else:
-        prev_verdict, team, task, round = result.args
+        prev_verdict, = result.args
 
     logger.error(
         f"Task exception handler was called for team {team} task {task}, round {round}, "
