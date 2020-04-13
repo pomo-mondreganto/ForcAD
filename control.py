@@ -258,6 +258,7 @@ if __name__ == '__main__':
     worker_parser.set_defaults(func=run_worker)
     worker_parser.add_argument('-i', '--instances', type=int, metavar='N', default=1,
                                help='Number of celery worker instances', required=False)
+    worker_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
     worker_parser.add_argument('--redis', type=str,
                                help='Redis address for the worker to connect', required=True)
     worker_parser.add_argument('--rabbitmq', type=str,
@@ -267,7 +268,7 @@ if __name__ == '__main__':
 
     parsed = parser.parse_args()
 
-    if parsed.fast or os.environ.get('FAST'):
+    if ('fast' in parsed and parsed.fast) or os.environ.get('FAST'):
         DOCKER_COMPOSE_FILE = 'docker-compose-fast.yml'
     elif os.environ.get('TEST'):
         DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'

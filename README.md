@@ -109,7 +109,8 @@ Config file (`backend/config/config.yml`) is split into five main parts:
   - `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`
   - `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`
   - `round_time`: round duration in seconds. Example: `120`
-  - `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00+03:00` (don't forget the timezone)
+  - `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00` 
+  (timezone will be taken from `timezone` option)
 
 - **storages** describes settings used to connect to PostgreSQL and Redis (examples provided):
   - `db`: PostgreSQL settings:
@@ -153,16 +154,13 @@ tasks:
   puts: 3
 
 - checker: tiktak/checker.py
-  checker_type: hackerdom
+  checker_type: hackerdom_nfr
   checker_timeout: 30
   gets: 2
   name: tiktak
   places: 3
   puts: 2
 ``` 
-
-`forcad_gevent` is an experimental checker type to make checkers faster. Don't use it if you're not absolutely sure 
-you know how it works. Example checker is [here](tests/service/checker/gevent_checker.py).
  
 
 ## Checkers
@@ -189,14 +187,24 @@ Checker-related configuration variables:
 `puts` and `gets`), I recommend setting `round_time` at least 4 times greater than the maximum checker timeout 
 if possible. 
 
-- `checker_type`: type of checker (see more in [checker writing](#writing-a-checker) section). Possible values:
-  - `hackerdom`: classic Hackerdom-style checker, `flag_id` from `PUT` is taken from `stdout` 
-  - `hackerdom_nfr`: classic Hackerdom-style checker, `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
-  That way, `flag_id` is used to seed the random generator in checkers so it would return the same values for `GET` and `PUT`
-  - `forcad_gevent`: experimental. See gevent checker in tests to find more.  
+- `checker_type` is an option containing tags, divided by an underscore, 
+    (missing tags are ignored). Examples: `hackerdom_nfr` (hackerdom tag ignored), `gevent_pfr` (gevent checker with 
+    public flag data returned). Currently supported tags:
+
+  - `pfr`: on `PUT`, checker returns public flag data (e.g. username of flag user) as a public message,
+    private flag data (`flag_id`) as private message, and public message is shown on `/api/attack_data` for participants.
+    Without `pfr` tag public message is considered flag data if `PUT` is successful and isn't shown.
+  
+  - `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
+    That way, `flag_id` is used to seed the random generator in checkers so it would return the same values for `GET` and `PUT` 
+
+  - `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
+you know how it works. **Don't use it** on long and (or) large competitions! Example checker is [here](tests/service/checker/gevent_checker.py).
 
 - `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there.
+
+See more in [checker writing](#writing-a-checker) section.
 
 #### Checkers folder
 
