@@ -43,7 +43,12 @@ def cache_helper(pipeline,
     return was_changed
 
 
-async def async_cache_helper(redis_aio, cache_key, cache_func, cache_args=None, cache_kwargs=None):
+async def async_cache_helper(
+        redis_aio,
+        cache_key: str,
+        cache_func: Callable,
+        cache_args: Optional[Iterable] = None,
+        cache_kwargs: Optional[dict] = None):
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:

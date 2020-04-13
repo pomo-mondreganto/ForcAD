@@ -26,7 +26,7 @@ def get_db_pool():
 
     if not _db_pool:
         database_config = config.get_db_config()
-        _db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
+        _db_pool = pool.SimpleConnectionPool(minconn=5, maxconn=20, **database_config)
 
     return _db_pool
 
