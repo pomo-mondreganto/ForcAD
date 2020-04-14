@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import aioredis
 import redis
 import socketio
+from kombu import Connection
 from psycopg2 import pool, extras
 
 import config
@@ -19,6 +20,7 @@ _async_redis_storage = None
 _db_pool = None
 _async_sio_manager = None
 _sio_wro_manager = None
+_rmq_connection = None
 
 
 def get_db_pool():
@@ -107,3 +109,12 @@ def get_wro_sio_manager():
         )
 
     return _sio_wro_manager
+
+
+def get_broker_connection():
+    global _rmq_connection
+
+    if _rmq_connection is None:
+        _rmq_connection = Connection(config.get_broker_url())
+
+    return _rmq_connection

@@ -1,7 +1,6 @@
 import secrets
 import string
 
-import storage
 from helplib import models
 
 ALPHABET = string.ascii_uppercase + string.digits
@@ -28,10 +27,3 @@ def generate_flag(service: str, team_id: int, task_id: int, round: int) -> model
         private_flag_data=None,
         vuln_number=None,
     )
-
-
-def try_add_stolen_flag_by_str(flag_str: str, attacker: int, round: int) -> models.Flag:
-    """Check flag wrapper, fetching flag using its string value, then runs try_add_stolen_flag from storage"""
-    flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
-    storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker, round=round)
-    return flag

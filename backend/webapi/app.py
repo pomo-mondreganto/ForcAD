@@ -14,6 +14,7 @@ from sanic_cors import CORS
 import storage
 from helplib import models
 import socketio
+from webapi.monitoring import MonitorClient
 
 sio_manager = storage.get_async_sio_manager()
 sio = socketio.AsyncServer(
@@ -25,6 +26,11 @@ sio = socketio.AsyncServer(
 app = Sanic('forcad_api')
 app.enable_websocket(True)
 CORS(app, supports_credentials=True, automatic_options=True)
+
+loop = asyncio.get_event_loop()
+mon = MonitorClient(app)
+mon.add_endpoint('/api/metrics')
+loop.run_until_complete(mon.connect_consumer())
 
 sio.attach(app)
 

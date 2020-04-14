@@ -1,7 +1,8 @@
+from kombu import Producer
 from typing import List, Optional
 
 import storage
-from helplib import models, flags
+from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
 
@@ -68,25 +69,47 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         :return: attacker rating change
     """
 
-    flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
-
-    with storage.db_cursor() as (conn, curs):
-        curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
-        attacker_delta, victim_delta = curs.fetchone()
-        conn.commit()
-
-    flag_data = {
+    monitor_data = {
         'attacker_id': attacker_id,
-        'victim_id': flag.team_id,
-        'task_id': flag.task_id,
-        'attacker_delta': attacker_delta,
-        'victim_delta': victim_delta,
+        'victim_id': 0,
+        'task_id': 0,
+        'submit_ok': False,
     }
 
-    storage.get_wro_sio_manager().emit(
-        event='flag_stolen',
-        data={'data': flag_data},
-        namespace='/live_events',
-    )
+    try:
+        flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
+        monitor_data['victim_id'] = flag.team_id
+        monitor_data['task_id'] = flag.task_id
+        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id, round=round)
+        monitor_data['submit_ok'] = True
 
-    return attacker_delta
+        with storage.db_cursor() as (conn, curs):
+            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
+            attacker_delta, victim_delta = curs.fetchone()
+            conn.commit()
+
+        flag_data = {
+            'attacker_id': attacker_id,
+            'victim_id': flag.team_id,
+            'task_id': flag.task_id,
+            'attacker_delta': attacker_delta,
+            'victim_delta': victim_delta,
+        }
+
+        storage.get_wro_sio_manager().emit(
+            event='flag_stolen',
+            data={'data': flag_data},
+            namespace='/live_events',
+        )
+
+        return attacker_delta
+
+    finally:
+        monitor_message = {
+            'type': 'flag_submit',
+            'data': monitor_data,
+        }
+        conn = storage.get_broker_connection()
+        with conn.channel() as channel:
+            producer = Producer(channel)
+            producer.publish(monitor_message, exchange='', routing_key='forcad-monitoring')

@@ -33,11 +33,13 @@ itsdangerous==1.1.0
 Jinja2==2.11.1
 jmespath==0.9.4
 kombu==4.6.7
+librabbitmq==2.0.0
 MarkupSafe==1.1.1
 multidict==4.7.4
 packaging==20.1
 pamqp==2.3.0
 pip-upgrader==1.4.15
+prometheus-client==0.7.1
 psycopg2-binary==2.8.4
 pyparsing==2.4.6
 python-engineio==3.11.2
