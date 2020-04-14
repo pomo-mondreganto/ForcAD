@@ -89,7 +89,7 @@ services:
     restart: on-failure
 
   redis:
-    image: redis:5.0.7-alpine
+    image: redis:5.0.8-alpine
     command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
     restart: on-failure
     sysctls:
@@ -101,12 +101,13 @@ services:
 
   rabbitmq:
     hostname: rabbitmq
-    image: rabbitmq:3.8.2-alpine
+    image: rabbitmq:3.8.3-management-alpine
     restart: on-failure
     env_file:
       - ./docker_config/rabbitmq/environment.env
     ports:
       - "5672:5672"
+      - "15672:15672"
 
   postgres:
     build:
