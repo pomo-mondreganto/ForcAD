@@ -13,7 +13,7 @@ from sanic.response import json as json_response, html, text
 import storage
 from helplib import models
 
-client_bp = Blueprint('client_api', url_prefix='/')
+client_bp = Blueprint('client_api')
 
 
 @client_bp.route('/teams/')
@@ -52,7 +52,7 @@ async def get_game_config(_request):
     return json_response(conf)
 
 
-@client_bp.route('/attack_data')
+@client_bp.route('/attack_data/')
 async def serve_attack_data(_request):
     attack_data = await storage.game.get_attack_data(asyncio.get_event_loop())
     return text(attack_data, content_type='application/json')
