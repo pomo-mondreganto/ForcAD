@@ -1,4 +1,5 @@
 import aio_pika
+import asyncio
 from kombu.utils import json as kjson
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
@@ -44,7 +45,23 @@ class MonitorClient:
 
     async def connect_consumer(self):
         broker_url = config.get_broker_url()
-        connection = await aio_pika.connect_robust(broker_url)
+
+        wait_period = 2
+        exc = None
+        for i in range(5):
+            try:
+                connection = await aio_pika.connect_robust(broker_url)
+            except ConnectionError as e:
+                exc = e
+                print(f'Got connection error from broker, waiting {wait_period}s')
+                await asyncio.sleep(wait_period)
+                wait_period *= 2
+            else:
+                break
+        else:
+            print('Error connecting to broker')
+            raise exc
+
         queue_name = 'forcad-monitoring'
         channel = await connection.channel()
         await channel.set_qos(prefetch_count=100)
