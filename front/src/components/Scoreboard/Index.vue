@@ -6,7 +6,9 @@
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
-                <div :key="name" class="service-cell" v-for="{ name } in tasks">{{ name }}</div>
+                <div :key="name" class="service-cell" v-for="{ name } in tasks">
+                    {{ name }}
+                </div>
             </div>
         </div>
         <transition-group name="teams-list">
@@ -24,7 +26,9 @@
                             `top-${index + 1}`,
                             index > 2 ? 'default-team' : '',
                         ]"
-                    >{{ index + 1 }}</div>
+                    >
+                        {{ index + 1 }}
+                    </div>
                     <div
                         class="team team-row"
                         @click="openTeam(id)"
@@ -42,7 +46,9 @@
                             `top-${index + 1}`,
                             index > 2 ? 'default-team' : '',
                         ]"
-                    >{{ score.toFixed(2) }}</div>
+                    >
+                        {{ score.toFixed(2) }}
+                    </div>
                 </div>
                 <div class="service">
                     <div
@@ -64,7 +70,9 @@
                     >
                         <button class="info">
                             <i class="fas fa-info-circle" />
-                            <span class="tooltip">{{ message === '' ? 'OK' : message }}</span>
+                            <span class="tooltip">{{
+                                message === '' ? 'OK' : message
+                            }}</span>
                         </button>
                         <div class="sla">
                             <strong>SLA</strong>
