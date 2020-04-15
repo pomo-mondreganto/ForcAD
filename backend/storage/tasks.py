@@ -8,6 +8,26 @@ from storage import caching
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
+TASK_INSERT_QUERY = '''
+INSERT INTO Tasks 
+(name, checker, gets, puts, places, checker_timeout, env_path, checker_type, get_period, default_score) 
+VALUES (%(name)s, %(checker)s, %(gets)s, %(puts)s, %(places)s, 
+        %(checker_timeout)s, %(env_path)s, %(checker_type)s, 
+        %(get_period)s, %(default_score)s) 
+RETURNING id
+'''
+
+TEAMTASK_INSERT_QUERY = '''
+INSERT INTO TeamTasks 
+(task_id, team_id, score, status) 
+VALUES (%s, %s, %s, %s)
+'''
+
+TEAMTASK_DELETE_QUERY = '''
+DELETE FROM TeamTasks
+WHERE task_id=%s AND team_id=%s
+'''
+
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database"""
@@ -108,9 +128,9 @@ def get_teamtasks_from_db() -> List[dict]:
     return data
 
 
-async def get_teamtasks_of_team_async(team_id: int, loop) -> List[dict]:
+async def get_teamtasks_of_team_async(team_id: int) -> List[dict]:
     """Fetch teamtasks for team for all tasks"""
-    redis_aio = await storage.get_async_redis_storage(loop)
+    redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
     tasks, = await pipe.execute()

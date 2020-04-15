@@ -1,3 +1,5 @@
+import secrets
+
 import datetime
 import yaml
 from kombu.utils import json as kjson
@@ -51,6 +53,10 @@ class Team(Model):
         self.ip = ip
         self.token = token
         self.highlighted = highlighted
+
+    @staticmethod
+    def generate_token():
+        return secrets.token_hex(8)
 
     def to_dict(self):
         return {

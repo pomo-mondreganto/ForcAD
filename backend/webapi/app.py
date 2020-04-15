@@ -7,14 +7,14 @@ sys.path.insert(0, BASE_DIR)
 
 import asyncio
 
-from sanic import Sanic
-from sanic.response import json as json_response, html, text
+from sanic import Sanic, Blueprint
 from sanic_cors import CORS
 
 import storage
 from helplib import models
 import socketio
 from webapi.monitoring import MonitorClient
+from webapi import client, admin
 
 sio_manager = storage.get_async_sio_manager()
 sio = socketio.AsyncServer(
@@ -34,11 +34,13 @@ loop.run_until_complete(mon.connect_consumer())
 
 sio.attach(app)
 
+bps = Blueprint.group(admin.admin_bp, client.client_bp, url_prefix='/api')
+app.blueprint(bps)
+
 
 @sio.on('connect', namespace='/game_events')
 async def handle_connect(sid, _environ):
-    loop = asyncio.get_event_loop()
-    redis_aio = await storage.get_async_redis_storage(loop)
+    redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     pipe.get('game_state')
     await storage.teams.teams_async_getter(redis_aio, pipe)
@@ -68,65 +70,6 @@ async def handle_connect(sid, _environ):
         namespace='/game_events',
         room=sid,
     )
-
-
-@app.route('/api/teams/')
-async def get_teams(_request):
-    loop = asyncio.get_event_loop()
-    redis_aio = await storage.get_async_redis_storage(loop)
-    pipe = redis_aio.pipeline()
-
-    await storage.teams.teams_async_getter(redis_aio, pipe)
-    teams, = await pipe.execute()
-    teams = [models.Team.from_json(team).to_dict_for_participants() for team in teams]
-
-    return json_response(teams)
-
-
-@app.route('/api/tasks/')
-async def get_tasks(_request):
-    loop = asyncio.get_event_loop()
-    redis_aio = await storage.get_async_redis_storage(loop)
-    pipe = redis_aio.pipeline()
-
-    await storage.tasks.tasks_async_getter(redis_aio, pipe)
-    tasks, = await pipe.execute()
-    tasks = [models.Task.from_json(task).to_dict_for_participants() for task in tasks]
-
-    return json_response(tasks)
-
-
-@app.route('/api/config/')
-async def get_game_config(_request):
-    loop = asyncio.get_event_loop()
-    redis_aio = await storage.get_async_redis_storage(loop)
-    pipe = redis_aio.pipeline()
-
-    await storage.game.global_config_async_getter(redis_aio, pipe)
-    conf, = await pipe.execute()
-    conf = models.GlobalConfig.from_json(conf).to_dict()
-
-    return json_response(conf)
-
-
-@app.route('/api/attack_data')
-async def serve_attack_data(_request):
-    attack_data = await storage.game.get_attack_data(asyncio.get_event_loop())
-    return text(attack_data, content_type='application/json')
-
-
-# noinspection PyUnresolvedReferences
-@app.route('/api/teams/<team_id:int>/')
-async def get_team_history(_request, team_id):
-    loop = asyncio.get_event_loop()
-    teamtasks = await storage.tasks.get_teamtasks_of_team_async(team_id=team_id, loop=loop)
-    teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
-    return json_response(teamtasks)
-
-
-@app.route('/api/status/')
-async def status(_request):
-    return html("OK")
 
 
 if __name__ == '__main__':

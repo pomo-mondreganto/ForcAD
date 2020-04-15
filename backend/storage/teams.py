@@ -1,10 +1,24 @@
-from kombu import Producer
 from typing import List, Optional
 
 import storage
 from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
+
+TEAM_INSERT_QUERY = '''
+INSERT INTO Teams 
+(name, ip, token, highlighted) 
+VALUES (%(name)s, %(ip)s, %(token)s, %(highlighted)s) 
+RETURNING id
+'''
+
+TEAM_UPDATE_QUERY = '''
+UPDATE Teams 
+SET name = %(name)s, ip = %(ip)s, token = %(token)s, highlighted = %(highlighted)s
+WHERE id = %(id)s
+'''
+
+TEAM_DELETE_QUERY = 'DELETE FROM Teams WHERE id = %s'
 
 
 def get_teams() -> List[models.Team]:
@@ -57,59 +71,57 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         return team_id
 
 
-def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
-    """Check flag, lock team for update, call rating recalculation,
-        then publish redis message about stolen flag
+async def create_team(team: models.Team):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(TEAM_INSERT_QUERY, team.to_dict())
+        result, = await curs.fetchone()
+        team.id = result
 
-        :param attacker_id: id of the attacking team
-        :param flag_str: flag to be checked
-        :param round: round of the attack
+        redis_aio = await storage.get_async_redis_storage()
+        pipe = redis_aio.pipeline()
+        pipe.delete("teams", "teams:cached")
+        await storage.tasks.tasks_async_getter(redis_aio, pipe)
+        _, tasks = await pipe.execute()
+        tasks = [models.Task.from_json(task) for task in tasks]
 
-        :raises FlagSubmitException: when flag check was failed
-        :return: attacker rating change
-    """
+        insert_data = [
+            (task.id, team.id, task.default_score, -1)
+            for task in tasks
+        ]
 
-    monitor_data = {
-        'attacker_id': attacker_id,
-        'victim_id': 0,
-        'task_id': 0,
-        'submit_ok': False,
-    }
+        for each in insert_data:
+            await curs.execute(storage.tasks.TEAMTASK_INSERT_QUERY, each)
 
-    try:
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
-        monitor_data['victim_id'] = flag.team_id
-        monitor_data['task_id'] = flag.task_id
-        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id, round=round)
-        monitor_data['submit_ok'] = True
+    return team
 
-        with storage.db_cursor() as (conn, curs):
-            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
-            attacker_delta, victim_delta = curs.fetchone()
-            conn.commit()
 
-        flag_data = {
-            'attacker_id': attacker_id,
-            'victim_id': flag.team_id,
-            'task_id': flag.task_id,
-            'attacker_delta': attacker_delta,
-            'victim_delta': victim_delta,
-        }
+async def update_team(team: models.Team):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(TEAM_UPDATE_QUERY, team.to_dict())
 
-        storage.get_wro_sio_manager().emit(
-            event='flag_stolen',
-            data={'data': flag_data},
-            namespace='/live_events',
-        )
+    redis_aio = await storage.get_async_redis_storage()
+    pipe = redis_aio.pipeline()
+    pipe.delete("teams", "teams:cached")
+    await pipe.execute()
 
-        return attacker_delta
+    return team
 
-    finally:
-        monitor_message = {
-            'type': 'flag_submit',
-            'data': monitor_data,
-        }
-        conn = storage.get_broker_connection()
-        with conn.channel() as channel:
-            producer = Producer(channel)
-            producer.publish(monitor_message, exchange='', routing_key='forcad-monitoring')
+
+async def delete_team(team_id: int):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(TEAM_DELETE_QUERY, (team_id,))
+
+        redis_aio = await storage.get_async_redis_storage()
+        pipe = redis_aio.pipeline()
+        pipe.delete("teams", "teams:cached")
+        await storage.tasks.tasks_async_getter(redis_aio, pipe)
+        _, tasks = await pipe.execute()
+        tasks = [models.Task.from_json(task) for task in tasks]
+
+        delete_data = [
+            (task.id, team_id)
+            for task in tasks
+        ]
+
+        for each in delete_data:
+            await curs.execute(storage.tasks.TEAMTASK_DELETE_QUERY, each)

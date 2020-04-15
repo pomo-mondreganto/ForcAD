@@ -1,10 +1,12 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 
+import aiopg
 import aioredis
+import asyncio
 import redis
 import socketio
 from kombu import Connection
-from psycopg2 import pool, extras
+from psycopg2 import pool, extras, _ext
 
 import config
 from storage import (
@@ -18,6 +20,7 @@ from storage import (
 _redis_storage = None
 _async_redis_storage = None
 _db_pool = None
+_async_db_pool = None
 _async_sio_manager = None
 _sio_wro_manager = None
 _rmq_connection = None
@@ -33,6 +36,17 @@ def get_db_pool():
     return _db_pool
 
 
+async def get_async_db_pool():
+    global _async_db_pool
+
+    if not _async_db_pool:
+        database_config = config.get_db_config()
+        dsn = _ext.make_dsn(**database_config)
+        _async_db_pool = await aiopg.create_pool(dsn)
+
+    return _async_db_pool
+
+
 @contextmanager
 def db_cursor(dict_cursor=False):
     db_pool = get_db_pool()
@@ -46,6 +60,23 @@ def db_cursor(dict_cursor=False):
     finally:
         curs.close()
         db_pool.putconn(conn)
+
+
+@asynccontextmanager
+async def async_db_cursor(dict_cursor=False):
+    db_pool = await get_async_db_pool()
+    conn = await db_pool.acquire()
+
+    if dict_cursor:
+        curs = await conn.cursor(cursor_factory=extras.RealDictCursor)
+    else:
+        curs = await conn.cursor()
+
+    try:
+        yield conn, curs
+    finally:
+        curs.close()
+        await db_pool.release(conn)
 
 
 def get_redis_storage():
@@ -71,7 +102,9 @@ async def _connect_async_redis(loop):
     )
 
 
-async def get_async_redis_storage(loop, always_create_new=False):
+async def get_async_redis_storage(loop=None, always_create_new=False):
+    if loop is None:
+        loop = asyncio.get_event_loop()
     if always_create_new:
         return await _connect_async_redis(loop)
 

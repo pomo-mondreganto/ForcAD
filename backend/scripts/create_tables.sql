@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS Tasks
     places          INTEGER,
     checker_timeout INTEGER,
     checker_type    VARCHAR(32) DEFAULT 'hackerdom',
-    get_period      INTEGER     DEFAULT 0
+    get_period      INTEGER     DEFAULT 0,
+    default_score   INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks

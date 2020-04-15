@@ -1,5 +1,7 @@
 import gevent.monkey
 
+import storage.game
+
 gevent.monkey.patch_all()
 
 import os
@@ -55,7 +57,7 @@ def handle(socket, address):
             socket.sendall(b'Game is unavailable\n')
 
         try:
-            attacker_delta = storage.teams.handle_attack(
+            attacker_delta = storage.game.handle_attack(
                 attacker_id=team_id,
                 flag_str=flag_str,
                 round=round,

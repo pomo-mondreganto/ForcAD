@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import secrets
 
 import pytz
 import sys
@@ -33,26 +32,6 @@ VALUES ({values})
 RETURNING id
 '''
 
-_TEAM_INSERT_QUERY = '''
-INSERT INTO Teams 
-(name, ip, token, highlighted) 
-VALUES (%s, %s, %s, %s) 
-RETURNING id
-'''
-
-_TASK_INSERT_QUERY = '''
-INSERT INTO Tasks 
-(name, checker, gets, puts, places, checker_timeout, env_path, checker_type, get_period) 
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) 
-RETURNING id
-'''
-
-_TEAMTASK_INSERT_QUERY = '''
-INSERT INTO TeamTasks 
-(task_id, team_id, score, status) 
-VALUES (%s, %s, %s, %s)
-'''
-
 
 def run():
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
@@ -82,9 +61,9 @@ def run():
                 if k not in team_conf:
                     team_conf[k] = v
 
-            team_token = secrets.token_hex(8)
+            team_token = models.Team.generate_token()
             team = models.Team(id=None, **team_conf, token=team_token)
-            curs.execute(_TEAM_INSERT_QUERY, (team.name, team.ip, team.token, team.highlighted))
+            curs.execute(storage.teams.TEAM_INSERT_QUERY, team.to_dict())
             team.id, = curs.fetchone()
             teams.append(team)
 
@@ -123,20 +102,7 @@ def run():
             task_conf['checker'] = os.path.join(global_config['checkers_path'], task_conf['checker'])
 
             task = models.Task(id=None, **task_conf)
-            curs.execute(
-                _TASK_INSERT_QUERY,
-                (
-                    task.name,
-                    task.checker,
-                    task.gets,
-                    task.puts,
-                    task.places,
-                    task.checker_timeout,
-                    task.env_path,
-                    task.checker_type,
-                    task.get_period,
-                )
-            )
+            curs.execute(storage.tasks.TASK_INSERT_QUERY, task.to_dict())
             task.id, = curs.fetchone()
             tasks.append(task)
 
@@ -146,7 +112,7 @@ def run():
             for task in tasks
         ]
 
-        curs.executemany(_TEAMTASK_INSERT_QUERY, data)
+        curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, data)
 
         global_config.pop('env_path', None)
         global_config.pop('default_score', None)
