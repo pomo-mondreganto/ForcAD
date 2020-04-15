@@ -1,7 +1,5 @@
 import gevent.monkey
 
-import storage.game
-
 gevent.monkey.patch_all()
 
 import os
