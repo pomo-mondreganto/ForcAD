@@ -24,14 +24,6 @@ elif os.environ.get('LOCAL'):
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
-# noinspection 
-_CONFIG_INITIALIZATION_QUERY = '''
-INSERT INTO globalconfig 
-({columns}) 
-VALUES ({values}) 
-RETURNING id
-'''
-
 
 def run():
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
@@ -54,6 +46,7 @@ def run():
 
         team_defaults = {
             'highlighted': False,
+            'active': True,
         }
 
         for team_conf in teams_config:
@@ -63,7 +56,7 @@ def run():
 
             team_token = models.Team.generate_token()
             team = models.Team(id=None, **team_conf, token=team_token)
-            curs.execute(storage.teams.TEAM_INSERT_QUERY, team.to_dict())
+            curs.execute(team.get_insert_query(), team.to_dict())
             team.id, = curs.fetchone()
             teams.append(team)
 
@@ -92,6 +85,7 @@ def run():
             'default_score': global_config['default_score'],
             'get_period': global_config.get('get_period', global_config['round_time']),
             'checker_type': 'hackerdom',
+            'active': True,
         }
 
         for task_conf in tasks_config:
@@ -102,7 +96,7 @@ def run():
             task_conf['checker'] = os.path.join(global_config['checkers_path'], task_conf['checker'])
 
             task = models.Task(id=None, **task_conf)
-            curs.execute(storage.tasks.TASK_INSERT_QUERY, task.to_dict())
+            curs.execute(task.get_insert_query(), task.to_dict())
             task.id, = curs.fetchone()
             tasks.append(task)
 
@@ -122,13 +116,11 @@ def run():
         tz = pytz.timezone(global_config['timezone'])
         global_config['start_time'] = tz.localize(global_config['start_time'])
 
-        keys = global_config.keys()
-        columns = ','.join(keys)
-        values = ','.join(f'%({key})s' for key in keys)
-        curs.execute(
-            _CONFIG_INITIALIZATION_QUERY.format(columns=columns, values=values),
-            global_config,
-        )
+        global_config['real_round'] = 0
+        global_config['game_running'] = False
+
+        global_config = models.GlobalConfig(id=None, **global_config)
+        curs.execute(global_config.get_insert_query(), global_config.to_dict())
 
         conn.commit()
 

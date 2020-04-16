@@ -8,11 +8,6 @@ import storage
 from helplib.cache import cache_helper
 from storage import caching
 
-_INSERT_FLAG_QUERY = """
-INSERT INTO flags (flag, team_id, task_id, round, public_flag_data, private_flag_data, vuln_number) 
-VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
-"""
-
 _GET_UNEXPIRED_FLAGS_QUERY = """
 SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
 INNER JOIN teams t on f.team_id = t.id
@@ -65,18 +60,7 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     """
 
     with storage.db_cursor() as (conn, curs):
-        curs.execute(
-            _INSERT_FLAG_QUERY,
-            (
-                flag.flag,
-                flag.team_id,
-                flag.task_id,
-                flag.round,
-                flag.public_flag_data,
-                flag.private_flag_data,
-                flag.vuln_number,
-            )
-        )
+        curs.execute(flag.get_insert_query(), flag.to_dict())
         flag.id, = curs.fetchone()
         conn.commit()
 

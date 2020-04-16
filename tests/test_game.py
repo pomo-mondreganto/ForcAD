@@ -14,6 +14,9 @@ from helpers import wait_rounds
 
 
 class GameStatusTestCase(TestCase):
+    def setUp(self) -> None:
+        wait_rounds(3)
+
     def get_teams(self):
         r = requests.get(f'http://127.0.0.1:8080/api/teams/')
         self.assertTrue(r.ok)
@@ -29,8 +32,6 @@ class GameStatusTestCase(TestCase):
         return data
 
     def test_team_statuses(self):
-        wait_rounds(3)
-
         teams = self.get_teams()
 
         for team in teams:

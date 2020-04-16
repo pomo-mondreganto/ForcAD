@@ -5,21 +5,6 @@ from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
 
-TEAM_INSERT_QUERY = '''
-INSERT INTO Teams 
-(name, ip, token, highlighted) 
-VALUES (%(name)s, %(ip)s, %(token)s, %(highlighted)s) 
-RETURNING id
-'''
-
-TEAM_UPDATE_QUERY = '''
-UPDATE Teams 
-SET name = %(name)s, ip = %(ip)s, token = %(token)s, highlighted = %(highlighted)s
-WHERE id = %(id)s
-'''
-
-TEAM_DELETE_QUERY = 'DELETE FROM Teams WHERE id = %s'
-
 
 def get_teams() -> List[models.Team]:
     """Get list of teams registered in the database"""
@@ -38,13 +23,23 @@ def get_teams() -> List[models.Team]:
 
 
 async def teams_async_getter(redis_aio, pipe):
-    """Get list of teams registered in the database (asynchronous version)"""
+    """Get list ofactive  teams registered in the database (asynchronous version)"""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams:cached',
         cache_func=caching.cache_teams,
     )
     pipe.smembers('teams')
+
+
+async def all_teams_async_getter(redis_aio, pipe):
+    """Get list of all teams registered in the database (asynchronous version)"""
+    await async_cache_helper(
+        redis_aio=redis_aio,
+        cache_key='all_teams:cached',
+        cache_func=caching.cache_all_teams,
+    )
+    pipe.smembers('all_teams')
 
 
 def get_team_id_by_token(token: str) -> Optional[int]:
@@ -73,13 +68,13 @@ def get_team_id_by_token(token: str) -> Optional[int]:
 
 async def create_team(team: models.Team):
     async with storage.async_db_cursor() as (_conn, curs):
-        await curs.execute(TEAM_INSERT_QUERY, team.to_dict())
+        await curs.execute(team.get_insert_query(), team.to_dict())
         result, = await curs.fetchone()
         team.id = result
 
         redis_aio = await storage.get_async_redis_storage()
         pipe = redis_aio.pipeline()
-        pipe.delete("teams", "teams:cached")
+        pipe.delete('teams', 'teams:cached', 'all_teams', 'all_teams:cached')
         await storage.tasks.tasks_async_getter(redis_aio, pipe)
         _, tasks = await pipe.execute()
         tasks = [models.Task.from_json(task) for task in tasks]
@@ -97,11 +92,11 @@ async def create_team(team: models.Team):
 
 async def update_team(team: models.Team):
     async with storage.async_db_cursor() as (_conn, curs):
-        await curs.execute(TEAM_UPDATE_QUERY, team.to_dict())
+        await curs.execute(team.get_update_query(), team.to_dict())
 
     redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
-    pipe.delete("teams", "teams:cached")
+    pipe.delete('teams', 'teams:cached', 'all_teams', 'all_teams:cached')
     await pipe.execute()
 
     return team
@@ -109,19 +104,9 @@ async def update_team(team: models.Team):
 
 async def delete_team(team_id: int):
     async with storage.async_db_cursor() as (_conn, curs):
-        await curs.execute(TEAM_DELETE_QUERY, (team_id,))
+        await curs.execute(models.Team.get_delete_query(), {'id': team_id})
 
         redis_aio = await storage.get_async_redis_storage()
         pipe = redis_aio.pipeline()
-        pipe.delete("teams", "teams:cached")
-        await storage.tasks.tasks_async_getter(redis_aio, pipe)
-        _, tasks = await pipe.execute()
-        tasks = [models.Task.from_json(task) for task in tasks]
-
-        delete_data = [
-            (task.id, team_id)
-            for task in tasks
-        ]
-
-        for each in delete_data:
-            await curs.execute(storage.tasks.TEAMTASK_DELETE_QUERY, each)
+        pipe.delete('teams', 'teams:cached', 'all_teams', 'all_teams:cached')
+        await pipe.execute()

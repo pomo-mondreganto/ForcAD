@@ -2,10 +2,6 @@ import helplib
 import storage
 from helplib import models
 
-_SELECT_ALL_TEAMS_QUERY = "SELECT * FROM teams"
-
-_SELECT_ALL_TASKS_QUERY = "SELECT * FROM tasks"
-
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
 WITH flag_ids AS (
     SELECT id FROM flags WHERE  round >= %s
@@ -23,7 +19,7 @@ def cache_teams(pipeline):
     Just adds commands to pipeline stack, don't forget to execute afterwards
     """
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(_SELECT_ALL_TEAMS_QUERY)
+        curs.execute(models.Team.get_select_active_query())
         teams = curs.fetchall()
 
     teams = list(models.Team.from_dict(team) for team in teams)
@@ -36,13 +32,32 @@ def cache_teams(pipeline):
     pipeline.set('teams:cached', 1)
 
 
+def cache_all_teams(pipeline):
+    """Put "teams" table data from database to cache
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards
+    """
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(models.Team.get_select_all_query())
+        teams = curs.fetchall()
+
+    teams = list(models.Team.from_dict(team) for team in teams)
+
+    pipeline.delete('all_teams', 'all_teams:cached')
+    if teams:
+        pipeline.sadd('all_teams', *[team.to_json() for team in teams])
+    for team in teams:
+        pipeline.set(f'team:token:{team.token}', team.id)
+    pipeline.set('all_teams:cached', 1)
+
+
 def cache_tasks(pipeline):
-    """Put "tasks" table data from database to cache
+    """Put active tasks table data from database to cache
 
     Just adds commands to pipeline stack (to support aioredis), don't forget to execute afterwards
     """
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.execute(_SELECT_ALL_TASKS_QUERY)
+        curs.execute(models.Task.get_select_active_query())
         tasks = curs.fetchall()
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
@@ -50,6 +65,22 @@ def cache_tasks(pipeline):
     if tasks:
         pipeline.sadd('tasks', *[task.to_json() for task in tasks])
     pipeline.set('tasks:cached', 1)
+
+
+def cache_all_tasks(pipeline):
+    """Put all tasks table data from database to cache
+
+    Just adds commands to pipeline stack (to support aioredis), don't forget to execute afterwards
+    """
+    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+        curs.execute(models.Task.get_select_all_query())
+        tasks = curs.fetchall()
+
+    tasks = list(models.Task.from_dict(task) for task in tasks)
+    pipeline.delete('all_tasks', 'all_tasks:cached')
+    if tasks:
+        pipeline.sadd('all_tasks', *[task.to_json() for task in tasks])
+    pipeline.set('all_tasks:cached', 1)
 
 
 def cache_last_stolen(team_id: int, round: int, pipeline):

@@ -8,24 +8,10 @@ from storage import caching
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
-TASK_INSERT_QUERY = '''
-INSERT INTO Tasks 
-(name, checker, gets, puts, places, checker_timeout, env_path, checker_type, get_period, default_score) 
-VALUES (%(name)s, %(checker)s, %(gets)s, %(puts)s, %(places)s, 
-        %(checker_timeout)s, %(env_path)s, %(checker_type)s, 
-        %(get_period)s, %(default_score)s) 
-RETURNING id
-'''
-
 TEAMTASK_INSERT_QUERY = '''
 INSERT INTO TeamTasks 
 (task_id, team_id, score, status) 
 VALUES (%s, %s, %s, %s)
-'''
-
-TEAMTASK_DELETE_QUERY = '''
-DELETE FROM TeamTasks
-WHERE task_id=%s AND team_id=%s
 '''
 
 
@@ -46,13 +32,23 @@ def get_tasks() -> List[models.Task]:
 
 
 async def tasks_async_getter(redis_aio, pipe):
-    """Get list of tasks registered in the database (asynchronous version)"""
+    """Get list of active tasks registered in the database (asynchronous version)"""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='tasks:cached',
         cache_func=caching.cache_tasks,
     )
     pipe.smembers('tasks')
+
+
+async def all_tasks_async_getter(redis_aio, pipe):
+    """Get list of all tasks registered in the database (asynchronous version)"""
+    await async_cache_helper(
+        redis_aio=redis_aio,
+        cache_key='all_tasks:cached',
+        cache_func=caching.cache_all_tasks,
+    )
+    pipe.smembers('all_tasks')
 
 
 def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
@@ -177,3 +173,49 @@ def process_teamtasks(teamtasks: List[dict]):
         for keys, t in casts:
             for key in keys:
                 each[key] = t(each[key])
+
+
+async def create_task(task: models.Task):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(task.get_insert_query(), task.to_dict())
+        result, = await curs.fetchone()
+        task.id = result
+
+        redis_aio = await storage.get_async_redis_storage()
+        pipe = redis_aio.pipeline()
+        pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
+        await storage.teams.teams_async_getter(redis_aio, pipe)
+        _, teams = await pipe.execute()
+        teams = [models.Team.from_json(team) for team in teams]
+
+        insert_data = [
+            (task.id, team.id, task.default_score, -1)
+            for team in teams
+        ]
+
+        for each in insert_data:
+            await curs.execute(TEAMTASK_INSERT_QUERY, each)
+
+    return task
+
+
+async def update_task(task: models.Task):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(task.get_update_query(), task.to_dict())
+
+    redis_aio = await storage.get_async_redis_storage()
+    pipe = redis_aio.pipeline()
+    pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
+    await pipe.execute()
+
+    return task
+
+
+async def delete_task(task_id: int):
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(models.Task.get_delete_query(), {'id': task_id})
+
+        redis_aio = await storage.get_async_redis_storage()
+        pipe = redis_aio.pipeline()
+        pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
+        await pipe.execute()

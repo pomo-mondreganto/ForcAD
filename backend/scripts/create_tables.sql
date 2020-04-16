@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS Teams
     name        VARCHAR(255) NOT NULL DEFAULT '',
     ip          VARCHAR(32)  NOT NULL,
     token       VARCHAR(16)  NOT NULL DEFAULT '',
-    highlighted BOOLEAN               DEFAULT FALSE
+    highlighted BOOLEAN               DEFAULT FALSE,
+    active      BOOLEAN               DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS Flags
@@ -40,7 +41,8 @@ CREATE TABLE IF NOT EXISTS Tasks
     checker_timeout INTEGER,
     checker_type    VARCHAR(32) DEFAULT 'hackerdom',
     get_period      INTEGER     DEFAULT 0,
-    default_score   INTEGER
+    default_score   INTEGER,
+    active          BOOLEAN     DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks
