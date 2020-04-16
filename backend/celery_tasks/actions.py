@@ -2,6 +2,7 @@ import random
 import secrets
 
 from celery import shared_task
+from typing import Optional
 
 import storage
 from celery_tasks.auxiliary import logger
@@ -16,7 +17,7 @@ def noop(data):
 
 
 @shared_task
-def put_action(_prev_verdict: models.CheckerVerdict,
+def put_action(_prev_verdict: Optional[models.CheckerVerdict],
                team: models.Team,
                task: models.Task,
                round: int) -> models.CheckerVerdict:

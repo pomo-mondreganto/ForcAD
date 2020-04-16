@@ -58,7 +58,7 @@ def run_puts_round(team: models.Team, task: models.Task, round: int) -> bool:
     }
     puts = group([
         celery_tasks.actions.put_action.s(
-            _checker_verdict_code=None,
+            _prev_verdict=None,
             **kwargs,
         ).set(**params)
         for _ in range(task.puts)
