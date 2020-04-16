@@ -53,8 +53,14 @@ async def handle_connect(sid, _environ):
     except TypeError:
         state = None
 
-    teams = [models.Team.from_json(team).to_dict_for_participants() for team in teams]
-    tasks = [models.Task.from_json(task).to_dict_for_participants() for task in tasks]
+    teams = [
+        models.Team.from_json(team).to_dict_for_participants()
+        for team in teams
+    ]
+    tasks = [
+        models.Task.from_json(task).to_dict_for_participants()
+        for task in tasks
+    ]
     game_config = models.GlobalConfig.from_json(game_config).to_dict()
 
     data_to_send = {

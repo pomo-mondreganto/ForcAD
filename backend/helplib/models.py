@@ -8,6 +8,7 @@ from typing import Optional, List
 from helplib.types import Action, TaskStatus
 
 
+# noinspection SqlResolve
 class Model(object):
     """Generic model implementing basic methods to load and print"""
 
@@ -22,7 +23,10 @@ class Model(object):
                 continue
             if attr not in kwargs:
                 if attr not in self.defaults:
-                    raise KeyError(f'Attribute {attr} is required for model {self.__class__}')
+                    raise KeyError(
+                        f'Attribute {attr} is required '
+                        f'for model {self.__class__}'
+                    )
                 setattr(self, attr, self.defaults[attr])
             else:
                 setattr(self, attr, kwargs[attr])
@@ -68,12 +72,18 @@ class Model(object):
         column_names = cls._get_column_names()
         columns = ', '.join(column_names)
         values = ', '.join(f'%({column})s' for column in column_names)
-        return f'INSERT INTO {cls.table_name} ({columns}) VALUES ({values}) RETURNING id'
+        q = (
+            f'INSERT INTO {cls.table_name} ({columns}) '
+            f'VALUES ({values}) RETURNING id'
+        )
+        return q
 
     @classmethod
     def get_update_query(cls):
         column_names = cls._get_column_names()
-        update_data = ', '.join(f'{column}=%({column})s' for column in column_names)
+        update_data = ', '.join(
+            f'{column}=%({column})s' for column in column_names
+        )
         return f'UPDATE {cls.table_name} SET {update_data} WHERE id=%(id)s'
 
     @classmethod
@@ -125,7 +135,8 @@ class Team(Model):
 class Task(Model):
     """Model representing a task
 
-        It also stores checker-specific info (path, env, number of gets, puts, flag places), etc...
+        It also stores checker-specific info
+        (path, env, number of gets, puts, flag places), etc...
     """
     id: Optional[int]
     name: str
@@ -205,7 +216,8 @@ class Task(Model):
 class Flag(Model):
     """Model representing a flag
 
-        Contains flag round, id, team, task, the value itself and additional data for the checker
+        Contains flag round, id, team, task, the value itself
+        and additional data for the checker
     """
     round: int
     id: Optional[int]
@@ -245,7 +257,7 @@ class GameState(Model):
     __slots__ = ('round_start', 'round', 'team_tasks')
 
     def __str__(self):
-        return f"GameState for round {self.round}"
+        return f"GameState for round {self.round}: {self.to_dict()}"
 
 
 class CheckerVerdict(Model):

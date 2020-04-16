@@ -23,7 +23,8 @@ def exception_callback(result, exc, traceback):
         prev_verdict, = result.args
 
     logger.error(
-        f"Task exception handler was called for team {team} task {task}, round {round}, "
+        f"Task exception handler was called for "
+        f"team {team} task {task}, round {round}, "
         f"exception {repr(exc)}, traceback\n{traceback}"
     )
 
@@ -72,8 +73,10 @@ def checker_results_handler(
             logger.error(f'Got invalid verdict action: {verdict.to_dict()}')
 
     logger.info(
-        f"Finished testing team `{team.name}` task `{task.name}` round {round}. "
-        f"Verdicts: check: {check_verdict} puts {puts_verdicts} gets {gets_verdict}"
+        f"Finished testing team `{team.name}` task `{task.name}` "
+        f"round {round}. "
+        f"Verdicts: check: {check_verdict} puts {puts_verdicts} "
+        f"gets {gets_verdict}"
     )
 
     parsed_verdicts = []

@@ -43,12 +43,15 @@ def run_command_gracefully(*popenargs,
         except subprocess.TimeoutExpired:
             proc.terminate()
             try:
-                stdout, stderr = proc.communicate(input, timeout=terminate_timeout)
+                stdout, stderr = proc.communicate(
+                    input,
+                    timeout=terminate_timeout,
+                )
             except subprocess.TimeoutExpired:
                 proc.kill()
                 killed = True
                 stdout, stderr = proc.communicate()
-            except:
+            except:  # noqa: E722
                 proc.kill()
                 raise
 
@@ -58,7 +61,7 @@ def run_command_gracefully(*popenargs,
                 output=stdout,
                 stderr=stderr,
             )
-        except:
+        except:  # noqa: E722
             proc.kill()
             raise
 
@@ -72,7 +75,8 @@ def run_command_gracefully(*popenargs,
                 stderr=stderr
             )
 
-    return subprocess.CompletedProcess(proc.args, retcode, stdout, stderr), killed
+    res_proc = subprocess.CompletedProcess(proc.args, retcode, stdout, stderr)
+    return res_proc, killed
 
 
 def get_patched_environ(env_path: str):
@@ -91,7 +95,8 @@ def run_generic_command(command: List,
                         timeout: int,
                         team_name: str,
                         logger) -> helplib.models.CheckerVerdict:
-    """Run generic checker command, calls "run_command_gracefully" and handles exceptions
+    """Runs generic checker command, calls "run_command_gracefully"
+        and handles exceptions
 
     :param command: command to run
     :param action: type of command (for logging)
@@ -123,7 +128,8 @@ def run_generic_command(command: List,
             private_message = result.stderr[:1024].decode().strip()
             if status == TaskStatus.CHECK_FAILED:
                 logger.warning(
-                    f'{action} for team {team_name} failed with exit code {result.returncode},'
+                    f'{action} for team {team_name} failed with '
+                    f'exit code {result.returncode},'
                     f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
                 )
         except ValueError as e:
@@ -131,7 +137,8 @@ def run_generic_command(command: List,
             public_message = 'Check failed'
             private_message = f'Check failed with ValueError: {str(e)}'
             logger.warning(
-                f'{action} for team {team_name} failed with exit code {result.returncode},'
+                f'{action} for team {team_name} failed with '
+                f'exit code {result.returncode},'
                 f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
             )
 

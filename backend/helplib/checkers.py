@@ -7,7 +7,8 @@ from helplib.thread_actions import run_generic_action_in_thread
 from helplib.types import TaskStatus, Action
 
 
-def first_error_or_first_verdict(verdicts: [models.CheckerVerdict]) -> Optional[models.CheckerVerdict]:
+def first_error_or_first_verdict(
+        verdicts: [models.CheckerVerdict]) -> Optional[models.CheckerVerdict]:
     if not verdicts:
         return None
 

@@ -53,7 +53,10 @@ class MonitorClient:
                 connection = await aio_pika.connect_robust(broker_url)
             except ConnectionError as e:
                 exc = e
-                print(f'Got connection error from broker, waiting {wait_period}s')
+                print(
+                    f'Got connection error from broker, '
+                    f'waiting {wait_period}s',
+                )
                 await asyncio.sleep(wait_period)
                 wait_period *= 2
             else:

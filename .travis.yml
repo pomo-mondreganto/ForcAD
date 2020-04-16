@@ -30,6 +30,7 @@ before_script:
   - python tests/wait_for_start.py
 
 script:
+  - ./control.py flake
   - docker ps
   - python -m unittest discover -v -s tests
 

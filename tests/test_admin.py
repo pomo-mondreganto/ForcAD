@@ -22,8 +22,15 @@ class TeamsTestCase(TestCase):
     def test_teams_api(self):
         was_teams = self.get_teams()
 
-        new_team_data = {'name': 'Test created', 'highlighted': False, 'ip': '127.0.0.1'}
-        r = requests.post('http://127.0.0.1/api/admin/teams/', json=new_team_data)
+        new_team_data = {
+            'name': 'Test created',
+            'highlighted': False,
+            'ip': '127.0.0.1',
+        }
+        r = requests.post(
+            'http://127.0.0.1/api/admin/teams/',
+            json=new_team_data,
+        )
         self.assertEqual(r.status_code, 201)
 
         full_data = r.json()
@@ -36,9 +43,17 @@ class TeamsTestCase(TestCase):
         self.assertIn(full_data, new_teams)
         self.assertEqual(len(was_teams) + 1, len(new_teams))
 
-        update_data = {'name': 'Test inactive', 'highlighted': True, 'active': True, 'ip': '127.0.0.3',
-                       'token': full_data['token']}
-        r = requests.put(f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/', json=update_data)
+        update_data = {
+            'name': 'Test inactive',
+            'highlighted': True,
+            'active': True,
+            'ip': '127.0.0.3',
+            'token': full_data['token'],
+        }
+        r = requests.put(
+            f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/',
+            json=update_data,
+        )
         self.assertTrue(r.ok)
 
         full_data = r.json()
@@ -50,7 +65,9 @@ class TeamsTestCase(TestCase):
         self.assertIn(full_data, new_teams)
         self.assertEqual(len(was_teams) + 1, len(new_teams))
 
-        r = requests.delete(f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/')
+        r = requests.delete(
+            f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/',
+        )
         self.assertTrue(r.ok)
 
         new_teams = self.get_teams()
@@ -82,7 +99,10 @@ class TasksTestCase(TestCase):
             'get_period': 20,
             'default_score': 2500,
         }
-        r = requests.post('http://127.0.0.1/api/admin/tasks/', json=new_task_data)
+        r = requests.post(
+            'http://127.0.0.1/api/admin/tasks/',
+            json=new_task_data,
+        )
         self.assertEqual(r.status_code, 201)
 
         full_data = r.json()
@@ -108,7 +128,10 @@ class TasksTestCase(TestCase):
             'active': True,
         }
 
-        r = requests.put(f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/', json=update_data)
+        r = requests.put(
+            f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/',
+            json=update_data,
+        )
         self.assertTrue(r.ok)
 
         full_data = r.json()
@@ -122,7 +145,9 @@ class TasksTestCase(TestCase):
         self.assertIn(full_data, new_tasks)
         self.assertEqual(len(was_tasks) + 1, len(new_tasks))
 
-        r = requests.delete(f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/')
+        r = requests.delete(
+            f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/',
+        )
         self.assertTrue(r.ok)
 
         new_tasks = self.get_tasks()

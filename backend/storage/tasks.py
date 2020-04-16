@@ -9,8 +9,8 @@ from storage import caching
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
 TEAMTASK_INSERT_QUERY = '''
-INSERT INTO TeamTasks 
-(task_id, team_id, score, status) 
+INSERT INTO TeamTasks
+(task_id, team_id, score, status)
 VALUES (%s, %s, %s, %s)
 '''
 
@@ -32,7 +32,7 @@ def get_tasks() -> List[models.Task]:
 
 
 async def tasks_async_getter(redis_aio, pipe):
-    """Get list of active tasks registered in the database (asynchronous version)"""
+    """Get list of active tasks registered in the database (async)"""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='tasks:cached',
@@ -51,7 +51,8 @@ async def get_all_tasks_async() -> List[models.Task]:
     return tasks
 
 
-def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
+def update_task_status(task_id: int, team_id: int, round: int,
+                       checker_verdict: models.CheckerVerdict):
     """ Update task status in database
 
         :param task_id:
@@ -85,7 +86,8 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
 
     data['round'] = round
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50, approximate=False).execute()
+        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
+                      approximate=False).execute()
 
 
 def get_last_teamtasks() -> List[dict]:
@@ -166,8 +168,14 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
 
 def process_teamtasks(teamtasks: List[dict]):
     casts = (
-        (['id', 'team_id', 'task_id', 'checks', 'checks_passed', 'round'], int),
-        (['score'], float),
+        (
+            ['id', 'team_id', 'task_id', 'checks', 'checks_passed', 'round'],
+            int,
+        ),
+        (
+            ['score'],
+            float,
+        ),
     )
     for each in teamtasks:
         for keys, t in casts:

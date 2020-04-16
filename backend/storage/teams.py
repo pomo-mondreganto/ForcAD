@@ -23,7 +23,7 @@ def get_teams() -> List[models.Team]:
 
 
 async def teams_async_getter(redis_aio, pipe):
-    """Get list ofactive  teams registered in the database (asynchronous version)"""
+    """Get list ofactive  teams registered in the database (async)"""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams:cached',

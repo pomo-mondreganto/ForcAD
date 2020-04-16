@@ -6,7 +6,10 @@ from helplib import models
 ALPHABET = string.ascii_uppercase + string.digits
 
 
-def generate_flag(service: str, team_id: int, task_id: int, round: int) -> models.Flag:
+def generate_flag(service: str,
+                  team_id: int,
+                  task_id: int,
+                  round: int) -> models.Flag:
     """Generate a new flag
 
         :param service: service name of new flag (to pick first flag letter)
@@ -15,7 +18,9 @@ def generate_flag(service: str, team_id: int, task_id: int, round: int) -> model
         :param round: current round
         :return: Flag model instance
     """
-    flag_text = f"{service[0].upper()}{''.join(secrets.choice(ALPHABET) for _ in range(30))}="
+    service_letter = service[0].upper()
+    rnd_data = ''.join(secrets.choice(ALPHABET) for _ in range(30))
+    flag_text = service_letter + rnd_data + '='
 
     return models.Flag(
         id=None,

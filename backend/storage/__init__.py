@@ -10,12 +10,14 @@ from psycopg2 import pool, extras, _ext
 
 import config
 from storage import (
+    caching,
+    flags,
     game,
     tasks,
-    flags,
-    caching,
     teams,
 )
+
+__all__ = ['caching', 'flags', 'game', 'tasks', 'teams']
 
 _redis_storage = None
 _async_redis_storage = None
@@ -31,7 +33,11 @@ def get_db_pool():
 
     if not _db_pool:
         database_config = config.get_db_config()
-        _db_pool = pool.SimpleConnectionPool(minconn=5, maxconn=20, **database_config)
+        _db_pool = pool.SimpleConnectionPool(
+            minconn=5,
+            maxconn=20,
+            **database_config,
+        )
 
     return _db_pool
 
@@ -84,7 +90,10 @@ def get_redis_storage():
 
     if not _redis_storage:
         redis_config = config.get_redis_config()
-        _redis_storage = redis.StrictRedis(**redis_config, decode_responses=True)
+        _redis_storage = redis.StrictRedis(
+            **redis_config,
+            decode_responses=True,
+        )
 
     return _redis_storage
 

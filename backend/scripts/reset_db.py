@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 
-import time
-import redis
 import psycopg2
+import redis
+import sys
+import time
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
@@ -33,7 +33,9 @@ def run():
     while True:
         try:
             storage.get_redis_storage().flushall()
-        except (redis.exceptions.ConnectionError, redis.exceptions.BusyLoadingError):
+        except (
+                redis.exceptions.ConnectionError,
+                redis.exceptions.BusyLoadingError):
             print('[*] Redis isn\'t running, waiting...')
             time.sleep(5)
         else:

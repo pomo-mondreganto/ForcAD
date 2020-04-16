@@ -143,7 +143,10 @@ def setup_worker(args):
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
 
     # create config backup
-    backup_path = os.path.join(CONFIG_DIR, f'config_backup_{int(time.time())}.yml')
+    backup_path = os.path.join(
+        CONFIG_DIR,
+        f'config_backup_{int(time.time())}.yml',
+    )
     with open(backup_path, 'w') as f:
         yaml.dump(config, f)
 
@@ -159,8 +162,14 @@ def setup_worker(args):
 
 
 def print_tokens(_args):
+    command = [
+        'docker-compose',
+        '-f', DOCKER_COMPOSE_FILE,
+        'exec', 'webapi',
+        'python3', '/app/scripts/print_tokens.py',
+    ]
     res = subprocess.check_output(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
+        command,
         cwd=BASE_DIR,
     )
 
@@ -176,7 +185,8 @@ def reset_game(_args):
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
     run_command(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v', '--remove-orphans'],
+        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v',
+         '--remove-orphans'],
         cwd=BASE_DIR,
     )
 
@@ -225,46 +235,95 @@ def run_worker(args):
     run_command(command, cwd=BASE_DIR)
 
 
+def run_flake(_args):
+    command = [
+        'flake8',
+        '--ignore', 'E402',
+        'control.py', 'backend',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     subparsers = parser.add_subparsers()
 
-    setup_parser = subparsers.add_parser('setup', help='Transfer centralized config to environment files')
+    setup_parser = subparsers.add_parser(
+        'setup',
+        help='Transfer centralized config to environment files',
+    )
     setup_parser.set_defaults(func=setup_config)
 
-    print_tokens_parser = subparsers.add_parser('print_tokens', help='Print team tokens')
+    print_tokens_parser = subparsers.add_parser(
+        'print_tokens',
+        help='Print team tokens',
+    )
     print_tokens_parser.set_defaults(func=print_tokens)
 
-    reset_parser = subparsers.add_parser('reset', help='Reset the game & cleanup')
+    reset_parser = subparsers.add_parser(
+        'reset',
+        help='Reset the game & cleanup',
+    )
     reset_parser.set_defaults(func=reset_game)
-    reset_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build compose file')
+    reset_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build compose file')
 
-    build_parser = subparsers.add_parser('build', help='Build the images, don\'t run')
+    build_parser = subparsers.add_parser(
+        'build',
+        help='Build the images, don\'t run',
+    )
     build_parser.set_defaults(func=build)
-    build_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
+    build_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build with prebuilt images')
 
-    start_parser = subparsers.add_parser('start', help='Start the forcad, building if necessary (with cache)')
+    start_parser = subparsers.add_parser(
+        'start',
+        help='Start the forcad, building if necessary (with cache)',
+    )
     start_parser.set_defaults(func=start_game)
-    start_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
-    start_parser.add_argument('-i', '--instances', type=int, metavar='N', default=1,
-                              help='Number of celery worker instances', required=False)
+    start_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build with prebuilt images')
+    start_parser.add_argument('-i', '--instances', type=int, metavar='N',
+                              default=1,
+                              help='Number of celery worker instances',
+                              required=False)
 
-    scale_celery_parser = subparsers.add_parser('scale_celery', help='Scale the number of celery worker containers')
+    scale_celery_parser = subparsers.add_parser(
+        'scale_celery',
+        help='Scale the number of celery worker containers',
+    )
     scale_celery_parser.set_defaults(func=scale_celery)
-    scale_celery_parser.add_argument('-i', '--instances', type=int, metavar='N',
-                                     help='Number of celery worker instances', required=True)
+    scale_celery_parser.add_argument('-i', '--instances', type=int,
+                                     metavar='N',
+                                     help='Number of celery worker instances',
+                                     required=True)
 
-    worker_parser = subparsers.add_parser('worker', help='Start the celery workers only')
+    worker_parser = subparsers.add_parser(
+        'worker',
+        help='Start the celery workers only',
+    )
     worker_parser.set_defaults(func=run_worker)
-    worker_parser.add_argument('-i', '--instances', type=int, metavar='N', default=1,
-                               help='Number of celery worker instances', required=False)
-    worker_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
+    worker_parser.add_argument('-i', '--instances', type=int, metavar='N',
+                               default=1,
+                               help='Number of celery worker instances',
+                               required=False)
+    worker_parser.add_argument('-f', '--fast', action='store_true',
+                               help='Use faster build with prebuilt images')
     worker_parser.add_argument('--redis', type=str,
-                               help='Redis address for the worker to connect', required=True)
+                               help='Redis address for the worker to connect',
+                               required=True)
     worker_parser.add_argument('--rabbitmq', type=str,
-                               help='RabbitMQ address for the worker to connect', required=True)
+                               help='RabbitMQ address for the worker',
+                               required=True)
     worker_parser.add_argument('--database', type=str,
-                               help='PostgreSQL address for the worker to connect', required=True)
+                               help='Postgres address for the worker',
+                               required=True)
+
+    flake_parser = subparsers.add_parser(
+        'flake',
+        help='Run flake8 validation',
+    )
+    flake_parser.set_defaults(func=run_flake)
 
     parsed = parser.parse_args()
 

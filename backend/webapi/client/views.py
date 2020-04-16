@@ -23,7 +23,10 @@ async def get_teams(_request):
 
     await storage.teams.teams_async_getter(redis_aio, pipe)
     teams, = await pipe.execute()
-    teams = [models.Team.from_json(team).to_dict_for_participants() for team in teams]
+    teams = [
+        models.Team.from_json(team).to_dict_for_participants()
+        for team in teams
+    ]
 
     return json_response(teams)
 
@@ -35,7 +38,10 @@ async def get_tasks(_request):
 
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
     tasks, = await pipe.execute()
-    tasks = [models.Task.from_json(task).to_dict_for_participants() for task in tasks]
+    tasks = [
+        models.Task.from_json(task).to_dict_for_participants()
+        for task in tasks
+    ]
 
     return json_response(tasks)
 
@@ -61,7 +67,9 @@ async def serve_attack_data(_request):
 # noinspection PyUnresolvedReferences
 @client_bp.route('/teams/<team_id:int>/')
 async def get_team_history(_request, team_id):
-    teamtasks = await storage.tasks.get_teamtasks_of_team_async(team_id=team_id)
+    teamtasks = await storage.tasks.get_teamtasks_of_team_async(
+        team_id=team_id,
+    )
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return json_response(teamtasks)
 

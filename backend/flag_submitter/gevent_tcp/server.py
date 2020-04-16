@@ -7,7 +7,13 @@ import sys
 import gevent.pool
 import gevent.server
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__),
+        ),
+    ),
+)
 sys.path.insert(0, BASE_DIR)
 
 import storage
@@ -63,7 +69,10 @@ def handle(socket, address):
         except exceptions.FlagSubmitException as e:
             socket.sendall(str(e).encode() + b'\n')
         else:
-            socket.sendall(f'Flag accepted! Earned {attacker_delta} flag points!\n'.encode())
+            socket.sendall(
+                f'Flag accepted! Earned {attacker_delta} '
+                f'flag points!\n'.encode()
+            )
 
 
 if __name__ == '__main__':

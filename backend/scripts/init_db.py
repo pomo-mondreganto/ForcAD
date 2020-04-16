@@ -34,7 +34,10 @@ def run():
             create_tables_query = f.read()
         curs.execute(create_tables_query)
 
-        create_functions_path = os.path.join(SCRIPTS_DIR, 'create_functions.sql')
+        create_functions_path = os.path.join(
+            SCRIPTS_DIR,
+            'create_functions.sql',
+        )
         with open(create_functions_path) as f:
             create_functions_query = f.read()
         curs.execute(create_functions_query)
@@ -81,7 +84,8 @@ def run():
         task_defaults = {
             'env_path': global_config['env_path'],
             'default_score': global_config['default_score'],
-            'get_period': global_config.get('get_period', global_config['round_time']),
+            'get_period': global_config.get('get_period',
+                                            global_config['round_time']),
             'checker_type': 'hackerdom',
             'active': True,
         }
@@ -91,7 +95,8 @@ def run():
                 if k not in task_conf:
                     task_conf[k] = v
 
-            task_conf['checker'] = os.path.join(global_config['checkers_path'], task_conf['checker'])
+            task_conf['checker'] = os.path.join(global_config['checkers_path'],
+                                                task_conf['checker'])
 
             task = models.Task(id=None, **task_conf)
             curs.execute(task.get_insert_query(), task.to_dict())

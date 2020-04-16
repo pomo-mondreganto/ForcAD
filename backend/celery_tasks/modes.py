@@ -35,7 +35,11 @@ def run_full_round(team: models.Team, task: models.Task, round: int) -> bool:
 
     handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
 
-    scheme = chain(check, group([celery_tasks.actions.noop, puts, gets]), handler)
+    scheme = chain(
+        check,
+        group([celery_tasks.actions.noop, puts, gets]),
+        handler,
+    )
     scheme.apply_async()
 
     return True
@@ -53,7 +57,10 @@ def run_puts_round(team: models.Team, task: models.Task, round: int) -> bool:
         'round': round,
     }
     puts = group([
-        celery_tasks.actions.put_action.s(_checker_verdict_code=None, **kwargs).set(**params)
+        celery_tasks.actions.put_action.s(
+            _checker_verdict_code=None,
+            **kwargs,
+        ).set(**params)
         for _ in range(task.puts)
     ])
     handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
@@ -64,7 +71,9 @@ def run_puts_round(team: models.Team, task: models.Task, round: int) -> bool:
 
 
 @shared_task
-def run_check_gets_round(team: models.Team, task: models.Task, round: int) -> bool:
+def run_check_gets_round(team: models.Team,
+                         task: models.Task,
+                         round: int) -> bool:
     params = {
         'time_limit': task.checker_timeout + 5,
         'link_error': celery_tasks.handlers.exception_callback,

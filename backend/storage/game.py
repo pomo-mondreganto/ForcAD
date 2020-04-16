@@ -11,7 +11,9 @@ _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
 _UPDATE_REAL_ROUND_QUERY = 'UPDATE globalconfig SET real_round = %s WHERE id=1'
 
-_SET_GAME_RUNNING_QUERY = 'UPDATE globalconfig SET game_running = %s WHERE id=1'
+_SET_GAME_RUNNING_QUERY = '''
+UPDATE globalconfig SET game_running = %s WHERE id=1
+'''
 
 _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
 
@@ -125,7 +127,11 @@ def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
     round_start = get_round_start(round)
-    state = models.GameState(round_start=round_start, round=round, team_tasks=teamtasks)
+    state = models.GameState(
+        round_start=round_start,
+        round=round,
+        team_tasks=teamtasks,
+    )
     return state
 
 
@@ -135,7 +141,11 @@ def construct_latest_game_state(round: int) -> Optional[models.GameState]:
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
     round_start = get_round_start(round)
-    state = models.GameState(round_start=round_start, round=round, team_tasks=teamtasks)
+    state = models.GameState(
+        round_start=round_start,
+        round=round,
+        team_tasks=teamtasks,
+    )
     return state
 
 
@@ -174,11 +184,23 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
         monitor_data['victim_id'] = flag.team_id
         monitor_data['task_id'] = flag.task_id
-        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id, round=round)
+        storage.flags.try_add_stolen_flag(
+            flag=flag,
+            attacker=attacker_id,
+            round=round,
+        )
         monitor_data['submit_ok'] = True
 
         with storage.db_cursor() as (conn, curs):
-            curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
+            curs.callproc(
+                "recalculate_rating",
+                (
+                    attacker_id,
+                    flag.team_id,
+                    flag.task_id,
+                    flag.id,
+                ),
+            )
             attacker_delta, victim_delta = curs.fetchone()
             conn.commit()
 
@@ -206,4 +228,8 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
         conn = storage.get_broker_connection()
         with conn.channel() as channel:
             producer = Producer(channel)
-            producer.publish(monitor_message, exchange='', routing_key='forcad-monitoring')
+            producer.publish(
+                monitor_message,
+                exchange='',
+                routing_key='forcad-monitoring',
+            )

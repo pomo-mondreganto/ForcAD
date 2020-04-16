@@ -16,7 +16,8 @@ WHERE f.round >= %s AND f.task_id IN %s
 
 
 def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
-    """Check that flag is valid for current round, add it to cache, then add to db
+    """Check that flag is valid for current round, add it to cache,
+        then add to db
 
         :param flag: Flag model instance
         :param attacker: attacker team id
@@ -32,7 +33,9 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         # optimization of redis request count
-        cached_stolen = pipeline.exists(f'team:{attacker}:stolen_flags:cached').execute()
+        cached_stolen = pipeline.exists(
+            f'team:{attacker}:stolen_flags:cached',
+        ).execute()
 
         if not cached_stolen:
             cache_helper(
@@ -42,7 +45,10 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
                 cache_args=(attacker, round, pipeline),
             )
 
-        is_new, = pipeline.sadd(f'team:{attacker}:stolen_flags', flag.id).execute()
+        is_new, = pipeline.sadd(
+            f'team:{attacker}:stolen_flags',
+            flag.id,
+        ).execute()
 
         if not is_new:
             raise helplib.exceptions.FlagSubmitException('Flag already stolen')
@@ -65,10 +71,11 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
         conn.commit()
 
     game_config = storage.game.get_current_global_config()
-    expires = game_config.flag_lifetime * game_config.round_time * 2  # can be smaller
+    expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        round_flags_key = f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+        team_id, task_id, round = flag.team_id, flag.task_id, flag.round
+        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{round}'
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 
@@ -79,7 +86,8 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     return flag
 
 
-def get_flag_by_field(field_name: str, field_value, round: int) -> helplib.models.Flag:
+def get_flag_by_field(field_name: str, field_value,
+                      round: int) -> helplib.models.Flag:
     """Get flag by generic field
 
         :param field_name: field name to ask cache for
@@ -103,7 +111,8 @@ def get_flag_by_field(field_name: str, field_value, round: int) -> helplib.model
         flag_exists, flag_json = pipeline.execute()
 
     if not flag_exists:
-        raise helplib.exceptions.FlagSubmitException('Flag is invalid or too old')
+        raise helplib.exceptions.FlagSubmitException(
+            'Flag is invalid or too old')
 
     flag = helplib.models.Flag.from_json(flag_json)
 
@@ -117,7 +126,8 @@ def get_flag_by_str(flag_str: str, round: int) -> helplib.models.Flag:
         :param round: current round
         :return: Flag model instance
     """
-    return get_flag_by_field(field_name='str', field_value=flag_str, round=round)
+    return get_flag_by_field(field_name='str', field_value=flag_str,
+                             round=round)
 
 
 def get_flag_by_id(flag_id: int, round: int) -> helplib.models.Flag:
@@ -130,7 +140,8 @@ def get_flag_by_id(flag_id: int, round: int) -> helplib.models.Flag:
     return get_flag_by_field(field_name='id', field_value=flag_id, round=round)
 
 
-def get_random_round_flag(team_id: int, task_id: int, round: int, current_round: int) -> Optional[helplib.models.Flag]:
+def get_random_round_flag(team_id: int, task_id: int, round: int,
+                          current_round: int) -> Optional[helplib.models.Flag]:
     """Get random flag for team generated for specified round and task
 
         :param team_id: team id
@@ -148,7 +159,8 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
             cache_args=(current_round, pipeline),
         )
 
-        flags, = pipeline.smembers(f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
+        flags, = pipeline.smembers(
+            f'team:{team_id}:task:{task_id}:round_flags:{round}').execute()
         try:
             flag_id = int(secrets.choice(list(flags)))
         except (ValueError, IndexError, TypeError):
@@ -156,8 +168,12 @@ def get_random_round_flag(team_id: int, task_id: int, round: int, current_round:
     return get_flag_by_id(flag_id, current_round)
 
 
-def get_attack_data(current_round: int, tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
-    """Get unexpired flags for round in format {task.name: {team.ip: [flag.public_data]}}"""
+def get_attack_data(
+        current_round: int,
+        tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
+    """Get unexpired flags for round in format
+        {task.name: {team.ip: [flag.public_data]}}
+    """
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}
 

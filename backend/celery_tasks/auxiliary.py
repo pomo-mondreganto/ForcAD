@@ -29,7 +29,7 @@ def startup(**_kwargs):
                 if not game_state:
                     logger.warning('Initial game_state missing')
                 else:
-                    logger.info(f"Initializing game_state with {game_state.to_dict()}")
+                    logger.info(f"Initializing game_state with {game_state}")
                     pipeline.set('game_state', game_state.to_json())
                     pipeline.execute()
 
