@@ -41,14 +41,14 @@ async def tasks_async_getter(redis_aio, pipe):
     pipe.smembers('tasks')
 
 
-async def all_tasks_async_getter(redis_aio, pipe):
-    """Get list of all tasks registered in the database (asynchronous version)"""
-    await async_cache_helper(
-        redis_aio=redis_aio,
-        cache_key='all_tasks:cached',
-        cache_func=caching.cache_all_tasks,
-    )
-    pipe.smembers('all_tasks')
+async def get_all_tasks_async() -> List[models.Task]:
+    """Get list of all tasks from database"""
+    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+        await curs.execute(models.Task.get_select_all_query())
+        results = await curs.fetchall()
+
+    tasks = [models.Task.from_dict(task) for task in results]
+    return tasks
 
 
 def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
@@ -181,13 +181,7 @@ async def create_task(task: models.Task):
         result, = await curs.fetchone()
         task.id = result
 
-        redis_aio = await storage.get_async_redis_storage()
-        pipe = redis_aio.pipeline()
-        pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
-        await storage.teams.teams_async_getter(redis_aio, pipe)
-        _, teams = await pipe.execute()
-        teams = [models.Team.from_json(team) for team in teams]
-
+        teams = await storage.teams.get_all_teams_async()
         insert_data = [
             (task.id, team.id, task.default_score, -1)
             for team in teams
@@ -195,6 +189,9 @@ async def create_task(task: models.Task):
 
         for each in insert_data:
             await curs.execute(TEAMTASK_INSERT_QUERY, each)
+
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('tasks', 'tasks:cached')
 
     return task
 
@@ -204,9 +201,7 @@ async def update_task(task: models.Task):
         await curs.execute(task.get_update_query(), task.to_dict())
 
     redis_aio = await storage.get_async_redis_storage()
-    pipe = redis_aio.pipeline()
-    pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
-    await pipe.execute()
+    await redis_aio.delete('tasks', 'tasks:cached')
 
     return task
 
@@ -215,7 +210,5 @@ async def delete_task(task_id: int):
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Task.get_delete_query(), {'id': task_id})
 
-        redis_aio = await storage.get_async_redis_storage()
-        pipe = redis_aio.pipeline()
-        pipe.delete('tasks', 'tasks:cached', 'all_tasks', 'all_tasks:cached')
-        await pipe.execute()
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('tasks', 'tasks:cached')

@@ -22,14 +22,9 @@ class TeamApi:
 
     @staticmethod
     async def list(_request):
-        redis_aio = await storage.get_async_redis_storage()
-        pipe = redis_aio.pipeline()
-
-        await storage.teams.all_teams_async_getter(redis_aio, pipe)
-        teams, = await pipe.execute()
-        teams = [models.Team.from_json(team).to_dict() for team in teams]
-
-        return json_response(teams)
+        teams = await storage.teams.get_all_teams_async()
+        dumped = [team.to_dict() for team in teams]
+        return json_response(dumped)
 
     @staticmethod
     async def create(request):

@@ -22,14 +22,9 @@ class TaskApi:
 
     @staticmethod
     async def list(_request):
-        redis_aio = await storage.get_async_redis_storage()
-        pipe = redis_aio.pipeline()
-
-        await storage.tasks.all_tasks_async_getter(redis_aio, pipe)
-        tasks, = await pipe.execute()
-        tasks = [models.Task.from_json(task).to_dict() for task in tasks]
-
-        return json_response(tasks)
+        tasks = await storage.tasks.get_all_tasks_async()
+        dumped = [task.to_dict() for task in tasks]
+        return json_response(dumped)
 
     @staticmethod
     async def create(request):
