@@ -1,12 +1,12 @@
 import os
-from collections import defaultdict
-from unittest import TestCase
-
-import requests
 import socket
 import subprocess
 import sys
 import time
+from collections import defaultdict
+from unittest import TestCase
+
+import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +29,7 @@ class FlagSubmitTestCase(TestCase):
             token = line.strip().split(':')[1]
             if 'working' in line:
                 self.working_token = token
-            else:
+            elif 'inactive' not in line:
                 self.unreachable_token = token
 
         database_config = config.get_db_config()

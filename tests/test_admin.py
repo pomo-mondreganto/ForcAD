@@ -36,7 +36,7 @@ class TeamsTestCase(TestCase):
         self.assertIn(full_data, new_teams)
         self.assertEqual(len(was_teams) + 1, len(new_teams))
 
-        update_data = {'name': 'Test updated', 'highlighted': True, 'active': True, 'ip': '127.0.0.3',
+        update_data = {'name': 'Test inactive', 'highlighted': True, 'active': True, 'ip': '127.0.0.3',
                        'token': full_data['token']}
         r = requests.put(f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/', json=update_data)
         self.assertTrue(r.ok)
@@ -67,7 +67,7 @@ class TasksTestCase(TestCase):
         data = r.json()
         return data
 
-    def test_teams_api(self):
+    def test_tasks_api(self):
         was_tasks = self.get_tasks()
 
         new_task_data = {
@@ -95,7 +95,7 @@ class TasksTestCase(TestCase):
         self.assertEqual(len(was_tasks) + 1, len(new_tasks))
 
         update_data = {
-            'name': 'test_updated',
+            'name': 'test_updated_inactive',
             'checker': '/checkers/test_service/gevent_checker.py',
             'gets': 1,
             'puts': 1,
