@@ -17,11 +17,11 @@ The name is pronounced as "forkád".
 (or copy `backend/config/config.yml.example` to `backend/config/config.yml`, if the latter is missing).
 
 2. Add teams and tasks to corresponding config sections following the example's format, 
-set `start_time` (don't forget your timezone) and `round_time` (in seconds) (for recommendations see 
+set `start_time`, `timezone` (e.g. `Europe/Moscow`) and `round_time` (in seconds) (for recommendations see 
 [checker_timeout](#checkers) variable).
 
 3. **Change default passwords** (that includes `storages.db.password`, `storages.redis.password` for database and cache,
- `flower.password` for `celery` visualization, which contains flags).
+ `admin.password` for `celery` visualization, which contains flags).
 
 4. Install `control_requirements.txt` (`pip3 install -r control_requirements.txt`) and run `./control.py setup` 
 to transfer config variables
@@ -126,7 +126,7 @@ Config file (`backend/config/config.yml`) is split into five main parts:
     - `port: 6379`
     - `password: **change_me**`
 
-- **flower** contains credentials to access visualization (`/flower/` on scoreboard):
+- **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
   - `password: **change_me**`
   - `username: system_admin`
 

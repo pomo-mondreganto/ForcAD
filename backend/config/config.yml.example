@@ -1,4 +1,4 @@
-flower:
+admin:
   password: secret
   username: system_admin
 

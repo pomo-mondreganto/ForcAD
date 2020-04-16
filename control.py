@@ -89,9 +89,9 @@ def setup_flower(config):
         'flower_environment.env',
     )
 
-    flower_config = config['flower']
-    flower_username = flower_config['username']
-    flower_password = flower_config['password']
+    admin_config = config['admin']
+    flower_username = admin_config['username']
+    flower_password = admin_config['password']
     flower_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'FLOWER_BASIC_AUTH={flower_username}:{flower_password}',

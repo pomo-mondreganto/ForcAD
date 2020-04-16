@@ -19,8 +19,6 @@ CONFIG_FILENAME = 'config.yml'
 
 if os.environ.get('TEST'):
     CONFIG_FILENAME = 'test_config.yml'
-elif os.environ.get('LOCAL'):
-    CONFIG_FILENAME = 'local_config.yml'
 
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
 
