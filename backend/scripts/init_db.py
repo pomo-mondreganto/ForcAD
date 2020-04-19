@@ -68,7 +68,7 @@ def run():
             'checkers_path': '/checkers/',
             'env_path': '/checkers/bin/',
             'default_score': 2000.0,
-            'game_hardness': 3000.0,
+            'game_hardness': 10.0,
             'inflation': True,
             'flag_lifetime': 5,
             'round_time': 60,

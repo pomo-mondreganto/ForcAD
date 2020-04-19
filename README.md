@@ -76,16 +76,14 @@ FLUSHALL in redis, but that can lead to a round of unavailable scoreboard.
 
 #### Rating system
 
-Platform has a somewhat-flexible rating system. Basically, rating system is a class that's initialized by 2 floats: 
-current attacker and victim scores and has `calculate` method that returns another 2 floats, attacker and 
-victim rating changes respectively. Having read that, you can easily replace default rating system in 
-[C rating system](backend/fast_rs/rs.c) by your own brand-new one. Default rating system is 
+Platform has a flexible rating system, you can easily replace the default one in 
+[postgres stored functions](backend/scripts/create_functions.sql) (function `recalculate_rating`) by your own brand-new one. Default rating system is 
 based on Elo rating and performs quite well in practice. **game_hardness** and **inflation** configuration variables 
 can be set in `global` block in `config.yml`, the first one sets how much points team is earning for an attack 
 (the higher the hardness, the bigger the rating change is), and the second one states is there's an "inflation" of 
 points: whether a team earns points by attacking zero-rating victim. Current rating system with inflation results in 
 quite a dynamic and fast gameplay. Default value for `game_hardness` in both versions (with and w/o inflation) is 
-`1300`, recommended range is `[500, 10000]` (try to emulate it first). Initial score for task can also be configured in 
+`10`, recommended range is `[5, 20]` (try to emulate it first). Initial score for task can also be configured in 
 global settings (that'll be the default value) and for each task independently.
 
 #### Flag format

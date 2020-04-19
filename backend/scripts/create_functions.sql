@@ -38,18 +38,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql ROWS 1;
 
-CREATE OR REPLACE FUNCTION calculate(FLOAT, FLOAT, FLOAT, BOOLEAN)
-    RETURNS TABLE
-            (
-                attacker_delta FLOAT,
-                victim_delta   FLOAT
-            )
-AS
-'rs.so',
-'calculate'
-    LANGUAGE C STRICT
-               ROWS 1;
-
 CREATE OR REPLACE FUNCTION recalculate_rating(_attacker_id INTEGER, _victim_id INTEGER, _task_id INTEGER,
                                               _flag_id INTEGER)
     RETURNS TABLE
@@ -63,6 +51,8 @@ DECLARE
     _round          INTEGER;
     hardness        FLOAT;
     inflate         BOOLEAN;
+    scale           FLOAT;
+    norm            FLOAT;
     attacker_score  FLOAT;
     victim_score    FLOAT;
     _attacker_delta FLOAT;
@@ -97,8 +87,14 @@ BEGIN
         INTO attacker_score;
     END IF;
 
+    scale = 50 * sqrt(hardness);
+    norm = ln(ln(hardness)) / 12;
+    _attacker_delta = scale / (1 + exp((sqrt(attacker_score) - sqrt(victim_score)) * norm));
+    _victim_delta = -least(victim_score, _attacker_delta);
 
-    SELECT * FROM calculate(attacker_score, victim_score, hardness, inflate) INTO _attacker_delta, _victim_delta;
+    IF inflate THEN
+        _attacker_delta = least(_attacker_delta, -_victim_delta);
+    END IF;
 
     INSERT INTO stolenflags (attacker_id, flag_id) VALUES (_attacker_id, _flag_id);
 

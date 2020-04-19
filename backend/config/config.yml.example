@@ -8,7 +8,7 @@ global:
   default_score: 2500
   env_path: /checkers/bin/
   flag_lifetime: 5
-  game_hardness: 3000.0
+  game_hardness: 10.0
   inflation: true
   round_time: 20
   start_time: 2019-11-30 15:30:00

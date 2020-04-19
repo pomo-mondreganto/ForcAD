@@ -115,10 +115,7 @@ services:
     restart: "no"
 
   postgres:
-    build:
-      context: .
-      dockerfile: docker_config/postgres/Dockerfile
-    image: ${FORCAD_REGISTRY}/forcad_postgres:${FORCAD_ARCH_TAG}
+    image: postgres:12.2
     volumes:
       - database:/var/lib/postgresql/data/
     env_file:
