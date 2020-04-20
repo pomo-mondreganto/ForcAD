@@ -169,7 +169,7 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
 def process_teamtasks(teamtasks: List[dict]):
     casts = (
         (
-            ['id', 'team_id', 'task_id', 'checks', 'checks_passed', 'round'],
+            ['team_id', 'task_id', 'checks', 'checks_passed', 'round'],
             int,
         ),
         (
