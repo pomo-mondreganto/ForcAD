@@ -4,10 +4,10 @@ from helplib import models
 
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
 WITH flag_ids AS (
-    SELECT id FROM flags WHERE  round >= %s
+    SELECT id FROM flags WHERE round >= %s
 )
 SELECT flag_id FROM stolenflags
-WHERE flag_id IN (SELECT id from flag_ids) AND attacker_id = %s
+WHERE attacker_id = %s AND flag_id IN (SELECT id from flag_ids)
 """
 
 _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"

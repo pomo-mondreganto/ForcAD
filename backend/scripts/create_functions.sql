@@ -21,8 +21,8 @@ BEGIN
            private_message,
            command
     FROM teamtasks
-    WHERE task_id = _task_id
-      AND team_id = _team_id
+    WHERE team_id = _team_id
+      AND task_id = _task_id
         FOR NO KEY UPDATE;
 
     RETURN QUERY UPDATE teamtasks
@@ -32,8 +32,8 @@ BEGIN
             command = _command,
             checks_passed = checks_passed + _passed,
             checks = checks + 1
-        WHERE task_id = _task_id
-            AND team_id = _team_id
+        WHERE team_id = _team_id
+            AND task_id = _task_id
         RETURNING *;
 END;
 $$ LANGUAGE plpgsql ROWS 1;
@@ -130,15 +130,13 @@ CREATE OR REPLACE FUNCTION get_first_bloods()
 AS
 $$
 BEGIN
-    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id) sf.id          AS attack_id,
-                                                                    sf.submit_time AS submit_time,
+    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id) sf.submit_time AS submit_time,
                                                                     sf.attacker_id AS attacker_id,
                                                                     f.task_id      AS task_id
                                      FROM stolenflags sf
                                               JOIN flags f ON f.id = sf.flag_id
                                      ORDER BY f.task_id, sf.id)
-                 SELECT preprocess.attack_id   AS attack_id,
-                        preprocess.submit_time AS submit_time,
+                 SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
                         tk.name                AS task_name,
                         tm.id                  AS attacker_id,

@@ -22,11 +22,10 @@ CREATE TABLE IF NOT EXISTS Flags
 
 CREATE TABLE IF NOT EXISTS StolenFlags
 (
-    id          SERIAL PRIMARY KEY,
     flag_id     INTEGER NOT NULL,
     attacker_id INTEGER NOT NULL,
     submit_time TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    UNIQUE (flag_id, attacker_id)
+    PRIMARY KEY (flag_id, attacker_id)
 );
 
 CREATE TABLE IF NOT EXISTS Tasks
@@ -59,7 +58,7 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     public_message  TEXT NOT NULL DEFAULT '',
     private_message TEXT NOT NULL DEFAULT '',
     command         TEXT NOT NULL DEFAULT '',
-    UNIQUE (task_id, team_id)
+    UNIQUE (team_id, task_id)
 );
 
 CREATE UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
