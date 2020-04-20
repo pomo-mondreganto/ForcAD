@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS Tasks
 
 CREATE TABLE IF NOT EXISTS TeamTasks
 (
-    id              SERIAL PRIMARY KEY,
     task_id         INTEGER,
     team_id         INTEGER,
     status          INTEGER,
@@ -58,7 +57,7 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     public_message  TEXT NOT NULL DEFAULT '',
     private_message TEXT NOT NULL DEFAULT '',
     command         TEXT NOT NULL DEFAULT '',
-    UNIQUE (team_id, task_id)
+    PRIMARY KEY (team_id, task_id)
 );
 
 CREATE UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
