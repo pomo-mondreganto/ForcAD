@@ -1,130 +1,52 @@
 version: '2.4'
 
-volumes:
-  front_build:
-
 services:
   celery:
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile.fast
-    environment:
-      - TEST=1
-      - CELERY_CONTAINER_TYPE=worker
-    volumes:
-      - ./checkers/:/checkers/
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   celerybeat:
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile.fast
-    environment:
-      - TEST=1
-      - CELERY_CONTAINER_TYPE=beat
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   flower:
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile.fast
-    environment:
-      - TEST=1
-      - CELERY_CONTAINER_TYPE=flower
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/celery/flower_environment.env
-      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   initializer:
     build:
       context: .
       dockerfile: docker_config/initializer/Dockerfile.fast
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    environment:
-      - TEST=1
     restart: "no"
 
   webapi:
     build:
       context: .
       dockerfile: docker_config/webapi/Dockerfile.fast
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    environment:
-      - TEST=1
-    tty: true
     restart: "no"
 
   gevent_flag_submitter:
     build:
       context: .
       dockerfile: docker_config/gevent_flag_submitter/Dockerfile.fast
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    environment:
-      - TEST=1
-    ports:
-      - 31337:31337
     restart: "no"
 
   nginx:
-    build:
-      context: .
-      dockerfile: docker_config/nginx/Dockerfile
-    volumes:
-      - front_build:/front_build
-    ports:
-      - 8080:80
-      - 80:80
     restart: "no"
 
   redis:
-    image: redis:5.0.8-alpine
-    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
     restart: "no"
-    sysctls:
-      net.core.somaxconn: 1024
-    env_file:
-      - ./docker_config/redis/environment.env
-    ports:
-      - "6379:6379"
 
   postgres:
-    image: postgres:12.2
-    volumes:
-      - ./docker_volumes/postgres/data/:/var/lib/postgresql/data/
-    ports:
-      - 5432:5432
-    env_file:
-      - ./docker_config/postgres/environment.env
     restart: "no"
 
   rabbitmq:
-    hostname: rabbitmq
-    image: rabbitmq:3.8.3-management-alpine
-    ports:
-      - 5672:5672
-      - 15672:15672
-    env_file:
-      - ./docker_config/rabbitmq/environment.env
     restart: "no"
 
   test_service:

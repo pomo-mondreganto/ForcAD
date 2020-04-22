@@ -12,6 +12,7 @@ import yaml
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(BASE_DIR, 'backend', 'config')
 DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 
 CONFIG_FILENAME = 'config.yml'
 
@@ -129,16 +130,34 @@ def setup_rabbitmq(config):
         f.write('\n'.join(rabbitmq_config))
 
 
-def setup_config(_args):
+def prepare_docker_compose(args):
+    conf_path = os.path.join(BASE_DIR, 'docker-compose.yml')
+    base_conf = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+
+    if not os.environ.get('TEST'):
+        if 'redis' in args and args.redis:
+            del base_conf['services']['redis']
+
+        if 'database' in args and args.database:
+            del base_conf['services']['postgres']
+
+    res_path = os.path.join(BASE_DIR, 'docker-compose-base.yml')
+    with open(res_path, 'w') as f:
+        yaml.dump(base_conf, f)
+
+
+def setup_config(args):
+    override_config(args)
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
     setup_db(config)
     setup_redis(config)
     setup_flower(config)
     setup_rabbitmq(config)
+    prepare_docker_compose(args)
 
 
-def setup_worker(args):
+def override_config(args):
     conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
     config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
 
@@ -147,23 +166,26 @@ def setup_worker(args):
         CONFIG_DIR,
         f'config_backup_{int(time.time())}.yml',
     )
-    with open(backup_path, 'w') as f:
-        yaml.dump(config, f)
+    shutil.copy2(conf_path, backup_path)
 
     # patch config host variables to connect to the right place
-    config['storages']['redis']['host'] = args.redis
-    config['storages']['db']['host'] = args.database
-    config['storages']['rabbitmq']['host'] = args.rabbitmq
+    if 'redis' in args and args.redis:
+        config['storages']['redis']['host'] = args.redis
+
+    if 'database' in args and args.database:
+        config['storages']['db']['host'] = args.database
+
+    if 'rabbitmq' in args:
+        config['storages']['rabbitmq']['host'] = args.rabbitmq
 
     with open(conf_path, 'w') as f:
         yaml.dump(config, f)
-
-    setup_config(args)
 
 
 def print_tokens(_args):
     command = [
         'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
         'exec', 'webapi',
         'python3', '/app/scripts/print_tokens.py',
@@ -184,24 +206,38 @@ def reset_game(_args):
     data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
+    base_path = os.path.join(BASE_DIR, BASE_COMPOSE_FILE)
+    try:
+        os.remove(base_path)
+    except FileNotFoundError:
+        print(f'File {base_path} not found')
+        pass
+
+    full_compose = os.path.join(BASE_DIR, 'docker-compose.yml')
+    command = [
+        'docker-compose',
+        '-f', full_compose,
+        'down', '-v',
+        '--remove-orphans',
+    ]
     run_command(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v',
-         '--remove-orphans'],
+        command,
         cwd=BASE_DIR,
     )
 
 
 def build(_args):
     run_command(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'build'],
+        ['docker-compose', '-f', BASE_COMPOSE_FILE, '-f', DOCKER_COMPOSE_FILE, 'build'],
         cwd=BASE_DIR,
     )
 
 
 def start_game(args):
     command = [
-        'docker-compose', '-f',
-        DOCKER_COMPOSE_FILE,
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
         'up', '--build', '-d',
         '--scale', f'celery={args.instances}',
     ]
@@ -211,6 +247,7 @@ def start_game(args):
 def scale_celery(args):
     command = [
         'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
         'up', '-d',
         '--no-recreate',
@@ -223,11 +260,13 @@ def scale_celery(args):
 
 def run_worker(args):
     # patch configuration
-    setup_worker(args)
+    override_config(args)
+    setup_config(args)
 
     command = [
-        'docker-compose', '-f',
-        DOCKER_COMPOSE_FILE,
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
         'up', '--build', '-d',
         '--scale', f'celery={args.instances}',
         'celery',
@@ -250,9 +289,15 @@ if __name__ == '__main__':
 
     setup_parser = subparsers.add_parser(
         'setup',
-        help='Transfer centralized config to environment files',
+        help='Transfer centralized config to environment files, prepare base docker-compose file',
     )
     setup_parser.set_defaults(func=setup_config)
+    setup_parser.add_argument('--redis', type=str,
+                              help='External redis address (disables built-in redis container)',
+                              required=False)
+    setup_parser.add_argument('--database', type=str,
+                              help='External postgres address (disables built-in postgres container)',
+                              required=False)
 
     print_tokens_parser = subparsers.add_parser(
         'print_tokens',

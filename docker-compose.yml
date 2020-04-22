@@ -1,14 +1,12 @@
 version: '2.4'
 
-volumes:
-  front_build:
-
 services:
   celery:
     build:
       context: .
       dockerfile: docker_config/celery/Dockerfile
     environment:
+      - TEST
       - CELERY_CONTAINER_TYPE=worker
     volumes:
       - ./checkers/:/checkers/
@@ -23,6 +21,7 @@ services:
       context: .
       dockerfile: docker_config/celery/Dockerfile
     environment:
+      - TEST
       - CELERY_CONTAINER_TYPE=beat
     env_file:
       - ./docker_config/postgres/environment.env
@@ -35,6 +34,7 @@ services:
       context: .
       dockerfile: docker_config/celery/Dockerfile
     environment:
+      - TEST
       - CELERY_CONTAINER_TYPE=flower
     env_file:
       - ./docker_config/postgres/environment.env
@@ -52,6 +52,8 @@ services:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
       - ./docker_config/rabbitmq/environment.env
+    environment:
+      - TEST
     restart: on-failure
 
   webapi:
@@ -62,8 +64,9 @@ services:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
       - ./docker_config/rabbitmq/environment.env
+    environment:
+      - TEST
     restart: on-failure
-    tty: true
 
   gevent_flag_submitter:
     build:
@@ -75,14 +78,14 @@ services:
       - ./docker_config/rabbitmq/environment.env
     ports:
       - 31337:31337
+    environment:
+      - TEST
     restart: on-failure
 
   nginx:
     build:
       context: .
       dockerfile: docker_config/nginx/Dockerfile
-    volumes:
-      - front_build:/front_build
     ports:
       - 8080:80
       - 80:80
