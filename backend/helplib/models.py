@@ -157,7 +157,7 @@ class Task(Model):
 
     def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict'):
         if not self.checker_returns_flag_id:
-            pass
+            flag.public_flag_data = ''
         elif self.checker_provides_public_flag_data:
             flag.public_flag_data = verdict.public_message
             flag.private_flag_data = verdict.private_message
