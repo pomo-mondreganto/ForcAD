@@ -206,13 +206,6 @@ def reset_game(_args):
     data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
-    base_path = os.path.join(BASE_DIR, BASE_COMPOSE_FILE)
-    try:
-        os.remove(base_path)
-    except FileNotFoundError:
-        print(f'File {base_path} not found')
-        pass
-
     full_compose = os.path.join(BASE_DIR, 'docker-compose.yml')
     command = [
         'docker-compose',
@@ -227,8 +220,14 @@ def reset_game(_args):
 
 
 def build(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'build',
+    ]
     run_command(
-        ['docker-compose', '-f', BASE_COMPOSE_FILE, '-f', DOCKER_COMPOSE_FILE, 'build'],
+        command,
         cwd=BASE_DIR,
     )
 
@@ -289,14 +288,17 @@ if __name__ == '__main__':
 
     setup_parser = subparsers.add_parser(
         'setup',
-        help='Transfer centralized config to environment files, prepare base docker-compose file',
+        help='Transfer centralized config to environment files, '
+             'prepare base docker-compose file',
     )
     setup_parser.set_defaults(func=setup_config)
     setup_parser.add_argument('--redis', type=str,
-                              help='External redis address (disables built-in redis container)',
+                              help='External redis address '
+                                   '(disables built-in redis container)',
                               required=False)
     setup_parser.add_argument('--database', type=str,
-                              help='External postgres address (disables built-in postgres container)',
+                              help='External postgres address '
+                                   '(disables built-in postgres container)',
                               required=False)
 
     print_tokens_parser = subparsers.add_parser(
