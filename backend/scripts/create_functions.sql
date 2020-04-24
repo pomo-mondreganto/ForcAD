@@ -135,7 +135,7 @@ BEGIN
                                                                     f.task_id      AS task_id
                                      FROM stolenflags sf
                                               JOIN flags f ON f.id = sf.flag_id
-                                     ORDER BY f.task_id, sf.id)
+                                     ORDER BY f.task_id)
                  SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
                         tk.name                AS task_name,

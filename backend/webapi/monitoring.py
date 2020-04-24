@@ -15,7 +15,7 @@ import config
 class MonitorClient:
     def __init__(self, app):
         self.app = app
-        self.flag_metric = Counter(
+        self.flag_submits_metric = Counter(
             name='flag_submits_total',
             documentation='Flag submission data',
             labelnames=['attacker_id', 'victim_id', 'task_id', 'submit_ok'],
@@ -39,7 +39,7 @@ class MonitorClient:
 
             data = kjson.loads(data)
             if data['type'] == 'flag_submit':
-                self.flag_metric.labels(**data['data']).inc()
+                self.flag_submits_metric.labels(**data['data']).inc()
             else:
                 print('Unknown metric type:', data)
 
