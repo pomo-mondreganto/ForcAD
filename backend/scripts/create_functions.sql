@@ -120,29 +120,31 @@ $$ LANGUAGE plpgsql ROWS 1;
 CREATE OR REPLACE FUNCTION get_first_bloods()
     RETURNS TABLE
             (
-                attack_id     INTEGER,
                 submit_time   TIMESTAMP WITH TIME ZONE,
                 attacker_name VARCHAR(255),
                 task_name     VARCHAR(255),
                 attacker_id   INTEGER,
-                task_id       INTEGER
+                task_id       INTEGER,
+                vuln_number   INTEGER
             )
 AS
 $$
 BEGIN
-    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id) sf.submit_time AS submit_time,
-                                                                    sf.attacker_id AS attacker_id,
-                                                                    f.task_id      AS task_id
+    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id, f.vuln_number) sf.submit_time AS submit_time,
+                                                                                   sf.attacker_id AS attacker_id,
+                                                                                   f.task_id      AS task_id,
+                                                                                   f.vuln_number  as vuln_number
                                      FROM stolenflags sf
-                                              JOIN flags f ON f.id = sf.flag_id
-                                     ORDER BY f.task_id)
+                                              JOIN flags f ON f.id = sf.flag_id)
                  SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
                         tk.name                AS task_name,
                         tm.id                  AS attacker_id,
-                        tk.id                  AS task_id
+                        tk.id                  AS task_id,
+                        preprocess.vuln_number AS vuln_number
                  FROM preprocess
                           JOIN teams tm ON tm.id = preprocess.attacker_id
-                          JOIN tasks tk ON tk.id = preprocess.task_id;
+                          JOIN tasks tk ON tk.id = preprocess.task_id
+                 ORDER BY submit_time;
 END;
 $$ LANGUAGE plpgsql;
