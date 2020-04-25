@@ -87,7 +87,7 @@ def setup_flower(config):
         BASE_DIR,
         'docker_config',
         'celery',
-        'flower_environment.env',
+        'flower.env',
     )
 
     admin_config = config['admin']
