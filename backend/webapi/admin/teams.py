@@ -11,14 +11,12 @@ import storage
 from helplib import models
 
 from .base import make_err_response
+from webapi.events import emit_init_scoreboard
+from .api_base import ApiSet
 
 
-class TeamApi:
-    def __init__(self, bp):
-        bp.add_route(self.list, '/teams/', methods=['GET'])
-        bp.add_route(self.create, '/teams/', methods=['POST'])
-        bp.add_route(self.update, '/teams/<team_id:int>/', methods=['PUT'])
-        bp.add_route(self.delete, '/teams/<team_id:int>/', methods=['DELETE'])
+class TeamApi(ApiSet):
+    model = 'team'
 
     @staticmethod
     async def list(_request):
@@ -36,6 +34,7 @@ class TeamApi:
             return make_err_response(f'Invalid team data: {e}')
 
         created = await storage.teams.create_team(team)
+        await emit_init_scoreboard()
         return json_response(created.to_dict(), status=201)
 
     @staticmethod
@@ -48,9 +47,11 @@ class TeamApi:
             return make_err_response(f'Invalid team data: {e}')
 
         updated = await storage.teams.update_team(team)
+        await emit_init_scoreboard()
         return json_response(updated.to_dict())
 
     @staticmethod
-    async def delete(_request, team_id):
+    async def destroy(_request, team_id):
         await storage.teams.delete_team(team_id)
+        await emit_init_scoreboard()
         return json_response('ok')

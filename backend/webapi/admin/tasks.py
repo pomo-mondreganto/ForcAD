@@ -10,15 +10,13 @@ from sanic.response import json as json_response
 import storage
 from helplib import models
 
+from webapi.events import emit_init_scoreboard
 from .base import make_err_response
+from .api_base import ApiSet
 
 
-class TaskApi:
-    def __init__(self, bp):
-        bp.add_route(self.list, '/tasks/', methods=['GET'])
-        bp.add_route(self.create, '/tasks/', methods=['POST'])
-        bp.add_route(self.update, '/tasks/<task_id:int>/', methods=['PUT'])
-        bp.add_route(self.delete, '/tasks/<task_id:int>/', methods=['DELETE'])
+class TaskApi(ApiSet):
+    model = 'task'
 
     @staticmethod
     async def list(_request):
@@ -35,6 +33,7 @@ class TaskApi:
             return make_err_response(f'Invalid task data: {e}')
 
         created = await storage.tasks.create_task(task)
+        await emit_init_scoreboard()
         return json_response(created.to_dict(), status=201)
 
     @staticmethod
@@ -47,9 +46,11 @@ class TaskApi:
             return make_err_response(f'Invalid task data: {e}')
 
         updated = await storage.tasks.update_task(task)
+        await emit_init_scoreboard()
         return json_response(updated.to_dict())
 
     @staticmethod
-    async def delete(_request, task_id):
+    async def destroy(_request, task_id):
         await storage.tasks.delete_task(task_id)
+        await emit_init_scoreboard()
         return json_response('ok')

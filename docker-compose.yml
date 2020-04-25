@@ -39,7 +39,7 @@ services:
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
-      - ./docker_config/celery/flower_environment.env
+      - ./docker_config/celery/flower.env
       - ./docker_config/rabbitmq/environment.env
     restart: on-failure
 
@@ -61,6 +61,7 @@ services:
       context: .
       dockerfile: docker_config/webapi/Dockerfile
     env_file:
+      - ./docker_config/webapi/environment.env
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
       - ./docker_config/rabbitmq/environment.env

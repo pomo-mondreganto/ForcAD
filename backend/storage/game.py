@@ -233,3 +233,37 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
                 exchange='',
                 routing_key='forcad-monitoring',
             )
+
+
+async def construct_scoreboard():
+    redis_aio = await storage.get_async_redis_storage()
+    pipe = redis_aio.pipeline()
+    pipe.get('game_state')
+    await storage.teams.teams_async_getter(redis_aio, pipe)
+    await storage.tasks.tasks_async_getter(redis_aio, pipe)
+    await global_config_async_getter(redis_aio, pipe)
+    state, teams, tasks, game_config = await pipe.execute()
+
+    try:
+        state = models.GameState.from_json(state).to_dict()
+    except TypeError:
+        state = None
+
+    teams = [
+        models.Team.from_json(team).to_dict_for_participants()
+        for team in teams
+    ]
+    tasks = [
+        models.Task.from_json(task).to_dict_for_participants()
+        for task in tasks
+    ]
+    game_config = models.GlobalConfig.from_json(game_config).to_dict()
+
+    data = {
+        'state': state,
+        'teams': teams,
+        'tasks': tasks,
+        'config': game_config,
+    }
+
+    return data

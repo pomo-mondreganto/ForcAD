@@ -130,6 +130,28 @@ def setup_rabbitmq(config):
         f.write('\n'.join(rabbitmq_config))
 
 
+def setup_webapi(config):
+    rabbitmq_env_path = os.path.join(
+        BASE_DIR,
+        'docker_config',
+        'webapi',
+        'environment.env',
+    )
+
+    admin_config = config['admin']
+    username = admin_config['username']
+    password = admin_config['password']
+
+    admin_config = [
+        "# THIS FILE IS MANAGED BY 'control.py'",
+        f'ADMIN_USERNAME={username}',
+        f'ADMIN_PASSWORD={password}',
+    ]
+
+    with open(rabbitmq_env_path, 'w') as f:
+        f.write('\n'.join(admin_config))
+
+
 def prepare_docker_compose(args):
     conf_path = os.path.join(BASE_DIR, 'docker-compose.yml')
     base_conf = yaml.load(open(conf_path), Loader=yaml.FullLoader)
@@ -154,6 +176,7 @@ def setup_config(args):
     setup_redis(config)
     setup_flower(config)
     setup_rabbitmq(config)
+    setup_webapi(config)
     prepare_docker_compose(args)
 
 

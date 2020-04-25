@@ -3,6 +3,13 @@ import os
 import storage
 
 
+def get_web_credentials() -> dict:
+    return {
+        'username': os.environ['ADMIN_USERNAME'],
+        'password': os.environ['ADMIN_PASSWORD'],
+    }
+
+
 def get_redis_config() -> dict:
     return {
         'host': os.environ['REDIS_HOST'],
