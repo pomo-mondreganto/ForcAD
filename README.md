@@ -201,6 +201,8 @@ if possible.
   - `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
 you know how it works. **Don't use it** on long and (or) large competitions! Example checker is [here](tests/service/checker/gevent_checker.py).
 
+More detailed explanation of checker tags can be found [in this issue](https://github.com/pomo-mondreganto/ForcAD/issues/18#issuecomment-618072993).
+
 - `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there.
 
