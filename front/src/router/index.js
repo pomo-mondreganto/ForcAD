@@ -88,7 +88,6 @@ router.beforeEach(async function(to, from, next) {
             await router.$http.get(`${serverUrl}/api/admin/status/`);
             ok = true;
         } catch (e) {
-            console.log(e);
             next({
                 name: 'adminLogin',
             });
