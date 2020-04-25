@@ -4,7 +4,6 @@
     </div>
     <div v-else-if="team !== null" class="table">
         <div class="row">
-            <div class="number">#</div>
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
@@ -15,9 +14,6 @@
         </div>
         <div>
             <div class="row" v-for="(state, index) in states" :key="index">
-                <div class="number">
-                    {{ state.tasks[0].checks }}
-                </div>
                 <div class="team">
                     <div class="team-name">{{ team.name }}</div>
                     <div class="ip">{{ team.ip }}</div>
@@ -146,11 +142,15 @@ export default {
                 }
             );
 
-            this.by_task = tasks.map(() => []);
+            this.by_task = {};
             for (const state of states) {
-                this.by_task[state.task_id - 1].push(state);
+                let key = state.task_id - 1;
+                if (!this.by_task[key]) {
+                    this.by_task[key] = [];
+                }
+                this.by_task[key].push(state);
             }
-
+            this.by_task = Object.values(this.by_task);
             let row_count = Math.min(...this.by_task.map(x => x.length));
 
             this.states = [];

@@ -6,8 +6,11 @@
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
-                <div :key="name" class="service-cell" v-for="{ name } in tasks">
+                <div :key="name" class="service-cell" v-for="{ id, name } in tasks">
                     {{ name }}
+                    <button @click="openTaskAdmin(id)" class="info">
+                        <i class="fas fa-edit" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -39,6 +42,9 @@
                     >
                         <div class="team-name">{{ name }}</div>
                         <div class="ip">{{ ip }}</div>
+                        <button @click="openTeamAdmin(id)" class="info" v-on:click.stop>
+                            <i class="fas fa-edit" />
+                        </button>
                     </div>
                     <div
                         class="score"
@@ -121,6 +127,14 @@ export default {
             clearInterval(this.timer);
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
+        openTaskAdmin: function(id) {
+            clearInterval(this.timer);
+            this.$router.push({ name: 'taskAdmin', params: { id } }).catch(() => {});
+        },
+        openTeamAdmin: function(id) {
+            clearInterval(this.timer);
+            this.$router.push({ name: 'teamAdmin', params: { id } }).catch(() => {});
+        },
     },
 
     created: function() {
@@ -130,13 +144,19 @@ export default {
         this.server.on('connect_error', () => {
             this.error = "Can't connect to server";
         });
-        this.server.on('init_scoreboard', ({ data }) => {
+        this.server.on('init_scoreboard', async ({ data }) => {
             this.error = null;
             const {
                 state: { round_start, round, team_tasks: teamTasks },
-                tasks,
-                teams,
             } = data;
+
+            const { data: tasks } = await this.$http.get(
+                `${serverUrl}/api/admin/tasks/`
+            );
+
+            const { data: teams } = await this.$http.get(
+                `${serverUrl}/api/admin/teams/`
+            );
 
             this.updateRoundStart(round_start);
             this.updateRound(round);
@@ -146,7 +166,7 @@ export default {
                     team =>
                         new Team({
                             ...team,
-                            tasks,
+                            tasks: this.tasks,
                             teamTasks,
                         })
                 )
@@ -252,6 +272,7 @@ export default {
     display: flex;
     flex-flow: column nowrap;
     justify-content: center;
+    position: relative;
 }
 
 .score {

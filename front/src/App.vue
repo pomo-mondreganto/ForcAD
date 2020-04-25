@@ -38,6 +38,10 @@ body {
     background-color: #fa83fc;
 }
 
+.status-0 {
+    background-color: #ffffff;
+}
+
 .top-1 {
     background-color: #ffdf00;
 }
