@@ -11,9 +11,60 @@ sys.path.insert(0, BACKEND_DIR)
 sys.path.insert(0, TESTS_DIR)
 
 
-class TeamsTestCase(TestCase):
-    def get_teams(self):
+class AdminAuthMixin:
+    def get_admin_sess(self):
+        username = os.environ['ADMIN_USERNAME']
+        password = os.environ['ADMIN_PASSWORD']
+
+        s2 = requests.Session()
+        r = s2.post(
+            'http://127.0.0.1:8080/api/admin/login/',
+            json={
+                'username': username,
+                'password': password,
+            },
+        )
+        self.assertTrue(r.ok)
+
+        return s2
+
+
+class BaseAdminTestCase(TestCase, AdminAuthMixin):
+    def test_unauthenticated(self):
         r = requests.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        self.assertFalse(r.ok)
+        r = requests.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        self.assertFalse(r.ok)
+
+    def test_authentication(self):
+        s1 = requests.Session()
+        r = s1.post(
+            'http://127.0.0.1:8080/api/admin/login/',
+            json={
+                'username': 'some_username',
+                'password': 'invalid_password',
+            },
+        )
+        self.assertFalse(r.ok)
+
+        r = s1.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        self.assertFalse(r.ok)
+        r = s1.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        self.assertFalse(r.ok)
+
+        s2 = self.get_admin_sess()
+        r = s2.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        self.assertTrue(r.ok)
+        r = s2.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        self.assertTrue(r.ok)
+
+
+class TeamsTestCase(TestCase, AdminAuthMixin):
+    def setUp(self) -> None:
+        self.s = self.get_admin_sess()
+
+    def get_teams(self):
+        r = self.s.get(f'http://127.0.0.1:8080/api/admin/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -27,7 +78,7 @@ class TeamsTestCase(TestCase):
             'highlighted': False,
             'ip': '127.0.0.1',
         }
-        r = requests.post(
+        r = self.s.post(
             'http://127.0.0.1/api/admin/teams/',
             json=new_team_data,
         )
@@ -50,7 +101,7 @@ class TeamsTestCase(TestCase):
             'ip': '127.0.0.3',
             'token': full_data['token'],
         }
-        r = requests.put(
+        r = self.s.put(
             f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/',
             json=update_data,
         )
@@ -65,7 +116,7 @@ class TeamsTestCase(TestCase):
         self.assertIn(full_data, new_teams)
         self.assertEqual(len(was_teams) + 1, len(new_teams))
 
-        r = requests.delete(
+        r = self.s.delete(
             f'http://127.0.0.1/api/admin/teams/{full_data["id"]}/',
         )
         self.assertTrue(r.ok)
@@ -76,9 +127,12 @@ class TeamsTestCase(TestCase):
         self.assertEqual(len(was_teams) + 1, len(new_teams))
 
 
-class TasksTestCase(TestCase):
+class TasksTestCase(TestCase, AdminAuthMixin):
+    def setUp(self) -> None:
+        self.s = self.get_admin_sess()
+
     def get_tasks(self):
-        r = requests.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s.get(f'http://127.0.0.1:8080/api/admin/tasks/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -99,7 +153,7 @@ class TasksTestCase(TestCase):
             'get_period': 20,
             'default_score': 2500,
         }
-        r = requests.post(
+        r = self.s.post(
             'http://127.0.0.1/api/admin/tasks/',
             json=new_task_data,
         )
@@ -128,7 +182,7 @@ class TasksTestCase(TestCase):
             'active': True,
         }
 
-        r = requests.put(
+        r = self.s.put(
             f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/',
             json=update_data,
         )
@@ -145,7 +199,7 @@ class TasksTestCase(TestCase):
         self.assertIn(full_data, new_tasks)
         self.assertEqual(len(was_tasks) + 1, len(new_tasks))
 
-        r = requests.delete(
+        r = self.s.delete(
             f'http://127.0.0.1/api/admin/tasks/{full_data["id"]}/',
         )
         self.assertTrue(r.ok)
