@@ -15,8 +15,18 @@ VALUES (%s, %s, %s, %s)
 '''
 
 _SELECT_TEAMTASK_LOG_QUERY = '''
-SELECT * FROM teamtaskslog
+WITH logged_teamtasks AS (
+    SELECT * FROM teamtaskslog
+    WHERE team_id=%(team_id)s AND task_id=%(task_id)s
+)
+SELECT (SELECT MAX(id) FROM logged_teamtasks) + 1 AS id, 
+       (SELECT real_round FROM globalconfig WHERE id=1) AS round, 
+       *, 
+       now() AS ts
+FROM teamtasks
 WHERE team_id=%(team_id)s AND task_id=%(task_id)s
+UNION SELECT * FROM logged_teamtasks
+ORDER BY id DESC
 '''
 
 
