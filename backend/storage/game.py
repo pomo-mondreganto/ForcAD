@@ -235,7 +235,10 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
             )
 
 
-async def construct_scoreboard():
+async def construct_scoreboard() -> dict:
+    """Fetches and constructs the full scoreboard (state, teams, tasks, config)
+        using asyncio (for sanic webapi)
+    """
     redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     pipe.get('game_state')

@@ -23,7 +23,7 @@ def get_teams() -> List[models.Team]:
 
 
 async def teams_async_getter(redis_aio, pipe):
-    """Get list ofactive  teams registered in the database (async)"""
+    """Cache teams if not cached, then add fetch command to pipe"""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams:cached',
@@ -32,8 +32,8 @@ async def teams_async_getter(redis_aio, pipe):
     pipe.smembers('teams')
 
 
-async def get_all_teams_async() -> List[models.Task]:
-    """Get list of all tasks from database"""
+async def get_all_teams_async() -> List[models.Team]:
+    """Get list of all teams from database"""
     async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
         await curs.execute(models.Team.get_select_all_query())
         results = await curs.fetchall()
@@ -44,11 +44,9 @@ async def get_all_teams_async() -> List[models.Task]:
 
 def get_team_id_by_token(token: str) -> Optional[int]:
     """Get team by token
-
         :param token: token string
         :return: team id
     """
-
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
@@ -67,6 +65,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
 
 
 async def create_team(team: models.Team):
+    """Add new team to DB, reset cache & return created instance"""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_insert_query(), team.to_dict())
         result, = await curs.fetchone()
@@ -88,6 +87,7 @@ async def create_team(team: models.Team):
 
 
 async def update_team(team: models.Team):
+    """Update team, reset cache & return updated instance"""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_update_query(), team.to_dict())
 
@@ -98,6 +98,7 @@ async def update_team(team: models.Team):
 
 
 async def delete_team(team_id: int):
+    """Set active = False on a team"""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Team.get_delete_query(), {'id': team_id})
 
