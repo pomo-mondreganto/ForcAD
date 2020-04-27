@@ -6,9 +6,13 @@
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
-                <div :key="name" class="service-cell" v-for="{ id, name } in tasks">
+                <div
+                    :key="name"
+                    class="service-cell"
+                    v-for="{ id, name } in tasks"
+                >
                     {{ name }}
-                    <button @click="openTaskAdmin(id)" class="info">
+                    <button @click="openTaskAdmin(id)" class="edit">
                         <i class="fas fa-edit" />
                     </button>
                 </div>
@@ -42,7 +46,11 @@
                     >
                         <div class="team-name">{{ name }}</div>
                         <div class="ip">{{ ip }}</div>
-                        <button @click="openTeamAdmin(id)" class="info" v-on:click.stop>
+                        <button
+                            @click="openTeamAdmin(id)"
+                            class="edit"
+                            v-on:click.stop
+                        >
                             <i class="fas fa-edit" />
                         </button>
                     </div>
@@ -60,6 +68,8 @@
                     <div
                         v-for="{
                             id,
+                            teamId,
+                            taskId,
                             sla,
                             score,
                             stolen,
@@ -74,6 +84,12 @@
                         }"
                         :class="`status-${status}`"
                     >
+                        <button
+                            @click="openTeamTaskHistory(teamId, taskId)"
+                            class="tt-edit"
+                        >
+                            <i class="fas fa-edit" />
+                        </button>
                         <button class="info">
                             <i class="fas fa-info-circle" />
                             <span class="tooltip">{{
@@ -129,11 +145,24 @@ export default {
         },
         openTaskAdmin: function(id) {
             clearInterval(this.timer);
-            this.$router.push({ name: 'taskAdmin', params: { id } }).catch(() => {});
+            this.$router
+                .push({ name: 'taskAdmin', params: { id } })
+                .catch(() => {});
         },
         openTeamAdmin: function(id) {
             clearInterval(this.timer);
-            this.$router.push({ name: 'teamAdmin', params: { id } }).catch(() => {});
+            this.$router
+                .push({ name: 'teamAdmin', params: { id } })
+                .catch(() => {});
+        },
+        openTeamTaskHistory: function(teamId, taskId) {
+            clearInterval(this.timer);
+            this.$router
+                .push({
+                    name: 'adminTeamTaskLog',
+                    params: { teamId: teamId, taskId: taskId },
+                })
+                .catch(() => {});
         },
     },
 
@@ -342,6 +371,15 @@ export default {
         outline: 0;
         border: 1px solid #c6cad1;
     }
+}
+
+.edit {
+    @extend .info;
+}
+
+.tt-edit {
+    @extend .info;
+    left: calc(100% - 2.5em - 0.5em - 3em);
 }
 
 .tooltip {

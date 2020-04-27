@@ -6,49 +6,53 @@
         <p>{{ message }}</p>
         <p>
             Name:
-            <input type="text" v-model="task.name"/>
+            <input type="text" v-model="task.name" />
         </p>
         <p>
             Checker:
-            <input type="text" v-model="task.checker"/>
+            <input type="text" v-model="task.checker" />
         </p>
         <p>
             Gets:
-            <input type="number" v-model="task.gets"/>
+            <input type="number" v-model="task.gets" />
         </p>
         <p>
             Puts:
-            <input type="number" v-model="task.puts"/>
+            <input type="number" v-model="task.puts" />
         </p>
         <p>
             Places:
-            <input type="number" v-model="task.places"/>
+            <input type="number" v-model="task.places" />
         </p>
         <p>
             Checker timeout:
-            <input type="number" v-model="task.checker_timeout"/>
+            <input type="number" v-model="task.checker_timeout" />
         </p>
         <p>
             Checker type:
-            <input type="text" v-model="task.checker_type"/>
+            <input type="text" v-model="task.checker_type" />
         </p>
         <p>
             Env path:
-            <input type="text" v-model="task.env_path"/>
+            <input type="text" v-model="task.env_path" />
         </p>
         <p>
             Get period:
-            <input type="number" v-model="task.get_period"/>
+            <input type="number" v-model="task.get_period" />
         </p>
         <p>
             Default score:
-            <input type="number" v-model="task.default_score"/>
+            <input type="number" v-model="task.default_score" />
         </p>
         <p>
             Active:
-            <input type="checkbox" @input="task.active = $event.target.checked" :checked="task.active"/>
+            <input
+                type="checkbox"
+                @input="task.active = $event.target.checked"
+                :checked="task.active"
+            />
         </p>
-        <input type="submit" value="Submit"/>
+        <input type="submit" value="Submit" />
     </form>
 </template>
 
@@ -97,34 +101,34 @@ export default {
                     default_score: 2500,
                     active: true,
                 };
-                this.message = "Creating task";
+                this.message = 'Creating task';
             } else {
                 const { data: tasks } = await this.$http.get(
                     `${serverUrl}/api/admin/tasks/`
                 );
                 this.task = tasks.filter(({ id }) => id == this.taskId)[0];
-                this.message = `Editing task ${this.task.id} ${this.task.name}`
+                this.message = `Editing task ${this.task.id} ${this.task.name}`;
             }
         },
         submitForm: async function() {
             if (!this.taskId) {
                 const { data: task } = await this.$http.post(
                     `${serverUrl}/api/admin/tasks/`,
-                    this.task,
+                    this.task
                 );
-                this.$router.push({ name: 'taskAdmin', params: { id: task.id } }).catch(() => {});
+                this.$router
+                    .push({ name: 'taskAdmin', params: { id: task.id } })
+                    .catch(() => {});
             } else {
                 const { data: task } = await this.$http.put(
                     `${serverUrl}/api/admin/tasks/${this.taskId}/`,
-                    this.task,
+                    this.task
                 );
                 this.task = task;
             }
         },
-    }
+    },
 };
 </script>
 
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>

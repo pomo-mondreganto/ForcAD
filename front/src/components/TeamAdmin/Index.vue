@@ -83,8 +83,6 @@ export default {
                 this.team = teams.filter(({ id }) => id == this.teamId)[0];
                 this.message = `Editing team ${this.team.id} ${this.team.name}`;
             }
-
-            console.log(this.team);
         },
         submitForm: async function() {
             if (!this.teamId) {

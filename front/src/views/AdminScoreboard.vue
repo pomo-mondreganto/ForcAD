@@ -9,8 +9,12 @@
         </header>
         <container>
             <div class="create-group">
-                <button class="create-btn" @click="createTask">Create task</button>
-                <button class="create-btn" @click="createTeam">Create team</button>
+                <button class="create-btn" @click="createTask">
+                    Create task
+                </button>
+                <button class="create-btn" @click="createTeam">
+                    Create team
+                </button>
             </div>
             <admin-scoreboard
                 :updateRound="updateRound"

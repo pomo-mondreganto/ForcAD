@@ -8,6 +8,8 @@ import AdminScoreboard from '@/views/AdminScoreboard';
 import TaskAdmin from '@/views/TaskAdmin';
 import TeamAdmin from '@/views/TeamAdmin';
 import AdminLogin from '@/views/AdminLogin';
+import AdminTeamTaskLog from '@/views/AdminTeamTaskLog';
+
 import { serverUrl } from '@/config';
 
 Vue.use(VueRouter);
@@ -69,6 +71,14 @@ const routes = [
         path: '/admin/create_team/',
         name: 'createTeam',
         component: TeamAdmin,
+        meta: {
+            auth: true,
+        },
+    },
+    {
+        path: '/admin/teamtask_log/team/:teamId/task/:taskId/',
+        name: 'adminTeamTaskLog',
+        component: AdminTeamTaskLog,
         meta: {
             auth: true,
         },

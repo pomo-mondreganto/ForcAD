@@ -64,7 +64,6 @@ export default {
                 });
                 this.$router.push({ name: 'admin' }).catch(() => {});
             } catch (e) {
-                console.log(123);
                 this.error = e.response.data;
             }
         },
