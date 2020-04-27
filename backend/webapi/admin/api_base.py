@@ -31,7 +31,7 @@ class ApiSet:
 
     async def _try_call(self, func):
         if not hasattr(self, func):
-            raise NotFound()
+            raise NotFound('No such page')
         return await getattr(self, func)(self.request, **self.kwargs)
 
     async def get(self):
@@ -44,12 +44,12 @@ class ApiSet:
 
     async def put(self):
         if self.get_id_kwarg() not in self.kwargs:
-            raise NotFound()
+            raise NotFound('No id provided')
         return await self._try_call('update')
 
     async def delete(self):
         if self.get_id_kwarg() not in self.kwargs:
-            raise NotFound()
+            raise NotFound('No id provided')
         return await self._try_call('destroy')
 
     class Dispatch:

@@ -37,8 +37,8 @@ class BaseAdminTestCase(TestCase, AdminAuthMixin):
         self.assertFalse(r.ok)
 
     def test_authentication(self):
-        s1 = requests.Session()
-        r = s1.post(
+        self.s1 = requests.Session()
+        r = self.s1.post(
             'http://127.0.0.1:8080/api/admin/login/',
             json={
                 'username': 'some_username',
@@ -47,16 +47,22 @@ class BaseAdminTestCase(TestCase, AdminAuthMixin):
         )
         self.assertFalse(r.ok)
 
-        r = s1.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        r = self.s1.get(f'http://127.0.0.1:8080/api/admin/teams/')
         self.assertFalse(r.ok)
-        r = s1.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s1.get(f'http://127.0.0.1:8080/api/admin/tasks/')
         self.assertFalse(r.ok)
 
-        s2 = self.get_admin_sess()
-        r = s2.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        self.s2 = self.get_admin_sess()
+        r = self.s2.get(f'http://127.0.0.1:8080/api/admin/teams/')
         self.assertTrue(r.ok)
-        r = s2.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s2.get(f'http://127.0.0.1:8080/api/admin/tasks/')
         self.assertTrue(r.ok)
+
+    def tearDown(self):
+        if hasattr(self, 's1'):
+            self.s1.close()
+        if hasattr(self, 's2'):
+            self.s2.close()
 
 
 class TeamsTestCase(TestCase, AdminAuthMixin):
@@ -125,6 +131,9 @@ class TeamsTestCase(TestCase, AdminAuthMixin):
         full_data['active'] = False
         self.assertIn(full_data, new_teams)
         self.assertEqual(len(was_teams) + 1, len(new_teams))
+
+    def tearDown(self):
+        self.s.close()
 
 
 class TasksTestCase(TestCase, AdminAuthMixin):
@@ -208,3 +217,13 @@ class TasksTestCase(TestCase, AdminAuthMixin):
         full_data['active'] = False
         self.assertIn(full_data, new_tasks)
         self.assertEqual(len(was_tasks) + 1, len(new_tasks))
+
+    def tearDown(self):
+        self.s.close()
+
+    def test_teamtasks_api(self):
+        r = self.s.get(
+            f'http://127.0.0.1:8080/api/admin/teamtasks/',
+            params={'team_id': 1, 'task_id': 1},
+        )
+        self.assertTrue(r.ok)

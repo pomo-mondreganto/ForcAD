@@ -48,3 +48,9 @@ class TaskApi(ApiSet):
         updated = await storage.tasks.update_task(task)
         await emit_init_scoreboard()
         return json_response(updated.to_dict())
+
+    @staticmethod
+    async def destroy(_request, task_id):
+        await storage.tasks.delete_task(task_id)
+        await emit_init_scoreboard()
+        return json_response('ok')
