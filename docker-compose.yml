@@ -69,10 +69,10 @@ services:
       - TEST
     restart: on-failure
 
-  gevent_flag_submitter:
+  gevent_flag_receiver:
     build:
       context: .
-      dockerfile: docker_config/gevent_flag_submitter/Dockerfile
+      dockerfile: docker_config/gevent_flag_receiver/Dockerfile
     env_file:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
@@ -81,6 +81,7 @@ services:
       - 31337:31337
     environment:
       - TEST
+    tty: true
     restart: on-failure
 
   nginx:

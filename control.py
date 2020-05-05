@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import os
 import traceback
 
 import argparse
+import os
 import shutil
 import subprocess
 import time
@@ -296,6 +296,30 @@ def run_worker(args):
     run_command(command, cwd=BASE_DIR)
 
 
+def pause_game(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'stop',
+        'celerybeat',
+        'gevent_flag_receiver',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
+def resume_game(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'start',
+        'celerybeat',
+        'gevent_flag_receiver',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
 def run_flake(_args):
     command = [
         'flake8',
@@ -388,6 +412,19 @@ if __name__ == '__main__':
     worker_parser.add_argument('--database', type=str,
                                help='Postgres address for the worker',
                                required=True)
+
+    pause_game_parser = subparsers.add_parser(
+        'pause_game',
+        help='Stop updating rounds & receiving flags',
+    )
+    pause_game_parser.set_defaults(func=pause_game)
+
+    resume_game_parser = subparsers.add_parser(
+        'resume_game',
+        help='Start updating rounds & receiving flags '
+             '(counterpart of pause_game command)',
+    )
+    resume_game_parser.set_defaults(func=resume_game)
 
     flake_parser = subparsers.add_parser(
         'flake',

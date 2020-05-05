@@ -31,10 +31,10 @@ services:
       dockerfile: docker_config/webapi/Dockerfile.fast
     restart: "no"
 
-  gevent_flag_submitter:
+  gevent_flag_receiver:
     build:
       context: .
-      dockerfile: docker_config/gevent_flag_submitter/Dockerfile.fast
+      dockerfile: docker_config/gevent_flag_receiver/Dockerfile.fast
     restart: "no"
 
   nginx:

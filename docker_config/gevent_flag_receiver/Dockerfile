@@ -17,7 +17,7 @@ RUN chmod +x /await_start.sh
 
 ADD backend /app
 
-ADD ./docker_config/gevent_flag_submitter/entrypoint.sh /entrypoint.sh
+ADD ./docker_config/gevent_flag_receiver/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

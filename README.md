@@ -45,7 +45,7 @@ or send tokens privately. Tokens have one upside: all requests can be masquerade
 
 Platform consists of several modules: 
 
-- **TCP flag submitter** (python tcp server on port 31337). 
+- **TCP flag receiver** (gevent tcp server on port 31337). 
 For each connection send team token in the first line, then flags, each in a new line. 
 
 - **Celerybeat** sends round start events to `celery`.
