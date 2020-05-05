@@ -92,7 +92,7 @@ BEGIN
     _attacker_delta = scale / (1 + exp((sqrt(attacker_score) - sqrt(victim_score)) * norm));
     _victim_delta = -least(victim_score, _attacker_delta);
 
-    IF inflate THEN
+    IF NOT inflate THEN
         _attacker_delta = least(_attacker_delta, -_victim_delta);
     END IF;
 
