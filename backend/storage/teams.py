@@ -11,7 +11,7 @@ def get_teams() -> List[models.Team]:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='teams:cached',
+            cache_key='teams',
             cache_func=caching.cache_teams,
             cache_args=(pipeline,),
         )
@@ -26,7 +26,7 @@ async def teams_async_getter(redis_aio, pipe):
     """Cache teams if not cached, then add fetch command to pipe"""
     await async_cache_helper(
         redis_aio=redis_aio,
-        cache_key='teams:cached',
+        cache_key='teams',
         cache_func=caching.cache_teams,
     )
     pipe.smembers('teams')
@@ -50,7 +50,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='teams:cached',
+            cache_key='teams',
             cache_func=caching.cache_teams,
             cache_args=(pipeline,),
         )
@@ -81,7 +81,7 @@ async def create_team(team: models.Team):
             await curs.execute(storage.tasks.TEAMTASK_INSERT_QUERY, each)
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('teams', 'teams:cached')
+    await redis_aio.delete('teams')
 
     return team
 
@@ -92,7 +92,7 @@ async def update_team(team: models.Team):
         await curs.execute(team.get_update_query(), team.to_dict())
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('teams', 'teams:cached')
+    await redis_aio.delete('teams')
 
     return team
 
@@ -103,4 +103,4 @@ async def delete_team(team_id: int):
         await curs.execute(models.Team.get_delete_query(), {'id': team_id})
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('teams', 'teams:cached')
+    await redis_aio.delete('teams')

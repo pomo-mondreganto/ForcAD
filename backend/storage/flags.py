@@ -34,13 +34,12 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         # optimization of redis request count
         cached_stolen = pipeline.exists(
-            f'team:{attacker}:stolen_flags:cached',
-        ).execute()
+            f'team:{attacker}:stolen_flags').execute()
 
         if not cached_stolen:
             cache_helper(
                 pipeline=pipeline,
-                cache_key=f'team:{attacker}:stolen_flags:cached',
+                cache_key=f'team:{attacker}:stolen_flags',
                 cache_func=caching.cache_last_stolen,
                 cache_args=(attacker, round, pipeline),
             )
@@ -97,11 +96,11 @@ def get_flag_by_field(field_name: str, field_value,
         :raises: FlagSubmitException if nothing found
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('flags:cached').execute()
+        cached, = pipeline.exists('flags').execute()
         if not cached:
             cache_helper(
                 pipeline=pipeline,
-                cache_key='flags:cached',
+                cache_key='flags',
                 cache_func=caching.cache_last_flags,
                 cache_args=(round, pipeline),
             )
@@ -154,7 +153,7 @@ def get_random_round_flag(team_id: int, task_id: int, round: int,
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='flags:cached',
+            cache_key='flags',
             cache_func=caching.cache_last_flags,
             cache_args=(current_round, pipeline),
         )

@@ -35,7 +35,7 @@ def get_tasks() -> List[models.Task]:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='tasks:cached',
+            cache_key='tasks',
             cache_func=caching.cache_tasks,
             cache_args=(pipeline,),
         )
@@ -50,7 +50,7 @@ async def tasks_async_getter(redis_aio, pipe):
     """Cache tasks if not cached, then add fetch command to pipe"""
     await async_cache_helper(
         redis_aio=redis_aio,
-        cache_key='tasks:cached',
+        cache_key='tasks',
         cache_func=caching.cache_tasks,
     )
     pipe.smembers('tasks')
@@ -218,7 +218,7 @@ async def create_task(task: models.Task) -> models.Task:
             await curs.execute(TEAMTASK_INSERT_QUERY, each)
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('tasks', 'tasks:cached')
+    await redis_aio.delete('tasks')
 
     return task
 
@@ -229,7 +229,7 @@ async def update_task(task: models.Task) -> models.Task:
         await curs.execute(task.get_update_query(), task.to_dict())
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('tasks', 'tasks:cached')
+    await redis_aio.delete('tasks')
 
     return task
 
@@ -240,7 +240,7 @@ async def delete_task(task_id: int):
         await curs.execute(models.Task.get_delete_query(), {'id': task_id})
 
     redis_aio = await storage.get_async_redis_storage()
-    await redis_aio.delete('tasks', 'tasks:cached')
+    await redis_aio.delete('tasks')
 
 
 async def get_admin_teamtask_history(team_id: int, task_id: int) -> List[dict]:

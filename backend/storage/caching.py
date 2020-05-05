@@ -24,12 +24,11 @@ def cache_teams(pipeline):
 
     teams = list(models.Team.from_dict(team) for team in teams)
 
-    pipeline.delete('teams', 'teams:cached')
+    pipeline.delete('teams')
     if teams:
         pipeline.sadd('teams', *[team.to_json() for team in teams])
     for team in teams:
         pipeline.set(f'team:token:{team.token}', team.id)
-    pipeline.set('teams:cached', 1)
 
 
 def cache_tasks(pipeline):
@@ -43,10 +42,9 @@ def cache_tasks(pipeline):
         tasks = curs.fetchall()
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
-    pipeline.delete('tasks', 'tasks:cached')
+    pipeline.delete('tasks')
     if tasks:
         pipeline.sadd('tasks', *[task.to_json() for task in tasks])
-    pipeline.set('tasks:cached', 1)
 
 
 def cache_last_stolen(team_id: int, round: int, pipeline):
@@ -70,16 +68,12 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         )
         flags = curs.fetchall()
 
-    pipeline.delete(
-        f'team:{team_id}:stolen_flags:cached',
-        f'team:{team_id}:stolen_flags',
-    )
+    pipeline.delete(f'team:{team_id}:stolen_flags')
     if flags:
         pipeline.sadd(
             f'team:{team_id}:stolen_flags',
             *[flag_id for flag_id, in flags],
         )
-    pipeline.set(f'team:{team_id}:stolen_flags:cached', 1)
 
 
 def cache_last_flags(round: int, pipeline):
@@ -98,7 +92,6 @@ def cache_last_flags(round: int, pipeline):
                      (round - game_config.flag_lifetime,))
         flags = curs.fetchall()
 
-    pipeline.delete('flags:cached')
     flag_models = list(helplib.models.Flag.from_dict(data) for data in flags)
 
     if flag_models:
@@ -115,12 +108,9 @@ def cache_last_flags(round: int, pipeline):
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 
-    pipeline.set('flags:cached', 1)
-
 
 def cache_global_config(pipeline):
     """Put global config to cache (without round or game_running)"""
     global_config = storage.game.get_db_global_config()
     data = global_config.to_json()
     pipeline.set('global_config', data)
-    pipeline.set('global_config:cached', 1)

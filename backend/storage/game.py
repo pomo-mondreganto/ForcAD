@@ -100,7 +100,7 @@ def get_current_global_config() -> models.GlobalConfig:
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='global_config:cached',
+            cache_key='global_config',
             cache_func=storage.caching.cache_global_config,
             cache_args=(pipeline,),
         )
@@ -115,7 +115,7 @@ async def global_config_async_getter(redis_aio, pipe):
     """Async version of get_current_global_config"""
     await async_cache_helper(
         redis_aio=redis_aio,
-        cache_key='global_config:cached',
+        cache_key='global_config',
         cache_func=caching.cache_global_config,
     )
     pipe.get('global_config')
