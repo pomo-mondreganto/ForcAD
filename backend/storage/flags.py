@@ -16,14 +16,17 @@ WHERE f.round >= %s AND f.task_id IN %s
 
 
 def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
-    """Check that flag is valid for current round, add it to cache,
-        then add to db
+    """
+    Flag validation function.
 
-        :param flag: Flag model instance
-        :param attacker: attacker team id
-        :param round: current round
+    Checks that flag is valid for current round, adds it to cache,
+    then adds to db
 
-        :raises: an instance of FlagSubmitException on validation error
+    :param flag: Flag model instance
+    :param attacker: attacker team id
+    :param round: current round
+
+    :raises FlagSubmitException: on validation error
     """
     game_config = storage.game.get_current_global_config()
     if round - flag.round > game_config.flag_lifetime:
@@ -58,10 +61,10 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int, round: int):
 
 
 def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
-    """Inserts a newly generated flag into the database and cache
+    """Inserts a newly generated flag into the database and cache.
 
-        :param flag: Flag model instance to be inserted
-        :return: flag with set "id" field
+    :param flag: Flag model instance to be inserted
+    :returns: flag with set "id" field
     """
 
     with storage.db_cursor() as (conn, curs):
@@ -87,13 +90,14 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
 
 def get_flag_by_field(field_name: str, field_value,
                       round: int) -> helplib.models.Flag:
-    """Get flag by generic field
+    """
+    Get flag by generic field.
 
-        :param field_name: field name to ask cache for
-        :param field_value: value of the field "field_name" to filter on
-        :param round: current round
-        :return: Flag model instance with flag.field_name == field_value
-        :raises: FlagSubmitException if nothing found
+    :param field_name: field name to ask cache for
+    :param field_value: value of the field "field_name" to filter on
+    :param round: current round
+    :returns: Flag model instance with flag.field_name == field_value
+    :raises FlagSubmitException: if nothing found
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('flags').execute()
@@ -111,7 +115,8 @@ def get_flag_by_field(field_name: str, field_value,
 
     if not flag_exists:
         raise helplib.exceptions.FlagSubmitException(
-            'Flag is invalid or too old')
+            'Flag is invalid or too old',
+        )
 
     flag = helplib.models.Flag.from_json(flag_json)
 
@@ -119,35 +124,38 @@ def get_flag_by_field(field_name: str, field_value,
 
 
 def get_flag_by_str(flag_str: str, round: int) -> helplib.models.Flag:
-    """Get flag by its string value
+    """
+    Get flag by its string value.
 
-        :param flag_str: flag value
-        :param round: current round
-        :return: Flag model instance
+    :param flag_str: flag value
+    :param round: current round
+    :returns: Flag model instance
     """
     return get_flag_by_field(field_name='str', field_value=flag_str,
                              round=round)
 
 
 def get_flag_by_id(flag_id: int, round: int) -> helplib.models.Flag:
-    """Get flag by its id value
+    """
+    Get flag by its id value.
 
-            :param flag_id: flag id
-            :param round: current round
-            :return: Flag model instance
+    :param flag_id: flag id
+    :param round: current round
+    :return: Flag model instance
     """
     return get_flag_by_field(field_name='id', field_value=flag_id, round=round)
 
 
 def get_random_round_flag(team_id: int, task_id: int, round: int,
                           current_round: int) -> Optional[helplib.models.Flag]:
-    """Get random flag for team generated for specified round and task
+    """
+    Get random flag for team generated for specified round and task.
 
-        :param team_id: team id
-        :param task_id: task id
-        :param round: round to fetch flag for
-        :param current_round: current round
-        :return: Flag mode instance or None if no flag from rounds exist
+    :param team_id: team id
+    :param task_id: task id
+    :param round: round to fetch flag for
+    :param current_round: current round
+    :returns: Flag mode instance or None if no flag from rounds exist
     """
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
@@ -170,8 +178,10 @@ def get_random_round_flag(team_id: int, task_id: int, round: int,
 def get_attack_data(
         current_round: int,
         tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
-    """Get unexpired flags for round in format
-        {task.name: {team.ip: [flag.public_data]}}
+    """
+    Get unexpired flags for round.
+
+    :returns: flags in format {task.name: {team.ip: [flag.public_data]}}
     """
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}

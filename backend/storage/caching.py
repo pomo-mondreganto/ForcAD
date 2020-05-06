@@ -14,11 +14,12 @@ _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
 
 
 def cache_teams(pipeline):
-    """Put "teams" table data from database to cache
-
-    Just adds commands to pipeline stack, don't forget to execute afterwards
     """
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    Put "teams" table data from database to cache.
+
+    Just adds commands to pipeline stack, don't forget to execute afterwards.
+    """
+    with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(models.Team.get_select_active_query())
         teams = curs.fetchall()
 
@@ -32,12 +33,13 @@ def cache_teams(pipeline):
 
 
 def cache_tasks(pipeline):
-    """Put active tasks table data from database to cache
+    """
+    Put active tasks table data from database to cache.
 
     Just adds commands to pipeline stack (to support aioredis),
-    don't forget to execute afterwards
+    don't forget to execute afterwards.
     """
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(models.Task.get_select_active_query())
         tasks = curs.fetchall()
 
@@ -48,17 +50,18 @@ def cache_tasks(pipeline):
 
 
 def cache_last_stolen(team_id: int, round: int, pipeline):
-    """Put stolen flags for attacker team from last
-        "flag_lifetime" rounds to cache
+    """
+    Caches stolen flags from "flag_lifetime" rounds
 
-        :param team_id: attacker team id
-        :param round: current round
-        :param pipeline: redis connection to add command to
     Just adds commands to pipeline stack, don't forget to execute afterwards
+
+    :param team_id: attacker team id
+    :param round: current round
+    :param pipeline: redis connection to add command to
     """
     game_config = storage.game.get_current_global_config()
 
-    with storage.db_cursor() as (conn, curs):
+    with storage.db_cursor() as (_, curs):
         curs.execute(
             _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY,
             (
@@ -77,17 +80,18 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
 
 
 def cache_last_flags(round: int, pipeline):
-    """Put all generated flags from last "flag_lifetime" rounds to cache
-
-        :param round: current round
-        :param pipeline: redis connection to add command to
+    """
+    Cache all generated flags from last "flag_lifetime" rounds.
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
+
+    :param round: current round
+    :param pipeline: redis connection to add command to
     """
     game_config = storage.game.get_current_global_config()
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY,
                      (round - game_config.flag_lifetime,))
         flags = curs.fetchall()
@@ -110,7 +114,7 @@ def cache_last_flags(round: int, pipeline):
 
 
 def cache_global_config(pipeline):
-    """Put global config to cache (without round or game_running)"""
+    """Put global config to cache (without round or game_running)."""
     global_config = storage.game.get_db_global_config()
     data = global_config.to_json()
     pipeline.set('global_config', data)

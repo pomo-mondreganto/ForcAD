@@ -31,7 +31,7 @@ ORDER BY id DESC
 
 
 def get_tasks() -> List[models.Task]:
-    """Get list of tasks registered in database"""
+    """Get list of tasks registered in database."""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
@@ -47,7 +47,7 @@ def get_tasks() -> List[models.Task]:
 
 
 async def tasks_async_getter(redis_aio, pipe):
-    """Cache tasks if not cached, then add fetch command to pipe"""
+    """Cache tasks if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='tasks',
@@ -57,7 +57,7 @@ async def tasks_async_getter(redis_aio, pipe):
 
 
 async def get_all_tasks_async() -> List[models.Task]:
-    """Get list of all tasks from database"""
+    """Get list of all tasks from database."""
     async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
         await curs.execute(models.Task.get_select_all_query())
         results = await curs.fetchall()
@@ -68,12 +68,13 @@ async def get_all_tasks_async() -> List[models.Task]:
 
 def update_task_status(task_id: int, team_id: int, round: int,
                        checker_verdict: models.CheckerVerdict):
-    """Update task status in database
+    """
+    Update task status in database.
 
-        :param task_id:
-        :param team_id:
-        :param round:
-        :param checker_verdict: instance of CheckerActionResult
+    :param task_id:
+    :param team_id:
+    :param round:
+    :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
     public = checker_verdict.public_message
@@ -106,7 +107,7 @@ def update_task_status(task_id: int, team_id: int, round: int,
 
 
 def get_last_teamtasks() -> List[dict]:
-    """Fetch team tasks, last for each team for each task"""
+    """Fetch team tasks, last for each team for each task."""
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
@@ -129,8 +130,10 @@ def get_last_teamtasks() -> List[dict]:
 
 
 def get_teamtasks_from_db() -> List[dict]:
-    """Fetch current team tasks from database
-        :return: dictionary of team tasks or None
+    """
+    Fetch current team tasks from database.
+
+    :returns: dictionary of team tasks or None
     """
     with storage.db_cursor(dict_cursor=True) as (conn, curs):
         curs.execute(_SELECT_TEAMTASKS_QUERY)
@@ -140,7 +143,7 @@ def get_teamtasks_from_db() -> List[dict]:
 
 
 async def get_teamtasks_of_team_async(team_id: int) -> List[dict]:
-    """Fetch teamtasks for team for all tasks"""
+    """Fetch teamtasks for team for all tasks."""
     redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
@@ -164,7 +167,10 @@ async def get_teamtasks_of_team_async(team_id: int) -> List[dict]:
 
 
 def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
-    """Remove private message and rename public message
+    """
+    Filter sensitive data from teamtasks.
+
+    Remove private message and rename public message
     to "message" for a list of teamtasks, remove 'command'
     """
     result = []
@@ -180,8 +186,10 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
 
 
 def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
-    """Force correct types on teamtasks list
-        :returns: processed list
+    """
+    Force correct types on teamtasks list.
+
+    :returns: processed list
     """
     casts = (
         (
@@ -202,7 +210,7 @@ def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
 
 
 async def create_task(task: models.Task) -> models.Task:
-    """Add new task to DB, reset cache & return created instance"""
+    """Add new task to DB, reset cache & return created instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(task.get_insert_query(), task.to_dict())
         result, = await curs.fetchone()
@@ -224,7 +232,7 @@ async def create_task(task: models.Task) -> models.Task:
 
 
 async def update_task(task: models.Task) -> models.Task:
-    """Update task, reset cache & return updated instance"""
+    """Update task, reset cache & return updated instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(task.get_update_query(), task.to_dict())
 
@@ -235,7 +243,7 @@ async def update_task(task: models.Task) -> models.Task:
 
 
 async def delete_task(task_id: int):
-    """Set active = False on a task"""
+    """Set active = False on a task."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Task.get_delete_query(), {'id': task_id})
 
@@ -244,7 +252,7 @@ async def delete_task(task_id: int):
 
 
 async def get_admin_teamtask_history(team_id: int, task_id: int) -> List[dict]:
-    """Get teamtasks from log table by team & task ids pair"""
+    """Get teamtasks from log table by team & task ids pair."""
     async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
         await curs.execute(
             _SELECT_TEAMTASK_LOG_QUERY,

@@ -7,7 +7,7 @@ from storage import caching
 
 
 def get_teams() -> List[models.Team]:
-    """Get list of teams registered in the database"""
+    """Get list of teams registered in the database."""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
@@ -23,7 +23,7 @@ def get_teams() -> List[models.Team]:
 
 
 async def teams_async_getter(redis_aio, pipe):
-    """Cache teams if not cached, then add fetch command to pipe"""
+    """Cache teams if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
         cache_key='teams',
@@ -33,7 +33,7 @@ async def teams_async_getter(redis_aio, pipe):
 
 
 async def get_all_teams_async() -> List[models.Team]:
-    """Get list of all teams from database"""
+    """Get list of all teams from database."""
     async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
         await curs.execute(models.Team.get_select_all_query())
         results = await curs.fetchall()
@@ -43,9 +43,11 @@ async def get_all_teams_async() -> List[models.Team]:
 
 
 def get_team_id_by_token(token: str) -> Optional[int]:
-    """Get team by token
-        :param token: token string
-        :return: team id
+    """
+    Get team by token.
+
+    :param token: token string
+    :return: team id
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
@@ -65,7 +67,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
 
 
 async def create_team(team: models.Team):
-    """Add new team to DB, reset cache & return created instance"""
+    """Add new team to DB, reset cache & return created instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_insert_query(), team.to_dict())
         result, = await curs.fetchone()
@@ -87,7 +89,7 @@ async def create_team(team: models.Team):
 
 
 async def update_team(team: models.Team):
-    """Update team, reset cache & return updated instance"""
+    """Update team, reset cache & return updated instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_update_query(), team.to_dict())
 
@@ -98,7 +100,7 @@ async def update_team(team: models.Team):
 
 
 async def delete_team(team_id: int):
-    """Set active = False on a team"""
+    """Set active = False on a team."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Team.get_delete_query(), {'id': team_id})
 
