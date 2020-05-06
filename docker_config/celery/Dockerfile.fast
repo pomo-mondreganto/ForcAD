@@ -20,16 +20,16 @@ ENV PWNLIB_NOTERM=true
 #RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 ################
 
-ADD ./checkers/requirements.txt /checker_requirements.txt
+COPY ./checkers/requirements.txt /checker_requirements.txt
 RUN pip install -r /checker_requirements.txt
 
-ADD ./checkers /checkers
+COPY ./checkers /checkers
 
 ########## END CUSTOMIZE ##########
 
-ADD backend /app
+COPY backend /app
 
-ADD ./docker_config/celery/entrypoint.sh /entrypoint.sh
+COPY ./docker_config/celery/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 USER nobody
