@@ -124,6 +124,7 @@ CREATE OR REPLACE FUNCTION get_first_bloods()
                 attacker_name VARCHAR(255),
                 task_name     VARCHAR(255),
                 attacker_id   INTEGER,
+                victim_id     INTEGER,
                 task_id       INTEGER,
                 vuln_number   INTEGER
             )
@@ -132,13 +133,16 @@ $$
 BEGIN
     RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id, f.vuln_number) sf.submit_time AS submit_time,
                                                                                    sf.attacker_id AS attacker_id,
+                                                                                   f.team_id      AS victim_id,
                                                                                    f.task_id      AS task_id,
                                                                                    f.vuln_number  as vuln_number
                                      FROM stolenflags sf
-                                              JOIN flags f ON f.id = sf.flag_id)
+                                              JOIN flags f ON f.id = sf.flag_id
+                                     ORDER BY f.task_id, f.vuln_number, sf.submit_time)
                  SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
                         tk.name                AS task_name,
+                        preprocess.victim_id   AS victim_id,
                         tm.id                  AS attacker_id,
                         tk.id                  AS task_id,
                         preprocess.vuln_number AS vuln_number

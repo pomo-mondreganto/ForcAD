@@ -22,6 +22,7 @@ from helplib import exceptions
 
 OK_SUBMITS = 0
 BAD_SUBMITS = 0
+CONNECTIONS = 0
 
 logger = logging.getLogger('gevent_flag_receiver')
 
@@ -38,20 +39,25 @@ logger.setLevel(logging.INFO)
 def log_routine():
     was_ok = OK_SUBMITS
     was_bad = BAD_SUBMITS
+    was_conn = CONNECTIONS
     while True:
-        new_ok, new_bad = OK_SUBMITS, BAD_SUBMITS
+        new_ok, new_bad, new_conn = OK_SUBMITS, BAD_SUBMITS, CONNECTIONS
         logger.info(
             f"OK: {new_ok - was_ok:>6}, BAD: {new_bad - was_bad:>6}, "
-            f"TOTOK: {new_ok:>6}, TOTBAD: {new_bad:>6}"
+            f"CONN: {new_conn - was_conn}, "
+            f"TOTOK: {new_ok:>6}, TOTBAD: {new_bad:>6}, "
+            f"TOTCONN: {new_conn:>6}"
         )
-        was_ok, was_bad = new_ok, new_bad
+        was_ok, was_bad, was_conn = new_ok, new_bad, new_conn
         gevent.sleep(5)
 
 
 def handle(socket, address):
-    global OK_SUBMITS, BAD_SUBMITS
+    global OK_SUBMITS, BAD_SUBMITS, CONNECTIONS
 
-    logger.debug('Accepted connection from:', address)
+    CONNECTIONS += 1
+
+    logger.debug(f'Accepted connection from {address}')
 
     socket.sendall(b'Welcome! Please, enter your team token:\n')
     rfile = socket.makefile(mode='rb')
@@ -60,6 +66,7 @@ def handle(socket, address):
     try:
         token = token.decode().strip()
     except UnicodeDecodeError:
+        logger.debug(f'Could not decode token from {address}: {token}')
         socket.sendall(b'Invalid team token\n')
         rfile.close()
         return
@@ -67,6 +74,7 @@ def handle(socket, address):
     team_id = storage.teams.get_team_id_by_token(token)
 
     if not team_id:
+        logger.debug(f'Bad token from {address}: {token}')
         socket.sendall(b'Invalid team token\n')
         rfile.close()
         return
@@ -82,6 +90,7 @@ def handle(socket, address):
         try:
             flag_str = flag_data.decode().strip()
         except UnicodeDecodeError:
+            logger.debug(f'Could not decode flag from {address}')
             socket.sendall(b'Invalid flag\n')
             continue
 
@@ -98,9 +107,11 @@ def handle(socket, address):
             )
         except exceptions.FlagSubmitException as e:
             BAD_SUBMITS += 1
+            logger.debug(f'Invalid flag from {address}: {e}')
             socket.sendall(str(e).encode() + b'\n')
         else:
             OK_SUBMITS += 1
+            logger.debug(f'Good flag from {address}: {attacker_delta}')
             socket.sendall(
                 f'Flag accepted! Earned {attacker_delta} '
                 f'flag points!\n'.encode()

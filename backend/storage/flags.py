@@ -104,7 +104,7 @@ def get_flag_by_field(field_name: str, field_value,
         if not cached:
             cache_helper(
                 pipeline=pipeline,
-                cache_key='flags',
+                cache_key='flags:cached',
                 cache_func=caching.cache_last_flags,
                 cache_args=(round, pipeline),
             )
@@ -161,7 +161,7 @@ def get_random_round_flag(team_id: int, task_id: int, round: int,
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='flags',
+            cache_key='flags:cached',
             cache_func=caching.cache_last_flags,
             cache_args=(current_round, pipeline),
         )

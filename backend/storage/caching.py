@@ -103,6 +103,7 @@ def cache_last_flags(round: int, pipeline):
             f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
             for flag in flag_models])
 
+    pipeline.set('flags:cached', 1)
     for flag in flag_models:
         pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
         pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)

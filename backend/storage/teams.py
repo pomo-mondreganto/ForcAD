@@ -49,13 +49,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
     :param token: token string
     :return: team id
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cache_helper(
-            pipeline=pipeline,
-            cache_key='teams',
-            cache_func=caching.cache_teams,
-            cache_args=(pipeline,),
-        )
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         team_id, = pipeline.get(f'team:token:{token}').execute()
 
     try:
