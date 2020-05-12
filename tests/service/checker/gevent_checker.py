@@ -1,8 +1,9 @@
-import os
-
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parent
+sys.path.insert(0, str(BASE_DIR))
 
 from test_service_lib import *
 
@@ -20,7 +21,11 @@ class Checker(BaseChecker):
         try:
             super(Checker, self).action(action, *args, **kwargs)
         except requests.exceptions.ConnectionError:
-            self.cquit(Status.DOWN, 'Connection error', 'Got requests connection error')
+            self.cquit(
+                Status.DOWN,
+                'Connection error',
+                'Got requests connection error',
+            )
 
     def check(self):
         self.mch.ping()

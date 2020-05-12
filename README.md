@@ -322,9 +322,10 @@ absolute paths inside Docker. For example, the following is incorrect: `open('lo
 to open `/local_file.txt` instead of `/checkers/task/local_file.txt`. Correct usage would be
 
 ```python
-import os
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-open(os.path.join(BASE_DIR, 'local_file.txt'))
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parent
+local_path = BASE_DIR / f'local_file.txt'
 ```
 
 #### Modifying checker container

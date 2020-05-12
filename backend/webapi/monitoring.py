@@ -39,7 +39,9 @@ class MonitorClient:
 
             data = kjson.loads(data)
             if data['type'] == 'flag_submit':
-                self.flag_submits_metric.labels(**data['data']).inc()
+                self.flag_submits_metric.labels(**data['data']).inc(
+                    amount=data.get('value', 1),
+                )
             else:
                 print('Unknown metric type:', data)
 

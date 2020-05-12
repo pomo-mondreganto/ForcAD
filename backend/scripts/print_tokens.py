@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import os
-
 import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
 
 import storage
 

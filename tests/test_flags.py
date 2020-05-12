@@ -1,19 +1,19 @@
-import os
 import socket
 import subprocess
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
 from unittest import TestCase
 
 import requests
 from psycopg2 import pool, extras
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
-TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
-sys.path.insert(0, BACKEND_DIR)
-sys.path.insert(0, TESTS_DIR)
+PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
+BACKEND_DIR = PROJECT_DIR / 'backend'
+TESTS_DIR = PROJECT_DIR / 'tests'
+sys.path.insert(0, str(BACKEND_DIR))
+sys.path.insert(0, str(TESTS_DIR))
 
 import config
 from helpers import wait_rounds
@@ -22,7 +22,8 @@ from helpers import wait_rounds
 class FlagSubmitTestCase(TestCase):
     def setUp(self) -> None:
         command = ['./control.py', 'print_tokens']
-        out = subprocess.check_output(command, cwd=PROJECT_DIR).decode().split('\n')
+        out = subprocess.check_output(command, cwd=PROJECT_DIR)
+        out = out.decode().split('\n')
         for line in out:
             if not line:
                 continue
@@ -34,7 +35,11 @@ class FlagSubmitTestCase(TestCase):
 
         database_config = config.get_db_config()
         database_config['host'] = '127.0.0.1'
-        self.db_pool = pool.SimpleConnectionPool(minconn=1, maxconn=20, **database_config)
+        self.db_pool = pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=20,
+            **database_config,
+        )
 
     def get_last_flags_from_db(self, team_token):
         conn = self.db_pool.getconn()
@@ -48,7 +53,7 @@ class FlagSubmitTestCase(TestCase):
         curs.execute(query, (team_token,))
         return curs.fetchall()
 
-    def submit_flags_to_tcp_mux(self, token, flags=None, token_valid=True):
+    def submit_flags_to_tcp(self, token, flags=None, token_valid=True):
         sock = socket.socket()
         sock.connect(('127.0.0.1', 31337))
         time.sleep(0.5)
@@ -92,13 +97,13 @@ class FlagSubmitTestCase(TestCase):
         ok_flags = self.get_last_flags_from_db(self.working_token)
         ok_flags = [flag['flag'] for flag in ok_flags]
 
-        self.submit_flags_to_tcp_mux(
+        self.submit_flags_to_tcp(
             token='invalid token',
             flags=[],
             token_valid=False,
         )
 
-        results = self.submit_flags_to_tcp_mux(
+        results = self.submit_flags_to_tcp(
             token=self.unreachable_token,
             flags=ok_flags,
             token_valid=True,
@@ -108,7 +113,7 @@ class FlagSubmitTestCase(TestCase):
             res = res.lower()
             self.assertIn('accepted', res)
 
-        results = self.submit_flags_to_tcp_mux(
+        results = self.submit_flags_to_tcp(
             token=self.unreachable_token,
             flags=ok_flags,
             token_valid=True,
@@ -119,7 +124,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('already stolen', res)
 
-        results = self.submit_flags_to_tcp_mux(
+        results = self.submit_flags_to_tcp(
             token=self.working_token,
             flags=ok_flags,
             token_valid=True,
@@ -130,7 +135,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('own', res)
 
-        results = self.submit_flags_to_tcp_mux(
+        results = self.submit_flags_to_tcp(
             token=self.working_token,
             flags=['INVALID_FLAG', 'A' * 31 + '='],
             token_valid=True,

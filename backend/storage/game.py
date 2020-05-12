@@ -1,10 +1,10 @@
 import time
-from kombu import Producer
 from typing import Optional
 
 import storage
 from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
+from helplib.exceptions import FlagSubmitException
 from storage import caching
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
@@ -165,7 +165,9 @@ async def get_attack_data(loop) -> str:
     return attack_data
 
 
-def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
+def handle_attack(attacker_id: int,
+                  flag_str: str,
+                  round: int) -> models.AttackResult:
     """
     Main routine for attack validation & state change.
 
@@ -176,27 +178,21 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
     :param flag_str: flag to be checked
     :param round: round of the attack
 
-    :raises FlagSubmitException: when flag check was failed
     :return: attacker rating change
     """
 
-    monitor_data = {
-        'attacker_id': attacker_id,
-        'victim_id': 0,
-        'task_id': 0,
-        'submit_ok': False,
-    }
+    result = models.AttackResult(attacker_id=attacker_id)
 
     try:
         flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
-        monitor_data['victim_id'] = flag.team_id
-        monitor_data['task_id'] = flag.task_id
+        result.victim_id = flag.team_id
+        result.task_id = flag.task_id
         storage.flags.try_add_stolen_flag(
             flag=flag,
             attacker=attacker_id,
             round=round,
         )
-        monitor_data['submit_ok'] = True
+        result.submit_ok = True
 
         with storage.db_cursor() as (conn, curs):
             curs.callproc(
@@ -210,6 +206,10 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
             )
             attacker_delta, victim_delta = curs.fetchone()
             conn.commit()
+
+        result.attacker_delta = attacker_delta
+        result.victim_delta = victim_delta
+        result.message = f'Flag accepted! Earned {attacker_delta} flag points!'
 
         flag_data = {
             'attacker_id': attacker_id,
@@ -225,21 +225,10 @@ def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
             namespace='/live_events',
         )
 
-        return attacker_delta
+    except FlagSubmitException as e:
+        result.message = str(e)
 
-    finally:
-        monitor_message = {
-            'type': 'flag_submit',
-            'data': monitor_data,
-        }
-        conn = storage.get_broker_connection()
-        with conn.channel() as channel:
-            producer = Producer(channel)
-            producer.publish(
-                monitor_message,
-                exchange='',
-                routing_key='forcad-monitoring',
-            )
+    return result
 
 
 async def construct_scoreboard() -> dict:

@@ -5,41 +5,37 @@ import os
 import pytz
 import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
 
 import storage
 import yaml
 
 from helplib import models
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_DIR = BASE_DIR / 'config'
 CONFIG_FILENAME = 'config.yml'
 
 if os.environ.get('TEST'):
     CONFIG_FILENAME = 'test_config.yml'
 
-SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
+SCRIPTS_DIR = BASE_DIR / 'scripts'
 
 
 def run():
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    with open(conf_path) as f:
-        file_config = yaml.load(f, Loader=yaml.FullLoader)
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    with conf_path.open(mode='r') as f:
+        file_config = yaml.safe_load(f)
 
     with storage.db_cursor() as (conn, curs):
-        create_tables_path = os.path.join(SCRIPTS_DIR, 'create_tables.sql')
-        with open(create_tables_path) as f:
-            create_tables_query = f.read()
+        create_tables_path = SCRIPTS_DIR / 'create_tables.sql'
+        create_tables_query = create_tables_path.read_text()
         curs.execute(create_tables_query)
 
-        create_functions_path = os.path.join(
-            SCRIPTS_DIR,
-            'create_functions.sql',
-        )
-        with open(create_functions_path) as f:
-            create_functions_query = f.read()
+        create_functions_path = SCRIPTS_DIR / 'create_functions.sql'
+        create_functions_query = create_functions_path.read_text()
         curs.execute(create_functions_query)
 
         teams_config = file_config['teams']
@@ -95,8 +91,13 @@ def run():
                 if k not in task_conf:
                     task_conf[k] = v
 
-            task_conf['checker'] = os.path.join(global_config['checkers_path'],
-                                                task_conf['checker'])
+            task_conf['checker'] = str(
+                Path(
+                    global_config['checkers_path']
+                ).joinpath(
+                    task_conf['checker'],
+                )
+            )
 
             task = models.Task(id=None, **task_conf)
             curs.execute(task.get_insert_query(), task.to_dict())

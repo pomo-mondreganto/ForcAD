@@ -100,7 +100,7 @@ def get_flag_by_field(field_name: str, field_value,
     :raises FlagSubmitException: if nothing found
     """
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cached, = pipeline.exists('flags').execute()
+        cached, = pipeline.exists('flags:cached').execute()
         if not cached:
             cache_helper(
                 pipeline=pipeline,
@@ -130,6 +130,7 @@ def get_flag_by_str(flag_str: str, round: int) -> helplib.models.Flag:
     :param flag_str: flag value
     :param round: current round
     :returns: Flag model instance
+    :raises FlagSubmitException: if flag not found
     """
     return get_flag_by_field(field_name='str', field_value=flag_str,
                              round=round)

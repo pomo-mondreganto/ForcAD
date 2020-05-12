@@ -316,3 +316,40 @@ class GlobalConfig(Model):
 
     def __str__(self):
         return str(self.to_dict())
+
+
+class AttackResult(Model):
+    attacker_id: int
+    victim_id: int
+    task_id: int
+    submit_ok: bool
+    message: str
+    attacker_delta: float
+    victim_delta: float
+
+    __slots__ = (
+        'attacker_id',
+        'victim_id',
+        'task_id',
+        'submit_ok',
+        'message',
+        'attacker_delta',
+        'victim_delta',
+    )
+
+    defaults = {
+        'victim_id': 0,
+        'task_id': 0,
+        'submit_ok': False,
+        'message': '',
+        'attacker_delta': 0.0,
+        'victim_delta': 0.0,
+    }
+
+    labels = ('attacker_id', 'victim_id', 'task_id', 'submit_ok')
+
+    def get_label_key(self):
+        return tuple(getattr(self, k) for k in self.labels)
+
+    def get_label_values(self):
+        return {k: getattr(self, k) for k in self.labels}

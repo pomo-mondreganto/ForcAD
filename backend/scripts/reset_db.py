@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 
-import os
-
 import psycopg2
 import redis
 import sys
 import time
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
 
 import storage
 
-SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
+SCRIPTS_DIR = BASE_DIR / 'scripts'
 
 
 def run():
     conn = storage.get_db_pool().getconn()
     curs = conn.cursor()
 
-    create_query_path = os.path.join(SCRIPTS_DIR, 'drop_query.sql')
-    create_query = open(create_query_path).read()
+    create_query_path = SCRIPTS_DIR / 'drop_query.sql'
+    create_query = create_query_path.read_text()
+    # noinspection PyUnresolvedReferences
     try:
         curs.execute(create_query)
     except psycopg2.errors.UndefinedTable:

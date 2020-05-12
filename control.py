@@ -8,9 +8,10 @@ import shutil
 import subprocess
 import time
 import yaml
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = os.path.join(BASE_DIR, 'backend', 'config')
+BASE_DIR = Path(__file__).absolute().resolve().parent
+CONFIG_DIR = BASE_DIR / 'backend' / 'config'
 DOCKER_COMPOSE_FILE = 'docker-compose.yml'
 BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 
@@ -31,8 +32,7 @@ def run_command(command, cwd=None, env=None):
 
 
 def setup_db(config):
-    postgres_env_path = os.path.join(
-        BASE_DIR,
+    postgres_env_path = BASE_DIR.joinpath(
         'docker_config',
         'postgres',
         'environment.env',
@@ -54,13 +54,11 @@ def setup_db(config):
         f'POSTGRES_DB={db}',
     ]
 
-    with open(postgres_env_path, 'w') as f:
-        f.write('\n'.join(postgres_config))
+    postgres_env_path.write_text('\n'.join(postgres_config))
 
 
 def setup_redis(config):
-    redis_env_path = os.path.join(
-        BASE_DIR,
+    redis_env_path = BASE_DIR.joinpath(
         'docker_config',
         'redis',
         'environment.env',
@@ -78,13 +76,11 @@ def setup_redis(config):
         f'REDIS_PASSWORD={password}',
     ]
 
-    with open(redis_env_path, 'w') as f:
-        f.write('\n'.join(redis_config))
+    redis_env_path.write_text('\n'.join(redis_config))
 
 
 def setup_flower(config):
-    flower_env_path = os.path.join(
-        BASE_DIR,
+    flower_env_path = BASE_DIR.joinpath(
         'docker_config',
         'celery',
         'flower.env',
@@ -98,13 +94,11 @@ def setup_flower(config):
         f'FLOWER_BASIC_AUTH={flower_username}:{flower_password}',
     ]
 
-    with open(flower_env_path, 'w') as f:
-        f.write('\n'.join(flower_config))
+    flower_env_path.write_text('\n'.join(flower_config))
 
 
 def setup_rabbitmq(config):
-    rabbitmq_env_path = os.path.join(
-        BASE_DIR,
+    rabbitmq_env_path = BASE_DIR.joinpath(
         'docker_config',
         'rabbitmq',
         'environment.env',
@@ -126,13 +120,11 @@ def setup_rabbitmq(config):
         f'RABBITMQ_DEFAULT_VHOST={vhost}',
     ]
 
-    with open(rabbitmq_env_path, 'w') as f:
-        f.write('\n'.join(rabbitmq_config))
+    rabbitmq_env_path.write_text('\n'.join(rabbitmq_config))
 
 
 def setup_webapi(config):
-    rabbitmq_env_path = os.path.join(
-        BASE_DIR,
+    webapi_env_path = BASE_DIR.joinpath(
         'docker_config',
         'webapi',
         'environment.env',
@@ -148,13 +140,12 @@ def setup_webapi(config):
         f'ADMIN_PASSWORD={password}',
     ]
 
-    with open(rabbitmq_env_path, 'w') as f:
-        f.write('\n'.join(admin_config))
+    webapi_env_path.write_text('\n'.join(admin_config))
 
 
 def prepare_docker_compose(args):
-    conf_path = os.path.join(BASE_DIR, 'docker-compose.yml')
-    base_conf = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+    conf_path = BASE_DIR / 'docker-compose.yml'
+    base_conf = yaml.safe_load(conf_path.open(mode='r'))
 
     if not os.environ.get('TEST'):
         if 'redis' in args and args.redis:
@@ -163,15 +154,15 @@ def prepare_docker_compose(args):
         if 'database' in args and args.database:
             del base_conf['services']['postgres']
 
-    res_path = os.path.join(BASE_DIR, 'docker-compose-base.yml')
-    with open(res_path, 'w') as f:
+    res_path = BASE_DIR / 'docker-compose-base.yml'
+    with res_path.open(mode='w') as f:
         yaml.dump(base_conf, f)
 
 
 def setup_config(args):
     override_config(args)
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    config = yaml.safe_load(conf_path.open(mode='r'))
     setup_db(config)
     setup_redis(config)
     setup_flower(config)
@@ -181,14 +172,11 @@ def setup_config(args):
 
 
 def override_config(args):
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    config = yaml.safe_load(conf_path.open(mode='r'))
 
     # create config backup
-    backup_path = os.path.join(
-        CONFIG_DIR,
-        f'config_backup_{int(time.time())}.yml',
-    )
+    backup_path = CONFIG_DIR / f'config_backup_{int(time.time())}.yml'
     shutil.copy2(conf_path, backup_path)
 
     # patch config host variables to connect to the right place
@@ -201,8 +189,8 @@ def override_config(args):
     if 'rabbitmq' in args:
         config['storages']['rabbitmq']['host'] = args.rabbitmq
 
-    with open(conf_path, 'w') as f:
-        yaml.dump(config, f)
+    with conf_path.open(mode='w') as f:
+        yaml.safe_dump(config, f)
 
 
 def print_tokens(_args):
@@ -226,10 +214,10 @@ def print_file_exception_info(_func, path, _exc_info):
 
 
 def reset_game(_args):
-    data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
+    data_path = BASE_DIR / 'docker_volumes' / 'postgres' / 'data'
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
-    full_compose = os.path.join(BASE_DIR, 'docker-compose.yml')
+    full_compose = BASE_DIR / 'docker-compose.yml'
     command = [
         'docker-compose',
         '-f', full_compose,
