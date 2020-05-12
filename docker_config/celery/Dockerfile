@@ -23,7 +23,10 @@ RUN chmod +x /await_start.sh
 # uncomment blocks to enable features
 ### pwntools dependencies ###
 ################
-#RUN apt-get install -y git libssl-dev libffi-dev build-essential
+#RUN apt-get update \
+#    && apt-get install -y --no-install-recommends git libssl-dev libffi-dev build-essential \
+#    && apt-get clean \
+#    && rm -rf /var/lib/apt/lists/*
 #ENV PWNLIB_NOTERM=true
 ################
 
@@ -31,9 +34,10 @@ RUN chmod +x /await_start.sh
 ################
 #RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 #RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-#RUN apt-get -y update
-#RUN apt-get install -y google-chrome-stable
-#RUN apt-get install -yqq unzip
+#RUN apt-get update \
+#    && apt-get install -y --no-install-recommends google-chrome-stable unzip \
+#    && apt-get clean \
+#    && rm -rf /var/lib/apt/lists/*
 #RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
 #RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 ################
