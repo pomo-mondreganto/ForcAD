@@ -2,8 +2,11 @@
     <div v-if="error !== null">{{ error }}</div>
     <div v-else-if="teams !== null">
         <p>
-            Team <b>{{ teamName }}</b> ({{ teamId }}) task
-            <b>{{ taskName }}</b> ({{ taskId }}) history
+            Team
+            <b>{{ teamName }}</b>
+            ({{ teamId }}) task
+            <b>{{ taskName }}</b>
+            ({{ taskId }}) history
         </p>
         <div class="table">
             <div class="row">
@@ -34,26 +37,14 @@
                 } in teamtasks"
                 :key="id"
             >
-                <div class="round">
-                    {{ round }}
-                </div>
-                <div class="status">
-                    {{ status }}
-                </div>
-                <div class="score">
-                    {{ score }}
-                </div>
+                <div class="round">{{ round }}</div>
+                <div class="status">{{ status }}</div>
+                <div class="score">{{ score }}</div>
                 <div class="flags">+{{ stolen }}/-{{ lost }}</div>
                 <div class="checks">{{ checks_passed }}/{{ checks }}</div>
-                <div class="public">
-                    {{ public_message }}
-                </div>
-                <div class="private">
-                    {{ private_message }}
-                </div>
-                <div class="command">
-                    {{ command }}
-                </div>
+                <div class="public">{{ public_message }}</div>
+                <div class="private">{{ private_message }}</div>
+                <div class="command">{{ command }}</div>
             </div>
         </div>
     </div>
@@ -98,7 +89,7 @@ export default {
         r = await this.$http.get(`${serverUrl}/api/admin/teams/`);
         this.teamName = r.data.filter(({ id }) => id == this.teamId)[0].name;
 
-        this.r = await this.$http.get(`${serverUrl}/api/admin/tasks/`);
+        r = await this.$http.get(`${serverUrl}/api/admin/tasks/`);
         this.taskName = r.data.filter(({ id }) => id == this.taskId)[0].name;
     },
 };
@@ -189,17 +180,16 @@ export default {
 }
 
 .public {
-    flex: 1.5 2 15%;
     @extend .round;
+    flex: 1.5 2 15%;
+    overflow: scroll;
 }
 
 .private {
-    flex: 1.5 2 15%;
-    @extend .round;
+    @extend .public;
 }
 
 .command {
-    flex: 1.5 2 15%;
-    @extend .round;
+    @extend .public;
 }
 </style>
