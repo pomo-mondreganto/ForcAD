@@ -45,13 +45,13 @@ def get_real_round() -> int:
     :returns: -1 if round not in cache, else round
     """
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        round, = pipeline.get('real_round').execute()
+        r, = pipeline.get('real_round').execute()
 
     try:
-        round = int(round)
+        r = int(r)
     except (ValueError, TypeError):
         return -1
-    return round
+    return r
 
 
 def get_real_round_from_db() -> int:
@@ -62,9 +62,9 @@ def get_real_round_from_db() -> int:
     """
     with storage.db_cursor() as (_, curs):
         curs.execute(_CURRENT_REAL_ROUND_QUERY)
-        round, = curs.fetchone()
+        r, = curs.fetchone()
 
-    return round
+    return r
 
 
 def update_real_round_in_db(new_round: int):

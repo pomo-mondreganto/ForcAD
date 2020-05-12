@@ -77,8 +77,9 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        team_id, task_id, round = flag.team_id, flag.task_id, flag.round
-        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{round}'
+        round_flags_key = (
+            f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+        )
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 
