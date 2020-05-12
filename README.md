@@ -100,66 +100,66 @@ Config file (`backend/config/config.yml`) is split into five main parts:
 
 -   **global** describes global settings:
 
-  -     `timezone`: mainly used for celery to show better times in flower. Example: timezone: `Europe/Moscow`
+  -   `timezone`: mainly used for celery to show better times in flower. Example: timezone: `Europe/Moscow`
   
-  -     `checkers_path`: path to checkers inside Docker container. `/checkers/` if not changed specifically.
+  -   `checkers_path`: path to checkers inside Docker container. `/checkers/` if not changed specifically.
   
-  -     `default_score`: default score for tasks. Example: `2000`
+  -   `default_score`: default score for tasks. Example: `2000`
   
-  -     `env_path`: path or default `env_path` for checkers (see [checkers](#checkers) section). Example: `/checkers/bin/`
+  -   `env_path`: path or default `env_path` for checkers (see [checkers](#checkers) section). Example: `/checkers/bin/`
   
-  -     `flag_lifetime`: flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`
+  -   `flag_lifetime`: flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`
   
-  -     `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`
+  -   `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`
   
-  -     `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`
+  -   `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`
   
-  -     `round_time`: round duration in seconds. Example: `120`
+  -   `round_time`: round duration in seconds. Example: `120`
   
-  -     `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00` 
+  -   `start_time`: Full datetime of game start. Example: `2019-11-30 15:30:00` 
   (timezone will be taken from `timezone` option)
 
 -   **storages** describes settings used to connect to PostgreSQL and Redis (examples provided):
 
-  -     `db`: PostgreSQL settings:
+  -   `db`: PostgreSQL settings:
   
-    -     `dbname: system_db`
+     -   `dbname: system_db`
     
-    -     `host: postgres`
+     -   `host: postgres`
     
-    -     `password: **change_me**`
+     -   `password: **change_me**`
     
-    -     `port: 5432`
+     -   `port: 5432`
     
-    -     `user: system_admin`
+     -   `user: system_admin`
 
-  -     `redis`: Redis settings:
+  -   `redis`: Redis settings:
   
-    -     `db: 0`
+    -   `db: 0`
     
-    -     `host: redis`
+    -   `host: redis`
     
-    -     `port: 6379`
+    -   `port: 6379`
     
-    -     `password: **change_me**`
+    -   `password: **change_me**`
     
-   -     `rabbitmq`: Redis settings:
+  -   `rabbitmq`: Redis settings:
   
-    -     `host: rabbitmq`
+    -   `host: rabbitmq`
     
-    -     `port: 5672`
+    -   `port: 5672`
     
-    -     `password: **change_me**`
+    -   `password: **change_me**`
     
-    -     `user: system_admin`
+    -   `user: system_admin`
     
-    -     `vhost: forcad`
+    -   `vhost: forcad`
 
 -   **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
-  -     `password: **change_me**`
+  -   `password: **change_me**`
   
-  -     `username: system_admin`
+  -   `username: system_admin`
 
 -   **teams** contains playing teams. Example contents:
 
@@ -221,14 +221,14 @@ if possible.
     (missing tags are ignored). Examples: `hackerdom_nfr` (hackerdom tag ignored), `gevent_pfr` (gevent checker with 
     public flag data returned). Currently supported tags:
 
-  - `pfr`: on `PUT`, checker returns public flag data (e.g. username of flag user) as a public message,
+  -   `pfr`: on `PUT`, checker returns public flag data (e.g. username of flag user) as a public message,
     private flag data (`flag_id`) as private message, and public message is shown on `/api/attack_data` for participants.
     Without `pfr` tag public message is considered flag data if `PUT` is successful and isn't shown.
   
-  - `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
+  -   `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
     That way, `flag_id` is used to seed the random generator in checkers so it would return the same values for `GET` and `PUT` 
 
-  - `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
+  -   `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
 you know how it works. **Don't use it** on long and (or) large competitions! Example checker is [here](tests/service/checker/gevent_checker.py).
 
 -   `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
@@ -242,11 +242,11 @@ See more in [checker writing](#writing-a-checker) section.
 
 ```yaml
 checkers:
-  -   requirements.txt  <--   automatically installed (with pip) combined requirements of all checkers
-  -   task1:
-    -   checker.py  <--   executable
-  -   task2:
-    -   checker.py  <--   executable
+  - requirements.txt  <--   automatically installed (with pip) combined requirements of all checkers
+  - task1:
+    - checker.py  <--   executable
+  - task2:
+    - checker.py  <--   executable
 ```
 
 ### Writing a checker
