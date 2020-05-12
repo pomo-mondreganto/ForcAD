@@ -111,12 +111,10 @@ def get_action(prev_verdict: models.CheckerVerdict,
         command="",
     )
 
-    flag = storage.flags.get_random_round_flag(
-        team_id=team.id,
-        task_id=task.id,
-        round=round_to_check,
-        current_round=round,
-    )
+    flag = storage.flags.get_random_round_flag(team_id=team.id,
+                                               task_id=task.id,
+                                               f_round=round_to_check,
+                                               current_round=round)
 
     if not flag:
         verdict.status = TaskStatus.UP

@@ -49,14 +49,14 @@ def cache_tasks(pipeline):
         pipeline.sadd('tasks', *[task.to_json() for task in tasks])
 
 
-def cache_last_stolen(team_id: int, round: int, pipeline):
+def cache_last_stolen(team_id: int, f_round: int, pipeline):
     """
     Caches stolen flags from "flag_lifetime" rounds
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
 
     :param team_id: attacker team id
-    :param round: current round
+    :param f_round: current round
     :param pipeline: redis connection to add command to
     """
     game_config = storage.game.get_current_global_config()
@@ -65,7 +65,7 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         curs.execute(
             _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY,
             (
-                round - game_config.flag_lifetime,
+                f_round - game_config.flag_lifetime,
                 team_id,
             ),
         )
@@ -79,13 +79,13 @@ def cache_last_stolen(team_id: int, round: int, pipeline):
         )
 
 
-def cache_last_flags(round: int, pipeline):
+def cache_last_flags(f_round: int, pipeline):
     """
     Cache all generated flags from last "flag_lifetime" rounds.
 
     Just adds commands to pipeline stack, don't forget to execute afterwards
 
-    :param round: current round
+    :param f_round: current round
     :param pipeline: redis connection to add command to
     """
     game_config = storage.game.get_current_global_config()
@@ -93,7 +93,7 @@ def cache_last_flags(round: int, pipeline):
 
     with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY,
-                     (round - game_config.flag_lifetime,))
+                     (f_round - game_config.flag_lifetime,))
         flags = curs.fetchall()
 
     flag_models = list(helplib.models.Flag.from_dict(data) for data in flags)
@@ -108,8 +108,8 @@ def cache_last_flags(round: int, pipeline):
         pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
         pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
 
-        team_id, task_id, round = flag.team_id, flag.task_id, flag.round
-        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{round}'
+        team_id, task_id, f_round = flag.team_id, flag.task_id, flag.round
+        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{f_round}'
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 

@@ -39,12 +39,8 @@ def exception_callback(result, exc, traceback):
             private_message=f'Exception on {action}: {repr(exc)}\n{traceback}'
         )
 
-    storage.tasks.update_task_status(
-        task_id=task.id,
-        team_id=team.id,
-        checker_verdict=verdict,
-        round=round,
-    )
+    storage.tasks.update_task_status(task_id=task.id, team_id=team.id,
+                                     f_round=round, checker_verdict=verdict)
     return verdict
 
 
@@ -87,10 +83,7 @@ def checker_results_handler(
         parsed_verdicts.append(gets_verdict)
 
     result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
-    storage.tasks.update_task_status(
-        task_id=task.id,
-        team_id=team.id,
-        checker_verdict=result_verdict,
-        round=round,
-    )
+    storage.tasks.update_task_status(task_id=task.id, team_id=team.id,
+                                     f_round=round,
+                                     checker_verdict=result_verdict)
     return result_verdict

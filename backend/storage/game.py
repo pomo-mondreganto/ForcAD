@@ -184,14 +184,11 @@ def handle_attack(attacker_id: int,
     result = models.AttackResult(attacker_id=attacker_id)
 
     try:
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str, round=round)
+        flag = storage.flags.get_flag_by_str(flag_str=flag_str, f_round=round)
         result.victim_id = flag.team_id
         result.task_id = flag.task_id
-        storage.flags.try_add_stolen_flag(
-            flag=flag,
-            attacker=attacker_id,
-            round=round,
-        )
+        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id,
+                                          f_round=round)
         result.submit_ok = True
 
         with storage.db_cursor() as (conn, curs):
