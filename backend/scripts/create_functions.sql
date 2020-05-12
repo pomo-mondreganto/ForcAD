@@ -21,8 +21,8 @@ BEGIN
            private_message,
            command
     FROM teamtasks
-    WHERE task_id = _task_id
-      AND team_id = _team_id
+    WHERE team_id = _team_id
+      AND task_id = _task_id
         FOR NO KEY UPDATE;
 
     RETURN QUERY UPDATE teamtasks
@@ -32,23 +32,11 @@ BEGIN
             command = _command,
             checks_passed = checks_passed + _passed,
             checks = checks + 1
-        WHERE task_id = _task_id
-            AND team_id = _team_id
+        WHERE team_id = _team_id
+            AND task_id = _task_id
         RETURNING *;
 END;
 $$ LANGUAGE plpgsql ROWS 1;
-
-CREATE OR REPLACE FUNCTION calculate(FLOAT, FLOAT, FLOAT, BOOLEAN)
-    RETURNS TABLE
-            (
-                attacker_delta FLOAT,
-                victim_delta   FLOAT
-            )
-AS
-'rs.so',
-'calculate'
-    LANGUAGE C STRICT
-               ROWS 1;
 
 CREATE OR REPLACE FUNCTION recalculate_rating(_attacker_id INTEGER, _victim_id INTEGER, _task_id INTEGER,
                                               _flag_id INTEGER)
@@ -63,6 +51,8 @@ DECLARE
     _round          INTEGER;
     hardness        FLOAT;
     inflate         BOOLEAN;
+    scale           FLOAT;
+    norm            FLOAT;
     attacker_score  FLOAT;
     victim_score    FLOAT;
     _attacker_delta FLOAT;
@@ -97,8 +87,14 @@ BEGIN
         INTO attacker_score;
     END IF;
 
+    scale = 50 * sqrt(hardness);
+    norm = ln(ln(hardness)) / 12;
+    _attacker_delta = scale / (1 + exp((sqrt(attacker_score) - sqrt(victim_score)) * norm));
+    _victim_delta = -least(victim_score, _attacker_delta);
 
-    SELECT * FROM calculate(attacker_score, victim_score, hardness, inflate) INTO _attacker_delta, _victim_delta;
+    IF NOT inflate THEN
+        _attacker_delta = least(_attacker_delta, -_victim_delta);
+    END IF;
 
     INSERT INTO stolenflags (attacker_id, flag_id) VALUES (_attacker_id, _flag_id);
 
@@ -124,31 +120,35 @@ $$ LANGUAGE plpgsql ROWS 1;
 CREATE OR REPLACE FUNCTION get_first_bloods()
     RETURNS TABLE
             (
-                attack_id     INTEGER,
                 submit_time   TIMESTAMP WITH TIME ZONE,
                 attacker_name VARCHAR(255),
                 task_name     VARCHAR(255),
                 attacker_id   INTEGER,
-                task_id       INTEGER
+                victim_id     INTEGER,
+                task_id       INTEGER,
+                vuln_number   INTEGER
             )
 AS
 $$
 BEGIN
-    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id) sf.id          AS attack_id,
-                                                                    sf.submit_time AS submit_time,
-                                                                    sf.attacker_id AS attacker_id,
-                                                                    f.task_id      AS task_id
+    RETURN QUERY WITH preprocess AS (SELECT DISTINCT ON (f.task_id, f.vuln_number) sf.submit_time AS submit_time,
+                                                                                   sf.attacker_id AS attacker_id,
+                                                                                   f.team_id      AS victim_id,
+                                                                                   f.task_id      AS task_id,
+                                                                                   f.vuln_number  as vuln_number
                                      FROM stolenflags sf
                                               JOIN flags f ON f.id = sf.flag_id
-                                     ORDER BY f.task_id, sf.id)
-                 SELECT preprocess.attack_id   AS attack_id,
-                        preprocess.submit_time AS submit_time,
+                                     ORDER BY f.task_id, f.vuln_number, sf.submit_time)
+                 SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
                         tk.name                AS task_name,
+                        preprocess.victim_id   AS victim_id,
                         tm.id                  AS attacker_id,
-                        tk.id                  AS task_id
+                        tk.id                  AS task_id,
+                        preprocess.vuln_number AS vuln_number
                  FROM preprocess
                           JOIN teams tm ON tm.id = preprocess.attacker_id
-                          JOIN tasks tk ON tk.id = preprocess.task_id;
+                          JOIN tasks tk ON tk.id = preprocess.task_id
+                 ORDER BY submit_time;
 END;
 $$ LANGUAGE plpgsql;

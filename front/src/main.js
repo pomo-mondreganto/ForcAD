@@ -5,7 +5,10 @@ import axios from 'axios';
 
 Vue.config.productionTip = false;
 
+axios.defaults.withCredentials = true;
+
 Vue.prototype.$http = axios;
+router.$http = axios;
 
 new Vue({
     router,

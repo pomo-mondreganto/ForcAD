@@ -45,14 +45,16 @@ class RoundProcessor(Task):
         if not current_round:
             return
 
-        game_state = storage.game.construct_latest_game_state(round=current_round)
+        game_state = storage.game.construct_latest_game_state(
+            current_round=current_round,
+        )
 
         if not game_state.team_tasks:
             logger.info("Empty team tasks, not updating scoreboard")
             return
 
         logger.info(f'Publishing scoreboard for round {current_round}')
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        with storage.get_redis_storage().pipeline() as pipeline:
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
@@ -66,13 +68,15 @@ class RoundProcessor(Task):
     def update_round(finished_round):
         logger.info(f'Updating round to {finished_round + 1}')
 
-        storage.game.set_round_start(round=finished_round + 1)
+        storage.game.set_round_start(r=finished_round + 1)
         storage.game.update_real_round_in_db(new_round=finished_round + 1)
 
         # Might think there's a RC here (I thought so too)
-        # But all teamtasks with round >= real_round are updated in the attack handler
+        # But all teamtasks with round >= real_round are
+        # updated in the attack handler
         # So both old and new teamtasks will be updated properly
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        with storage.get_redis_storage().pipeline(
+                transaction=True) as pipeline:
             pipeline.set('real_round', finished_round + 1).execute()
 
     @staticmethod
@@ -80,16 +84,20 @@ class RoundProcessor(Task):
         logger.info(f'Updating attack data contents for round {current_round}')
 
         tasks = storage.tasks.get_tasks()
-        tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
+        tasks = list(
+            filter(lambda x: x.checker_provides_public_flag_data, tasks))
         flags = storage.flags.get_attack_data(current_round, tasks)
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        with storage.get_redis_storage().pipeline(
+                transaction=True) as pipeline:
             pipeline.set('attack_data', kjson.dumps(flags)).execute()
 
     def run(self, *args, **kwargs):
         """Process new round
             Updates current round variable, then processes all teams.
-            This function also caches previous state and notifies frontend of a new round (for classic game mode).
-            Only one instance of process_round that updates round is to be be run!
+            This function also caches previous state and notifies frontend of
+            a new round (for classic game mode).
+            Only one instance of process_round that updates round
+            is to be be run!
         """
 
         game_running = storage.game.get_game_running()
@@ -97,7 +105,7 @@ class RoundProcessor(Task):
             logger.info('Game is not running, exiting')
             return
 
-        with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+        with storage.get_redis_storage().pipeline() as pipeline:
             with locking.acquire_redis_lock(pipeline, 'round_update:lock'):
                 current_round = storage.game.get_real_round_from_db()
                 round_to_check = current_round
@@ -131,5 +139,8 @@ class RoundProcessor(Task):
             logger.info("Running puts round")
             celery_tasks.modes.run_puts_round.starmap(args).apply_async()
         else:
-            logger.critical(f"Invalid round type supplied: {self.round_type}, falling back to full")
+            logger.critical(
+                f"Invalid round type supplied: {self.round_type}, "
+                f"falling back to full"
+            )
             celery_tasks.modes.run_full_round.starmap(args).apply_async()

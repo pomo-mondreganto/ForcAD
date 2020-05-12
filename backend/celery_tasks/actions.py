@@ -2,6 +2,7 @@ import random
 import secrets
 
 from celery import shared_task
+from typing import Optional
 
 import storage
 from celery_tasks.auxiliary import logger
@@ -16,13 +17,16 @@ def noop(data):
 
 
 @shared_task
-def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
+def put_action(_prev_verdict: Optional[models.CheckerVerdict],
+               team: models.Team,
+               task: models.Task,
+               current_round: int) -> models.CheckerVerdict:
     """Run "put" checker action
 
-        :param _checker_verdict_code: integer verdict code passed by check action in chain
+        :param _prev_verdict: verdict passed by check action in chain
         :param team: models.Team instance
         :param task: models.Task instance
-        :param round: current round
+        :param current_round: current round
         :returns verdict: models.CheckerVerdict instance
 
         If "check" action fails, put is not run.
@@ -35,12 +39,17 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
         service=task.name[0].upper(),
         team_id=team.id,
         task_id=task.id,
-        round=round,
+        current_round=current_round,
     )
     flag.private_flag_data = secrets.token_hex(20)
     flag.vuln_number = place
 
-    runner = checkers.CheckerRunner(team=team, task=task, flag=flag, logger=logger)
+    runner = checkers.CheckerRunner(
+        team=team,
+        task=task,
+        flag=flag,
+        logger=logger,
+    )
 
     verdict = runner.put()
 
@@ -52,14 +61,16 @@ def put_action(_checker_verdict_code: int, team: models.Team, task: models.Task,
 
 
 @shared_task
-def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: models.Task,
-               round) -> models.CheckerVerdict:
+def get_action(prev_verdict: models.CheckerVerdict,
+               team: models.Team,
+               task: models.Task,
+               current_round: int) -> models.CheckerVerdict:
     """Run "get" checker action
 
         :param prev_verdict: verdict passed by previous check or get in chain
         :param team: models.Team instance
         :param task: models.Task instance
-        :param round: current round
+        :param current_round: current round
         :returns: previous result & self result
 
         If "check" or previous "get" actions fail, get is not run.
@@ -82,10 +93,15 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
 
     flag_lifetime = storage.game.get_current_global_config().flag_lifetime
 
-    rounds_to_check = list(set(max(1, round - x) for x in range(0, flag_lifetime)))
+    rounds_to_check = list(set(
+        max(1, current_round - x) for x in range(0, flag_lifetime)
+    ))
     round_to_check = random.choice(rounds_to_check)
 
-    logger.info(f'Running GET on round {round_to_check} for team {team.id} task {task.id}')
+    logger.info(
+        f'Running GET on round {round_to_check} for '
+        f'team {team.id} task {task.id}'
+    )
 
     verdict = models.CheckerVerdict(
         status=TaskStatus.UP,
@@ -95,35 +111,43 @@ def get_action(prev_verdict: models.CheckerVerdict, team: models.Team, task: mod
         command="",
     )
 
-    flag = storage.flags.get_random_round_flag(
-        team_id=team.id,
-        task_id=task.id,
-        round=round_to_check,
-        current_round=round,
-    )
+    flag = storage.flags.get_random_round_flag(team_id=team.id,
+                                               task_id=task.id,
+                                               from_round=round_to_check,
+                                               current_round=current_round)
 
     if not flag:
         verdict.status = TaskStatus.UP
         verdict.private_message = f'No flag from round {round_to_check}'
     else:
-        runner = checkers.CheckerRunner(team=team, task=task, flag=flag, logger=logger)
+        runner = checkers.CheckerRunner(
+            team=team,
+            task=task,
+            flag=flag,
+            logger=logger,
+        )
         verdict = runner.get()
 
     return verdict
 
 
 @shared_task
-def check_action(team: models.Team, task: models.Task, round: int) -> models.CheckerVerdict:
+def check_action(team: models.Team,
+                 task: models.Task,
+                 current_round: int) -> models.CheckerVerdict:
     """Run "check" checker action
 
     :param team: models.Team instance
     :param task: models.Task instance
-    :param round: current round (for exception handler)
+    :param current_round: current round (for exception handler)
 
     :return verdict: models.CheckerVerdict instance
     """
 
-    logger.info(f'Running CHECK for team `{team.name}` task `{task.name}`, round {round}')
+    logger.info(
+        f'Running CHECK for team `{team.name}` '
+        f'task `{task.name}`, round {current_round}'
+    )
     runner = checkers.CheckerRunner(team=team, task=task, logger=logger)
     verdict = runner.check()
 

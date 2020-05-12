@@ -1,8 +1,8 @@
 FROM pomomondreganto/forcad_base:latest
 
-ADD backend /app
+COPY backend /app
 
-ADD ./docker_config/initializer/entrypoint.sh /entrypoint.sh
+COPY ./docker_config/initializer/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

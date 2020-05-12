@@ -1,73 +1,41 @@
 #!/usr/bin/env python3
 
 import os
-import secrets
 
 import pytz
 import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).absolute().resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
 
 import storage
 import yaml
 
 from helplib import models
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+CONFIG_DIR = BASE_DIR / 'config'
 CONFIG_FILENAME = 'config.yml'
 
 if os.environ.get('TEST'):
     CONFIG_FILENAME = 'test_config.yml'
-elif os.environ.get('LOCAL'):
-    CONFIG_FILENAME = 'local_config.yml'
 
-SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
-
-# noinspection 
-_CONFIG_INITIALIZATION_QUERY = '''
-INSERT INTO globalconfig 
-({columns}) 
-VALUES ({values}) 
-RETURNING id
-'''
-
-_TEAM_INSERT_QUERY = '''
-INSERT INTO Teams 
-(name, ip, token, highlighted) 
-VALUES (%s, %s, %s, %s) 
-RETURNING id
-'''
-
-_TASK_INSERT_QUERY = '''
-INSERT INTO Tasks 
-(name, checker, gets, puts, places, checker_timeout, env_path, checker_type, get_period) 
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) 
-RETURNING id
-'''
-
-_TEAMTASK_INSERT_QUERY = '''
-INSERT INTO TeamTasks 
-(task_id, team_id, score, status) 
-VALUES (%s, %s, %s, %s)
-'''
+SCRIPTS_DIR = BASE_DIR / 'scripts'
 
 
 def run():
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    with open(conf_path) as f:
-        file_config = yaml.load(f, Loader=yaml.FullLoader)
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    with conf_path.open(mode='r') as f:
+        file_config = yaml.safe_load(f)
 
     with storage.db_cursor() as (conn, curs):
-        create_tables_path = os.path.join(SCRIPTS_DIR, 'create_tables.sql')
-        with open(create_tables_path) as f:
-            create_tables_query = f.read()
+        create_tables_path = SCRIPTS_DIR / 'create_tables.sql'
+        create_tables_query = create_tables_path.read_text()
         curs.execute(create_tables_query)
 
-        create_functions_path = os.path.join(SCRIPTS_DIR, 'create_functions.sql')
-        with open(create_functions_path) as f:
-            create_functions_query = f.read()
+        create_functions_path = SCRIPTS_DIR / 'create_functions.sql'
+        create_functions_query = create_functions_path.read_text()
         curs.execute(create_functions_query)
 
         teams_config = file_config['teams']
@@ -75,6 +43,7 @@ def run():
 
         team_defaults = {
             'highlighted': False,
+            'active': True,
         }
 
         for team_conf in teams_config:
@@ -82,9 +51,9 @@ def run():
                 if k not in team_conf:
                     team_conf[k] = v
 
-            team_token = secrets.token_hex(8)
+            team_token = models.Team.generate_token()
             team = models.Team(id=None, **team_conf, token=team_token)
-            curs.execute(_TEAM_INSERT_QUERY, (team.name, team.ip, team.token, team.highlighted))
+            curs.execute(team.get_insert_query(), team.to_dict())
             team.id, = curs.fetchone()
             teams.append(team)
 
@@ -95,7 +64,7 @@ def run():
             'checkers_path': '/checkers/',
             'env_path': '/checkers/bin/',
             'default_score': 2000.0,
-            'game_hardness': 3000.0,
+            'game_hardness': 10.0,
             'inflation': True,
             'flag_lifetime': 5,
             'round_time': 60,
@@ -111,8 +80,10 @@ def run():
         task_defaults = {
             'env_path': global_config['env_path'],
             'default_score': global_config['default_score'],
-            'get_period': global_config.get('get_period', global_config['round_time']),
+            'get_period': global_config.get('get_period',
+                                            global_config['round_time']),
             'checker_type': 'hackerdom',
+            'active': True,
         }
 
         for task_conf in tasks_config:
@@ -120,23 +91,16 @@ def run():
                 if k not in task_conf:
                     task_conf[k] = v
 
-            task_conf['checker'] = os.path.join(global_config['checkers_path'], task_conf['checker'])
-
-            task = models.Task(id=None, **task_conf)
-            curs.execute(
-                _TASK_INSERT_QUERY,
-                (
-                    task.name,
-                    task.checker,
-                    task.gets,
-                    task.puts,
-                    task.places,
-                    task.checker_timeout,
-                    task.env_path,
-                    task.checker_type,
-                    task.get_period,
+            task_conf['checker'] = str(
+                Path(
+                    global_config['checkers_path']
+                ).joinpath(
+                    task_conf['checker'],
                 )
             )
+
+            task = models.Task(id=None, **task_conf)
+            curs.execute(task.get_insert_query(), task.to_dict())
             task.id, = curs.fetchone()
             tasks.append(task)
 
@@ -146,7 +110,7 @@ def run():
             for task in tasks
         ]
 
-        curs.executemany(_TEAMTASK_INSERT_QUERY, data)
+        curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, data)
 
         global_config.pop('env_path', None)
         global_config.pop('default_score', None)
@@ -156,17 +120,15 @@ def run():
         tz = pytz.timezone(global_config['timezone'])
         global_config['start_time'] = tz.localize(global_config['start_time'])
 
-        keys = global_config.keys()
-        columns = ','.join(keys)
-        values = ','.join(f'%({key})s' for key in keys)
-        curs.execute(
-            _CONFIG_INITIALIZATION_QUERY.format(columns=columns, values=values),
-            global_config,
-        )
+        global_config['real_round'] = 0
+        global_config['game_running'] = False
+
+        global_config = models.GlobalConfig(id=None, **global_config)
+        curs.execute(global_config.get_insert_query(), global_config.to_dict())
 
         conn.commit()
 
-    game_state = storage.game.construct_game_state_from_db(round=0)
+    game_state = storage.game.construct_game_state_from_db(current_round=0)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())
         pipeline.execute()

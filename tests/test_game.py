@@ -1,19 +1,22 @@
-import os
 import sys
+from pathlib import Path
 from unittest import TestCase
 
 import requests
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
-TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
-sys.path.insert(0, BACKEND_DIR)
-sys.path.insert(0, TESTS_DIR)
+PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
+BACKEND_DIR = PROJECT_DIR / 'backend'
+TESTS_DIR = PROJECT_DIR / 'tests'
+sys.path.insert(0, str(BACKEND_DIR))
+sys.path.insert(0, str(TESTS_DIR))
 
 from helpers import wait_rounds
 
 
 class GameStatusTestCase(TestCase):
+    def setUp(self) -> None:
+        wait_rounds(3)
+
     def get_teams(self):
         r = requests.get(f'http://127.0.0.1:8080/api/teams/')
         self.assertTrue(r.ok)
@@ -29,8 +32,6 @@ class GameStatusTestCase(TestCase):
         return data
 
     def test_team_statuses(self):
-        wait_rounds(3)
-
         teams = self.get_teams()
 
         for team in teams:

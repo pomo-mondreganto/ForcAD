@@ -25,11 +25,12 @@ def startup(**_kwargs):
                     eta=game_config.start_time,
                 )
 
-                game_state = storage.game.construct_game_state_from_db(round=0)
+                game_state = storage.game.construct_game_state_from_db(
+                    current_round=0)
                 if not game_state:
                     logger.warning('Initial game_state missing')
                 else:
-                    logger.info(f"Initializing game_state with {game_state.to_dict()}")
+                    logger.info(f"Initializing game_state with {game_state}")
                     pipeline.set('game_state', game_state.to_json())
                     pipeline.execute()
 
@@ -55,10 +56,10 @@ def start_game():
                 logger.info('Game already started')
                 return
 
-            storage.game.set_round_start(round=0)
+            storage.game.set_round_start(r=0)
             storage.game.set_game_running(True)
 
-        game_state = storage.game.construct_game_state_from_db(round=0)
+        game_state = storage.game.construct_game_state_from_db(current_round=0)
         if not game_state:
             logger.warning('Initial game_state missing')
         else:

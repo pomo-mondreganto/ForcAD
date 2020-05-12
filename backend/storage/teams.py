@@ -1,17 +1,17 @@
 from typing import List, Optional
 
 import storage
-from helplib import models, flags
+from helplib import models
 from helplib.cache import cache_helper, async_cache_helper
 from storage import caching
 
 
 def get_teams() -> List[models.Team]:
-    """Get list of teams registered in the database"""
+    """Get list of teams registered in the database."""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='teams:cached',
+            cache_key='teams',
             cache_func=caching.cache_teams,
             cache_args=(pipeline,),
         )
@@ -23,29 +23,33 @@ def get_teams() -> List[models.Team]:
 
 
 async def teams_async_getter(redis_aio, pipe):
-    """Get list of teams registered in the database (asynchronous version)"""
+    """Cache teams if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
-        cache_key='teams:cached',
+        cache_key='teams',
         cache_func=caching.cache_teams,
     )
     pipe.smembers('teams')
 
 
+async def get_all_teams_async() -> List[models.Team]:
+    """Get list of all teams from database."""
+    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+        await curs.execute(models.Team.get_select_all_query())
+        results = await curs.fetchall()
+
+    teams = [models.Team.from_dict(team) for team in results]
+    return teams
+
+
 def get_team_id_by_token(token: str) -> Optional[int]:
-    """Get team by token
-
-        :param token: token string
-        :return: team id
     """
+    Get team by token.
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        cache_helper(
-            pipeline=pipeline,
-            cache_key='teams:cached',
-            cache_func=caching.cache_teams,
-            cache_args=(pipeline,),
-        )
+    :param token: token string
+    :return: team id
+    """
+    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
         team_id, = pipeline.get(f'team:token:{token}').execute()
 
     try:
@@ -56,37 +60,43 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         return team_id
 
 
-def handle_attack(attacker_id: int, flag_str: str, round: int) -> float:
-    """Check flag, lock team for update, call rating recalculation,
-        then publish redis message about stolen flag
+async def create_team(team: models.Team):
+    """Add new team to DB, reset cache & return created instance."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(team.get_insert_query(), team.to_dict())
+        result, = await curs.fetchone()
+        team.id = result
 
-        :param attacker_id: id of the attacking team
-        :param flag_str: flag to be checked
-        :param round: round of the attack
+        tasks = await storage.tasks.get_all_tasks_async()
+        insert_data = [
+            (task.id, team.id, task.default_score, -1)
+            for task in tasks
+        ]
 
-        :raises FlagSubmitException: when flag check was failed
-        :return: attacker rating change
-    """
+        for each in insert_data:
+            await curs.execute(storage.tasks.TEAMTASK_INSERT_QUERY, each)
 
-    flag = flags.try_add_stolen_flag_by_str(flag_str=flag_str, attacker=attacker_id, round=round)
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('teams')
 
-    with storage.db_cursor() as (conn, curs):
-        curs.callproc("recalculate_rating", (attacker_id, flag.team_id, flag.task_id, flag.id))
-        attacker_delta, victim_delta = curs.fetchone()
-        conn.commit()
+    return team
 
-    flag_data = {
-        'attacker_id': attacker_id,
-        'victim_id': flag.team_id,
-        'task_id': flag.task_id,
-        'attacker_delta': attacker_delta,
-        'victim_delta': victim_delta,
-    }
 
-    storage.get_wro_sio_manager().emit(
-        event='flag_stolen',
-        data={'data': flag_data},
-        namespace='/live_events',
-    )
+async def update_team(team: models.Team):
+    """Update team, reset cache & return updated instance."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(team.get_update_query(), team.to_dict())
 
-    return attacker_delta
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('teams')
+
+    return team
+
+
+async def delete_team(team_id: int):
+    """Set active = False on a team."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(models.Team.get_delete_query(), {'id': team_id})
+
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('teams')

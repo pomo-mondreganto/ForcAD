@@ -4,6 +4,7 @@ from traceback import format_exc
 import gevent
 
 import helplib
+from helplib.exceptions import CheckerTimeoutException
 from helplib.types import Action, TaskStatus
 
 
@@ -22,7 +23,6 @@ def run_generic_action_in_thread(checker_path: str,
                                  action_args: tuple,
                                  action_kwargs: dict,
                                  logger):
-
     verdict = helplib.models.CheckerVerdict(
         command=f'checker.{action}()',
         action=action,
@@ -53,14 +53,17 @@ def run_generic_action_in_thread(checker_path: str,
         return verdict
 
     try:
-        with gevent.Timeout(timeout, helplib.exceptions.CheckerTimeoutException):
+        with gevent.Timeout(timeout, CheckerTimeoutException):
             checker.action(action.name.lower(), *action_args, **action_kwargs)
 
     except finished_exception:
         try:
             verdict.status = TaskStatus(checker.status)
         except ValueError:
-            mess = f'Invalid TaskStatus: {checker.status} for team `{team_name}` task `{task_name}`'
+            mess = (
+                f'Invalid TaskStatus: {checker.status} for '
+                f'team `{team_name}` task `{task_name}`'
+            )
             logger.error(mess)
 
             set_verdict_error(verdict=verdict, action=action, message=mess)
@@ -69,7 +72,10 @@ def run_generic_action_in_thread(checker_path: str,
             verdict.private_message = checker.private
 
     except helplib.exceptions.CheckerTimeoutException:
-        logger.warning(f'{action} action for team `{team_name}` task {task_name} timed out')
+        logger.warning(
+            f'{action} action for team `{team_name}` task {task_name} '
+            'timed out'
+        )
 
         verdict.status = TaskStatus.DOWN
         verdict.public_message = 'Checker timed out'
@@ -82,7 +88,10 @@ def run_generic_action_in_thread(checker_path: str,
         log_func = logger.warning
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
             log_func = logger.error
-        log_func(f'{action} action for team `{team_name}` task `{task_name}` failed with exception {exc}')
+        log_func(
+            f'{action} action for team `{team_name}` task `{task_name}` '
+            f'failed with exception {exc}'
+        )
 
         set_verdict_error(verdict=verdict, action=action, message=exc)
 
