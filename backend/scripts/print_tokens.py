@@ -13,7 +13,7 @@ _SELECT_TEAMS_NAME_TOKEN_QUERY = "SELECT name, token from teams"
 
 
 def run():
-    with storage.db_cursor() as (conn, curs):
+    with storage.db_cursor() as (_, curs):
         curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
         result = curs.fetchall()
 

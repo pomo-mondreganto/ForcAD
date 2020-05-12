@@ -20,10 +20,10 @@ _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
 _GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
 
 
-def get_round_start(round: int) -> int:
+def get_round_start(r: int) -> int:
     """Get start time for round as unix timestamp."""
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        start_time, = pipeline.get(f'round:{round}:start_time').execute()
+        start_time, = pipeline.get(f'round:{r}:start_time').execute()
     try:
         start_time = int(start_time)
     except (ValueError, TypeError):
@@ -31,11 +31,11 @@ def get_round_start(round: int) -> int:
     return start_time
 
 
-def set_round_start(round: int):
+def set_round_start(r: int):
     """Set start time for round as str."""
     cur_time = int(time.time())
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
-        pipeline.set(f'round:{round}:start_time', cur_time).execute()
+        pipeline.set(f'round:{r}:start_time', cur_time).execute()
 
 
 def get_real_round() -> int:
@@ -125,29 +125,31 @@ async def global_config_async_getter(redis_aio, pipe):
     pipe.get('global_config')
 
 
-def construct_game_state_from_db(round: int) -> Optional[models.GameState]:
+def construct_game_state_from_db(current_round: int
+                                 ) -> Optional[models.GameState]:
     """Get game state for specified round with teamtasks from db."""
     teamtasks = storage.tasks.get_teamtasks_from_db()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
-    round_start = get_round_start(round)
+    round_start = get_round_start(current_round)
     state = models.GameState(
         round_start=round_start,
-        round=round,
+        round=current_round,
         team_tasks=teamtasks,
     )
     return state
 
 
-def construct_latest_game_state(round: int) -> Optional[models.GameState]:
+def construct_latest_game_state(current_round: int
+                                ) -> Optional[models.GameState]:
     """Get game state from latest teamtasks from redis stream."""
     teamtasks = storage.tasks.get_last_teamtasks()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
-    round_start = get_round_start(round)
+    round_start = get_round_start(current_round)
     state = models.GameState(
         round_start=round_start,
-        round=round,
+        round=current_round,
         team_tasks=teamtasks,
     )
     return state
@@ -167,7 +169,7 @@ async def get_attack_data(loop) -> str:
 
 def handle_attack(attacker_id: int,
                   flag_str: str,
-                  round: int) -> models.AttackResult:
+                  current_round: int) -> models.AttackResult:
     """
     Main routine for attack validation & state change.
 
@@ -176,7 +178,7 @@ def handle_attack(attacker_id: int,
 
     :param attacker_id: id of the attacking team
     :param flag_str: flag to be checked
-    :param round: round of the attack
+    :param current_round: round of the attack
 
     :return: attacker rating change
     """
@@ -184,11 +186,12 @@ def handle_attack(attacker_id: int,
     result = models.AttackResult(attacker_id=attacker_id)
 
     try:
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str, f_round=round)
+        flag = storage.flags.get_flag_by_str(flag_str=flag_str,
+                                             current_round=current_round)
         result.victim_id = flag.team_id
         result.task_id = flag.task_id
         storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id,
-                                          f_round=round)
+                                          current_round=current_round)
         result.submit_ok = True
 
         with storage.db_cursor() as (conn, curs):

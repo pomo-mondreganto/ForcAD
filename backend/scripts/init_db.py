@@ -128,7 +128,7 @@ def run():
 
         conn.commit()
 
-    game_state = storage.game.construct_game_state_from_db(round=0)
+    game_state = storage.game.construct_game_state_from_db(current_round=0)
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())
         pipeline.execute()

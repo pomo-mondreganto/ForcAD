@@ -46,7 +46,7 @@ class RoundProcessor(Task):
             return
 
         game_state = storage.game.construct_latest_game_state(
-            round=current_round,
+            current_round=current_round,
         )
 
         if not game_state.team_tasks:
@@ -68,7 +68,7 @@ class RoundProcessor(Task):
     def update_round(finished_round):
         logger.info(f'Updating round to {finished_round + 1}')
 
-        storage.game.set_round_start(round=finished_round + 1)
+        storage.game.set_round_start(r=finished_round + 1)
         storage.game.update_real_round_in_db(new_round=finished_round + 1)
 
         # Might think there's a RC here (I thought so too)

@@ -38,7 +38,7 @@ class Model(object):
 
     @classmethod
     def from_yaml(cls, yaml_obj):
-        d = yaml.load(yaml_obj, Loader=yaml.FullLoader)
+        d = yaml.safe_load(yaml_obj)
         return cls(**d)
 
     @classmethod

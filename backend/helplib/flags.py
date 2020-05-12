@@ -9,13 +9,13 @@ ALPHABET = string.ascii_uppercase + string.digits
 def generate_flag(service: str,
                   team_id: int,
                   task_id: int,
-                  round: int) -> models.Flag:
+                  current_round: int) -> models.Flag:
     """Generate a new flag
 
         :param service: service name of new flag (to pick first flag letter)
         :param team_id: team id
         :param task_id: task id
-        :param round: current round
+        :param current_round: current round
         :return: Flag model instance
     """
     service_letter = service[0].upper()
@@ -27,7 +27,7 @@ def generate_flag(service: str,
         team_id=team_id,
         task_id=task_id,
         flag=flag_text,
-        round=round,
+        round=current_round,
         public_flag_data=None,
         private_flag_data=None,
         vuln_number=None,

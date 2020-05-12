@@ -12,7 +12,7 @@ logger = get_task_logger(__name__)
 
 def get_round_setup(team: models.Team,
                     task: models.Task,
-                    f_round: int) -> Tuple[dict, dict]:
+                    current_round: int) -> Tuple[dict, dict]:
     params = {
         'time_limit': task.checker_timeout + 5,
         'link_error': celery_tasks.handlers.exception_callback,
@@ -20,7 +20,7 @@ def get_round_setup(team: models.Team,
     kwargs = {
         'team': team,
         'task': task,
-        'round': f_round,
+        'current_round': current_round,
     }
     return params, kwargs
 
@@ -40,8 +40,10 @@ def get_gets_chain(task: models.Task, kwargs: dict, params: dict) -> group:
 
 
 @shared_task
-def run_full_round(team: models.Team, task: models.Task, f_round: int) -> bool:
-    params, kwargs = get_round_setup(team, task, f_round)
+def run_full_round(team: models.Team,
+                   task: models.Task,
+                   current_round: int) -> bool:
+    params, kwargs = get_round_setup(team, task, current_round)
     check = celery_tasks.actions.check_action.s(**kwargs).set(**params)
 
     puts = get_puts_group(task, kwargs, params)
@@ -60,8 +62,10 @@ def run_full_round(team: models.Team, task: models.Task, f_round: int) -> bool:
 
 
 @shared_task
-def run_puts_round(team: models.Team, task: models.Task, f_round: int) -> bool:
-    params, kwargs = get_round_setup(team, task, f_round)
+def run_puts_round(team: models.Team,
+                   task: models.Task,
+                   current_round: int) -> bool:
+    params, kwargs = get_round_setup(team, task, current_round)
 
     handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)
 
@@ -74,9 +78,10 @@ def run_puts_round(team: models.Team, task: models.Task, f_round: int) -> bool:
 
 
 @shared_task
-def run_check_gets_round(team: models.Team, task: models.Task,
-                         f_round: int) -> bool:
-    params, kwargs = get_round_setup(team, task, f_round)
+def run_check_gets_round(team: models.Team,
+                         task: models.Task,
+                         current_round: int) -> bool:
+    params, kwargs = get_round_setup(team, task, current_round)
     check = celery_tasks.actions.check_action.s(**kwargs).set(**params)
     gets = get_gets_chain(task, kwargs, params)
     handler = celery_tasks.handlers.checker_results_handler.s(**kwargs)

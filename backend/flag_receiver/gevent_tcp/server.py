@@ -59,16 +59,14 @@ class SubmitHandler:
                 socket.sendall(b'Invalid flag\n')
                 continue
 
-            round = storage.game.get_real_round()
+            current_round = storage.game.get_real_round()
 
-            if round == -1:
+            if current_round == -1:
                 socket.sendall(b'Game is unavailable\n')
 
-            ar = storage.game.handle_attack(
-                attacker_id=team_id,
-                flag_str=flag_str,
-                round=round,
-            )
+            ar = storage.game.handle_attack(attacker_id=team_id,
+                                            flag_str=flag_str,
+                                            current_round=current_round)
             self._monitor.add(ar)
             if ar.submit_ok:
                 self._monitor.inc_ok()

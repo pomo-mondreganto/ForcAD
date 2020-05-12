@@ -66,14 +66,14 @@ async def get_all_tasks_async() -> List[models.Task]:
     return tasks
 
 
-def update_task_status(task_id: int, team_id: int, f_round: int,
+def update_task_status(task_id: int, team_id: int, current_round: int,
                        checker_verdict: models.CheckerVerdict):
     """
     Update task status in database.
 
     :param task_id:
     :param team_id:
-    :param f_round:
+    :param current_round:
     :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
@@ -87,7 +87,7 @@ def update_task_status(task_id: int, team_id: int, f_round: int,
         curs.callproc(
             'update_teamtasks_status',
             (
-                f_round,
+                current_round,
                 team_id,
                 task_id,
                 checker_verdict.status.value,
@@ -100,7 +100,7 @@ def update_task_status(task_id: int, team_id: int, f_round: int,
         data = curs.fetchone()
         conn.commit()
 
-    data['round'] = f_round
+    data['round'] = current_round
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
                       approximate=False).execute()
@@ -135,7 +135,7 @@ def get_teamtasks_from_db() -> List[dict]:
 
     :returns: dictionary of team tasks or None
     """
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_TEAMTASKS_QUERY)
         data = curs.fetchall()
 

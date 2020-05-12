@@ -16,7 +16,7 @@ WHERE f.round >= %s AND f.task_id IN %s
 
 
 def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
-                        f_round: int):
+                        current_round: int):
     """
     Flag validation function.
 
@@ -25,12 +25,12 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
 
     :param flag: Flag model instance
     :param attacker: attacker team id
-    :param f_round: current round
+    :param current_round: current round
 
     :raises FlagSubmitException: on validation error
     """
     game_config = storage.game.get_current_global_config()
-    if f_round - flag.round > game_config.flag_lifetime:
+    if current_round - flag.round > game_config.flag_lifetime:
         raise helplib.exceptions.FlagSubmitException('Flag is too old')
     if flag.team_id == attacker:
         raise helplib.exceptions.FlagSubmitException('Flag is your own')
@@ -45,7 +45,7 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
                 pipeline=pipeline,
                 cache_key=f'team:{attacker}:stolen_flags',
                 cache_func=caching.cache_last_stolen,
-                cache_args=(attacker, f_round, pipeline),
+                cache_args=(attacker, current_round, pipeline),
             )
 
         is_new, = pipeline.sadd(
@@ -89,15 +89,14 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     return flag
 
 
-def get_flag_by_field(field_name: str,
-                      field_value,
-                      f_round: int) -> helplib.models.Flag:
+def get_flag_by_field(field_name: str, field_value,
+                      current_round: int) -> helplib.models.Flag:
     """
     Get flag by generic field.
 
     :param field_name: field name to ask cache for
     :param field_value: value of the field "field_name" to filter on
-    :param f_round: current round
+    :param current_round: current round
     :returns: Flag model instance with flag.field_name == field_value
     :raises FlagSubmitException: if nothing found
     """
@@ -108,7 +107,7 @@ def get_flag_by_field(field_name: str,
                 pipeline=pipeline,
                 cache_key='flags:cached',
                 cache_func=caching.cache_last_flags,
-                cache_args=(f_round, pipeline),
+                cache_args=(current_round, pipeline),
             )
 
         pipeline.exists(f'flag:{field_name}:{field_value}')
@@ -125,39 +124,39 @@ def get_flag_by_field(field_name: str,
     return flag
 
 
-def get_flag_by_str(flag_str: str, f_round: int) -> helplib.models.Flag:
+def get_flag_by_str(flag_str: str, current_round: int) -> helplib.models.Flag:
     """
     Get flag by its string value.
 
     :param flag_str: flag value
-    :param f_round: current round
+    :param current_round: current round
     :returns: Flag model instance
     :raises FlagSubmitException: if flag not found
     """
     return get_flag_by_field(field_name='str', field_value=flag_str,
-                             f_round=f_round)
+                             current_round=current_round)
 
 
-def get_flag_by_id(flag_id: int, f_round: int) -> helplib.models.Flag:
+def get_flag_by_id(flag_id: int, current_round: int) -> helplib.models.Flag:
     """
     Get flag by its id value.
 
     :param flag_id: flag id
-    :param f_round: current round
+    :param current_round: current round
     :return: Flag model instance
     """
     return get_flag_by_field(field_name='id', field_value=flag_id,
-                             f_round=f_round)
+                             current_round=current_round)
 
 
-def get_random_round_flag(team_id: int, task_id: int, f_round: int,
+def get_random_round_flag(team_id: int, task_id: int, from_round: int,
                           current_round: int) -> Optional[helplib.models.Flag]:
     """
     Get random flag for team generated for specified round and task.
 
     :param team_id: team id
     :param task_id: task id
-    :param f_round: round to fetch flag for
+    :param from_round: round to fetch flag for
     :param current_round: current round
     :returns: Flag mode instance or None if no flag from rounds exist
     """
@@ -171,7 +170,7 @@ def get_random_round_flag(team_id: int, task_id: int, f_round: int,
         )
 
         flags, = pipeline.smembers(
-            f'team:{team_id}:task:{task_id}:round_flags:{f_round}').execute()
+            f'team:{team_id}:task:{task_id}:round_flags:{from_round}').execute()
         try:
             flag_id = int(secrets.choice(list(flags)))
         except (ValueError, IndexError, TypeError):

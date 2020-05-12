@@ -7,13 +7,15 @@ from prometheus_client import (
     Counter,
 )
 from prometheus_client.exposition import generate_latest
+from sanic import Sanic
 from sanic.response import raw
+from typing import Optional
 
 import config
 
 
 class MonitorClient:
-    def __init__(self, app):
+    def __init__(self, app: Sanic):
         self.app = app
         self.flag_submits_metric = Counter(
             name='flag_submits_total',
@@ -26,9 +28,10 @@ class MonitorClient:
         return generate_latest(REGISTRY)
 
     def add_endpoint(self, name):
-        @self.app.route(name)
         async def monitoring_endpoint(_request):
             return raw(self.get_data(), content_type=CONTENT_TYPE_LATEST)
+
+        self.app.add_route(monitoring_endpoint, name)
 
     async def process_message(self, message: aio_pika.IncomingMessage):
         async with message.process():
@@ -49,8 +52,8 @@ class MonitorClient:
         broker_url = config.get_broker_url()
 
         wait_period = 2
-        exc = None
-        for i in range(5):
+        exc: Optional[Exception] = None
+        for _ in range(5):
             try:
                 connection = await aio_pika.connect_robust(broker_url)
             except ConnectionError as e:

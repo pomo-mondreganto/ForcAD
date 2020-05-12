@@ -15,7 +15,7 @@ def exception_callback(result, exc, traceback):
     action = Action[action_name]
 
     kw = result.kwargs
-    team, task, round = kw['team'], kw['task'], kw['round']
+    team, task, current_round = kw['team'], kw['task'], kw['round']
 
     if action == Action.CHECK:
         prev_verdict = None
@@ -24,7 +24,7 @@ def exception_callback(result, exc, traceback):
 
     logger.error(
         f"Task exception handler was called for "
-        f"team {team} task {task}, round {round}, "
+        f"team {team} task {task}, round {current_round}, "
         f"exception {repr(exc)}, traceback\n{traceback}"
     )
 
@@ -39,17 +39,20 @@ def exception_callback(result, exc, traceback):
             private_message=f'Exception on {action}: {repr(exc)}\n{traceback}'
         )
 
-    storage.tasks.update_task_status(task_id=task.id, team_id=team.id,
-                                     f_round=round, checker_verdict=verdict)
+    storage.tasks.update_task_status(
+        task_id=task.id,
+        team_id=team.id,
+        current_round=current_round,
+        checker_verdict=verdict,
+    )
     return verdict
 
 
 @shared_task
-def checker_results_handler(
-        verdicts: List[models.CheckerVerdict],
-        team: models.Team,
-        task: models.Task,
-        round: int) -> models.CheckerVerdict:
+def checker_results_handler(verdicts: List[models.CheckerVerdict],
+                            team: models.Team,
+                            task: models.Task,
+                            current_round: int) -> models.CheckerVerdict:
     """Parse returning verdicts and return the final one
 
         If there were any errors, the first one'll be returned
@@ -70,7 +73,7 @@ def checker_results_handler(
 
     logger.info(
         f"Finished testing team `{team.name}` task `{task.name}` "
-        f"round {round}. "
+        f"round {current_round}. "
         f"Verdicts: check: {check_verdict} puts {puts_verdicts} "
         f"gets {gets_verdict}"
     )
@@ -84,6 +87,6 @@ def checker_results_handler(
 
     result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
     storage.tasks.update_task_status(task_id=task.id, team_id=team.id,
-                                     f_round=round,
+                                     current_round=current_round,
                                      checker_verdict=result_verdict)
     return result_verdict
