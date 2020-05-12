@@ -108,8 +108,12 @@ def cache_last_flags(current_round: int, pipeline):
         pipeline.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
         pipeline.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
 
-        team_id, task_id, current_round = flag.team_id, flag.task_id, flag.round
-        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{current_round}'
+        team_id = flag.team_id
+        task_id = flag.task_id
+        current_round = flag.round
+        round_flags_key = (
+            f'team:{team_id}:task:{task_id}:round_flags:{current_round}'
+        )
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 

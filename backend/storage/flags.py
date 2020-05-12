@@ -170,7 +170,8 @@ def get_random_round_flag(team_id: int, task_id: int, from_round: int,
         )
 
         flags, = pipeline.smembers(
-            f'team:{team_id}:task:{task_id}:round_flags:{from_round}').execute()
+            f'team:{team_id}:task:{task_id}:round_flags:{from_round}',
+        ).execute()
         try:
             flag_id = int(secrets.choice(list(flags)))
         except (ValueError, IndexError, TypeError):
