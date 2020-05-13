@@ -1,6 +1,7 @@
 from celery import shared_task
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
+from typing import Any
 
 import storage
 from helplib import locking
@@ -9,7 +10,7 @@ logger = get_task_logger(__name__)
 
 
 @worker_ready.connect
-def startup(**_kwargs):
+def startup(**_kwargs: Any) -> None:
     """Task to run on start of celery, schedules game start"""
     game_config = storage.game.get_current_global_config()
 
@@ -25,11 +26,12 @@ def startup(**_kwargs):
                     eta=game_config.start_time,
                 )
 
-                game_state = storage.game.construct_game_state_from_db(round=0)
+                game_state = storage.game.construct_game_state_from_db(
+                    current_round=0)
                 if not game_state:
                     logger.warning('Initial game_state missing')
                 else:
-                    logger.info(f"Initializing game_state with {game_state.to_dict()}")
+                    logger.info(f"Initializing game_state with {game_state}")
                     pipeline.set('game_state', game_state.to_json())
                     pipeline.execute()
 
@@ -41,7 +43,7 @@ def startup(**_kwargs):
 
 
 @shared_task
-def start_game():
+def start_game() -> None:
     """Starts game
 
     Sets `game_running` in DB
@@ -55,10 +57,10 @@ def start_game():
                 logger.info('Game already started')
                 return
 
-            storage.game.set_round_start(round=0)
+            storage.game.set_round_start(r=0)
             storage.game.set_game_running(True)
 
-        game_state = storage.game.construct_game_state_from_db(round=0)
+        game_state = storage.game.construct_game_state_from_db(current_round=0)
         if not game_state:
             logger.warning('Initial game_state missing')
         else:

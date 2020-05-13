@@ -24,7 +24,9 @@ if game_config.game_mode == 'blitz':
     tasks = storage.tasks.get_tasks()
 
     beat_schedule = {}
-    puts_processor = celery_tasks.round_processor.get_round_processor(round_type='puts')
+    puts_processor = celery_tasks.round_processor.get_round_processor(
+        round_type='puts',
+    )
     app.register_task(puts_processor)
     beat_schedule['process_puts_round'] = {
         'task': puts_processor.name,
@@ -32,13 +34,13 @@ if game_config.game_mode == 'blitz':
     }
 
     for task in tasks:
-        check_gets_processor = celery_tasks.round_processor.get_round_processor(
+        check_get_processor = celery_tasks.round_processor.get_round_processor(
             round_type='check_gets',
             task_id=task.id,
         )
-        app.register_task(check_gets_processor)
+        app.register_task(check_get_processor)
         beat_schedule[f'process_check_gets_{task.id}_round'] = {
-            'task': check_gets_processor.name,
+            'task': check_get_processor.name,
             'schedule': task.get_period,
         }
 else:

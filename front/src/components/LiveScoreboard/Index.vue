@@ -1,10 +1,13 @@
 <template>
     <div class="flag" v-if="error !== null">{{ error }}</div>
     <div class="flag" v-else>
-        <div :key="index" v-for="({ attacker, victim, task, delta }, index) in events">
+        <div
+            :key="index"
+            v-for="({ attacker, victim, task, delta }, index) in events"
+        >
             <span class="mark">{{ attacker }}</span> stole a flag from
-            <span class="mark">{{ victim }}</span>'s service
-            <span class="mark">{{ task }}</span> and got
+            <span class="mark">{{ victim }}</span
+            >'s service <span class="mark">{{ task }}</span> and got
             <span class="mark">{{ delta }}</span> points
         </div>
     </div>

@@ -1,4 +1,6 @@
-from typing import Optional
+from logging import Logger
+
+from typing import Optional, List
 
 import helplib
 from helplib import models
@@ -7,10 +9,8 @@ from helplib.thread_actions import run_generic_action_in_thread
 from helplib.types import TaskStatus, Action
 
 
-def first_error_or_first_verdict(verdicts: [models.CheckerVerdict]) -> Optional[models.CheckerVerdict]:
-    if not verdicts:
-        return None
-
+def first_error_or_first_verdict(verdicts: List[models.CheckerVerdict]
+                                 ) -> models.CheckerVerdict:
     for verdict in verdicts:
         if verdict.status != TaskStatus.UP:
             return verdict
@@ -22,9 +22,13 @@ class CheckerRunner:
     """Helper class """
     team: models.Team
     task: models.Task
-    flag: helplib.models.Flag
+    flag: Optional[models.Flag]
 
-    def __init__(self, team, task, logger, flag=None):
+    def __init__(self,
+                 team: models.Team,
+                 task: models.Task,
+                 logger: Logger,
+                 flag: Optional[models.Flag] = None):
         self.team = team
         self.task = task
         self.logger = logger
@@ -64,6 +68,7 @@ class CheckerRunner:
 
     def _put_as_process(self) -> helplib.models.CheckerVerdict:
         """Put implementation using subprocess calling"""
+        assert self.flag is not None, 'Can only be called when flag is passed'
 
         put_command = [
             self.task.checker,
@@ -85,6 +90,7 @@ class CheckerRunner:
 
     def _get_as_process(self) -> helplib.models.CheckerVerdict:
         """Get implementation using subprocess calling"""
+        assert self.flag is not None, 'Can only be called when flag is passed'
 
         get_command = [
             self.task.checker,
@@ -121,6 +127,7 @@ class CheckerRunner:
 
     def _put_in_thread(self) -> helplib.models.CheckerVerdict:
         """Check implementation, gevent-compatible"""
+        assert self.flag is not None, 'Can only be called when flag is passed'
 
         kwargs = {
             'flag_id': self.flag.private_flag_data,
@@ -142,6 +149,7 @@ class CheckerRunner:
 
     def _get_in_thread(self) -> helplib.models.CheckerVerdict:
         """Check implementation, gevent-compatible"""
+        assert self.flag is not None, 'Can only be called when flag is passed'
 
         kwargs = {
             'flag_id': self.flag.private_flag_data,

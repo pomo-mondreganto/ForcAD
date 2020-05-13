@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS Teams
     name        VARCHAR(255) NOT NULL DEFAULT '',
     ip          VARCHAR(32)  NOT NULL,
     token       VARCHAR(16)  NOT NULL DEFAULT '',
-    highlighted BOOLEAN               DEFAULT FALSE
+    highlighted BOOLEAN               DEFAULT FALSE,
+    active      BOOLEAN               DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS Flags
@@ -21,11 +22,10 @@ CREATE TABLE IF NOT EXISTS Flags
 
 CREATE TABLE IF NOT EXISTS StolenFlags
 (
-    id          SERIAL PRIMARY KEY,
     flag_id     INTEGER NOT NULL,
     attacker_id INTEGER NOT NULL,
     submit_time TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    UNIQUE (flag_id, attacker_id)
+    PRIMARY KEY (flag_id, attacker_id)
 );
 
 CREATE TABLE IF NOT EXISTS Tasks
@@ -39,12 +39,13 @@ CREATE TABLE IF NOT EXISTS Tasks
     places          INTEGER,
     checker_timeout INTEGER,
     checker_type    VARCHAR(32) DEFAULT 'hackerdom',
-    get_period      INTEGER     DEFAULT 0
+    get_period      INTEGER     DEFAULT 0,
+    default_score   INTEGER,
+    active          BOOLEAN     DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS TeamTasks
 (
-    id              SERIAL PRIMARY KEY,
     task_id         INTEGER,
     team_id         INTEGER,
     status          INTEGER,
@@ -56,7 +57,7 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     public_message  TEXT NOT NULL DEFAULT '',
     private_message TEXT NOT NULL DEFAULT '',
     command         TEXT NOT NULL DEFAULT '',
-    UNIQUE (task_id, team_id)
+    PRIMARY KEY (team_id, task_id)
 );
 
 CREATE UNLOGGED TABLE IF NOT EXISTS TeamTasksLog

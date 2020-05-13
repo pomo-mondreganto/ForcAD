@@ -8,13 +8,34 @@ from storage import caching
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
+TEAMTASK_INSERT_QUERY = '''
+INSERT INTO TeamTasks
+(task_id, team_id, score, status)
+VALUES (%s, %s, %s, %s)
+'''
+
+_SELECT_TEAMTASK_LOG_QUERY = '''
+WITH logged_teamtasks AS (
+    SELECT * FROM teamtaskslog
+    WHERE team_id=%(team_id)s AND task_id=%(task_id)s
+)
+SELECT (SELECT MAX(id) FROM logged_teamtasks) + 1 AS id,
+       (SELECT real_round FROM globalconfig WHERE id=1) AS round,
+       *,
+       now() AS ts
+FROM teamtasks
+WHERE team_id=%(team_id)s AND task_id=%(task_id)s
+UNION SELECT * FROM logged_teamtasks
+ORDER BY id DESC
+'''
+
 
 def get_tasks() -> List[models.Task]:
-    """Get list of tasks registered in database"""
+    """Get list of tasks registered in database."""
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
-            cache_key='tasks:cached',
+            cache_key='tasks',
             cache_func=caching.cache_tasks,
             cache_args=(pipeline,),
         )
@@ -25,23 +46,35 @@ def get_tasks() -> List[models.Task]:
     return tasks
 
 
-async def tasks_async_getter(redis_aio, pipe):
-    """Get list of tasks registered in the database (asynchronous version)"""
+async def tasks_async_getter(redis_aio, pipe):  # type: ignore
+    """Cache tasks if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
-        cache_key='tasks:cached',
+        cache_key='tasks',
         cache_func=caching.cache_tasks,
     )
     pipe.smembers('tasks')
 
 
-def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: models.CheckerVerdict):
-    """ Update task status in database
+async def get_all_tasks_async() -> List[models.Task]:
+    """Get list of all tasks from database."""
+    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+        await curs.execute(models.Task.get_select_all_query())
+        results = await curs.fetchall()
 
-        :param task_id:
-        :param team_id:
-        :param round:
-        :param checker_verdict: instance of CheckerActionResult
+    tasks = [models.Task.from_dict(task) for task in results]
+    return tasks
+
+
+def update_task_status(task_id: int, team_id: int, current_round: int,
+                       checker_verdict: models.CheckerVerdict) -> None:
+    """
+    Update task status in database.
+
+    :param task_id:
+    :param team_id:
+    :param current_round:
+    :param checker_verdict: instance of CheckerActionResult
     """
     add = 0
     public = checker_verdict.public_message
@@ -54,7 +87,7 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         curs.callproc(
             'update_teamtasks_status',
             (
-                round,
+                current_round,
                 team_id,
                 task_id,
                 checker_verdict.status.value,
@@ -67,15 +100,14 @@ def update_task_status(task_id: int, team_id: int, round: int, checker_verdict: 
         data = curs.fetchone()
         conn.commit()
 
-    data['round'] = round
+    data['round'] = current_round
     with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50, approximate=False).execute()
+        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
+                      approximate=False).execute()
 
 
 def get_last_teamtasks() -> List[dict]:
-    """Fetch team tasks, last for each team for each task
-        :return: dictionary of team tasks or None
-    """
+    """Fetch team tasks, last for each team for each task."""
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
@@ -92,25 +124,27 @@ def get_last_teamtasks() -> List[dict]:
         record['timestamp'] = timestamp
         results.append(record)
 
-    process_teamtasks(results)
+    results = process_teamtasks(results)
 
     return results
 
 
 def get_teamtasks_from_db() -> List[dict]:
-    """Fetch current team tasks from database
-        :return: dictionary of team tasks or None
     """
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    Fetch current team tasks from database.
+
+    :returns: dictionary of team tasks or None
+    """
+    with storage.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_TEAMTASKS_QUERY)
         data = curs.fetchall()
 
     return data
 
 
-async def get_teamtasks_of_team_async(team_id: int, loop) -> List[dict]:
-    """Fetch teamtasks for team for all tasks"""
-    redis_aio = await storage.get_async_redis_storage(loop)
+async def get_teamtasks_of_team_async(team_id: int) -> List[dict]:
+    """Fetch teamtasks for team for all tasks."""
+    redis_aio = await storage.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
     tasks, = await pipe.execute()
@@ -133,7 +167,10 @@ async def get_teamtasks_of_team_async(team_id: int, loop) -> List[dict]:
 
 
 def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
-    """Remove private message and rename public message
+    """
+    Filter sensitive data from teamtasks.
+
+    Remove private message and rename public message
     to "message" for a list of teamtasks, remove 'command'
     """
     result = []
@@ -148,12 +185,85 @@ def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:
     return result
 
 
-def process_teamtasks(teamtasks: List[dict]):
+def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
+    """
+    Force correct types on teamtasks list.
+
+    :returns: processed list
+    """
     casts = (
-        (['id', 'team_id', 'task_id', 'checks', 'checks_passed', 'round'], int),
-        (['score'], float),
+        (
+            ['team_id', 'task_id', 'checks', 'checks_passed', 'round'],
+            int,
+        ),
+        (
+            ['score'],
+            float,
+        ),
     )
     for each in teamtasks:
         for keys, t in casts:
             for key in keys:
                 each[key] = t(each[key])
+
+    return teamtasks
+
+
+async def create_task(task: models.Task) -> models.Task:
+    """Add new task to DB, reset cache & return created instance."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(task.get_insert_query(), task.to_dict())
+        result, = await curs.fetchone()
+        task.id = result
+
+        teams = await storage.teams.get_all_teams_async()
+        insert_data = [
+            (task.id, team.id, task.default_score, -1)
+            for team in teams
+        ]
+
+        for each in insert_data:
+            await curs.execute(TEAMTASK_INSERT_QUERY, each)
+
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('tasks')
+
+    return task
+
+
+async def update_task(task: models.Task) -> models.Task:
+    """Update task, reset cache & return updated instance."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(task.get_update_query(), task.to_dict())
+
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('tasks')
+
+    return task
+
+
+async def delete_task(task_id: int) -> None:
+    """Set active = False on a task."""
+    async with storage.async_db_cursor() as (_conn, curs):
+        await curs.execute(models.Task.get_delete_query(), {'id': task_id})
+
+    redis_aio = await storage.get_async_redis_storage()
+    await redis_aio.delete('tasks')
+
+
+async def get_admin_teamtask_history(team_id: int, task_id: int) -> List[dict]:
+    """Get teamtasks from log table by team & task ids pair."""
+    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+        await curs.execute(
+            _SELECT_TEAMTASK_LOG_QUERY,
+            {
+                'team_id': team_id,
+                'task_id': task_id,
+            },
+        )
+        results = await curs.fetchall()
+
+    for each in results:
+        each['ts'] = each['ts'].timestamp()
+
+    return results

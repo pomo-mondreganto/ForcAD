@@ -1,7 +1,19 @@
 import os
+
+import kombu
+import psycopg2
 import sys
 
-import psycopg2
+amqp_host = os.environ['RABBITMQ_HOST']
+amqp_user = os.environ['RABBITMQ_DEFAULT_USER']
+amqp_port = os.environ['RABBITMQ_PORT']
+amqp_pass = os.environ['RABBITMQ_DEFAULT_PASS']
+amqp_vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
+
+broker_url = f'amqp://{amqp_user}:{amqp_pass}@{amqp_host}:{amqp_port}/{amqp_vhost}'
+
+c = kombu.Connection(broker_url)
+c.connect()
 
 conn = psycopg2.connect(
     host=os.environ['POSTGRES_HOST'],

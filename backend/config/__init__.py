@@ -3,6 +3,13 @@ import os
 import storage
 
 
+def get_web_credentials() -> dict:
+    return {
+        'username': os.environ['ADMIN_USERNAME'],
+        'password': os.environ['ADMIN_PASSWORD'],
+    }
+
+
 def get_redis_config() -> dict:
     return {
         'host': os.environ['REDIS_HOST'],
@@ -24,25 +31,25 @@ def get_db_config() -> dict:
 
 def get_broker_url() -> str:
     """Get broker url for RabbitMQ from config"""
-    amqp_host = os.environ['RABBITMQ_HOST']
-    amqp_user = os.environ['RABBITMQ_DEFAULT_USER']
-    amqp_port = os.environ['RABBITMQ_PORT']
-    amqp_pass = os.environ['RABBITMQ_DEFAULT_PASS']
-    amqp_vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
+    host = os.environ['RABBITMQ_HOST']
+    user = os.environ['RABBITMQ_DEFAULT_USER']
+    port = os.environ['RABBITMQ_PORT']
+    password = os.environ['RABBITMQ_DEFAULT_PASS']
+    vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
 
-    broker_url = f'amqp://{amqp_user}:{amqp_pass}@{amqp_host}:{amqp_port}/{amqp_vhost}'
+    broker_url = f'amqp://{user}:{password}@{host}:{port}/{vhost}'
     return broker_url
 
 
 def get_celery_config() -> dict:
     game_config = storage.game.get_current_global_config()
 
-    redis_host = os.environ['REDIS_HOST']
-    redis_port = os.environ['REDIS_PORT']
-    redis_pass = os.environ['REDIS_PASSWORD']
-    redis_db = 1
+    host = os.environ['REDIS_HOST']
+    port = os.environ['REDIS_PORT']
+    password = os.environ['REDIS_PASSWORD']
+    db = 1
 
-    result_backend = f'redis://:{redis_pass}@{redis_host}:{redis_port}/{redis_db}'
+    result_backend = f'redis://:{password}@{host}:{port}/{db}'
 
     broker_url = get_broker_url()
 

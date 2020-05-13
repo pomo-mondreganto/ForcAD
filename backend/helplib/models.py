@@ -1,38 +1,98 @@
+import secrets
+
 import datetime
 import yaml
 from kombu.utils import json as kjson
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Tuple, TypeVar, Type, TextIO
 
 from helplib.types import Action, TaskStatus
 
+T = TypeVar('T', bound='Model')
 
+
+# noinspection SqlResolve
 class Model(object):
     """Generic model implementing basic methods to load and print"""
 
-    def __init__(self, *_args, **_kwargs):
-        pass
+    __slots__: Tuple[str, ...] = ()
+    table_name = 'undefined'
+    defaults: Dict[str, Any] = {}
+
+    def __init__(self, **kwargs: Any):
+        for attr in self.__slots__:
+            if attr == 'id':
+                setattr(self, attr, kwargs.get(attr))
+                continue
+            if attr not in kwargs:
+                if attr not in self.defaults:
+                    raise KeyError(
+                        f'Attribute {attr} is required '
+                        f'for model {self.__class__}'
+                    )
+                setattr(self, attr, self.defaults[attr])
+            else:
+                setattr(self, attr, kwargs[attr])
 
     @classmethod
-    def from_json(cls, json_str: str):
+    def from_json(cls: Type[T], json_str: str) -> T:
         d = kjson.loads(json_str)
         return cls(**d)
 
     @classmethod
-    def from_yaml(cls, yaml_obj):
-        d = yaml.load(yaml_obj, Loader=yaml.FullLoader)
+    def from_yaml(cls: Type[T], yaml_obj: TextIO) -> T:
+        d = yaml.safe_load(yaml_obj)
         return cls(**d)
 
     @classmethod
-    def from_dict(cls, d: dict):
+    def from_dict(cls: Type[T], d: Dict[str, Any]) -> T:
         return cls(**d)
 
-    def to_dict(self):
-        raise NotImplemented
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: getattr(self, k) for k in self.__slots__}
 
-    def to_json(self):
-        return kjson.dumps(self.to_dict())
+    def to_json(self) -> str:
+        return kjson.dumps(self.to_dict())  # type: ignore
 
-    def __repr__(self):
+    @classmethod
+    def _get_column_names(cls) -> List[str]:
+        return list(filter(lambda x: x != 'id', cls.__slots__))
+
+    @classmethod
+    def get_select_all_query(cls) -> str:
+        return f'SELECT * FROM {cls.table_name}'
+
+    @classmethod
+    def get_select_one_query(cls) -> str:
+        return f'SELECT * FROM {cls.table_name} WHERE id=%(id)s'
+
+    @classmethod
+    def get_select_active_query(cls) -> str:
+        return f'SELECT * FROM {cls.table_name} WHERE active=TRUE'
+
+    @classmethod
+    def get_insert_query(cls) -> str:
+        column_names = cls._get_column_names()
+        columns = ', '.join(column_names)
+        values = ', '.join(f'%({column})s' for column in column_names)
+        q = (
+            f'INSERT INTO {cls.table_name} ({columns}) '
+            f'VALUES ({values}) RETURNING id'
+        )
+        return q
+
+    @classmethod
+    def get_update_query(cls) -> str:
+        column_names = cls._get_column_names()
+        update_data = ', '.join(
+            f'{column}=%({column})s' for column in column_names
+        )
+        return f'UPDATE {cls.table_name} SET {update_data} WHERE id=%(id)s'
+
+    @classmethod
+    def get_delete_query(cls) -> str:
+        return f'UPDATE {cls.table_name} SET active=FALSE WHERE id=%(id)s'
+
+    def __repr__(self) -> str:
         return str(self)
 
 
@@ -43,40 +103,42 @@ class Team(Model):
     ip: str
     token: str
     highlighted: bool
+    active: bool
 
-    def __init__(self, id: Optional[int], name: str, ip: str, token: str, highlighted: bool):
-        super(Team, self).__init__()
-        self.id = id
-        self.name = name
-        self.ip = ip
-        self.token = token
-        self.highlighted = highlighted
+    table_name = 'Teams'
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'ip': self.ip,
-            'token': self.token,
-            'highlighted': self.highlighted,
-        }
+    defaults = {
+        'highlighted': False,
+        'active': True,
+    }
 
-    def to_dict_for_participants(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'ip': self.ip,
-            'highlighted': self.highlighted,
-        }
+    __slots__ = (
+        'id',
+        'name',
+        'ip',
+        'token',
+        'highlighted',
+        'active',
+    )
 
-    def __str__(self):
+    @staticmethod
+    def generate_token() -> str:
+        return secrets.token_hex(8)
+
+    def to_dict_for_participants(self) -> Dict[str, Any]:
+        d = self.to_dict()
+        d.pop('token', None)
+        return d
+
+    def __str__(self) -> str:
         return f"Team({self.id, self.name})"
 
 
 class Task(Model):
     """Model representing a task
 
-        It also stores checker-specific info (path, env, number of gets, puts, flag places), etc...
+        It also stores checker-specific info
+        (path, env, number of gets, puts, flag places), etc...
     """
     id: Optional[int]
     name: str
@@ -87,75 +149,57 @@ class Task(Model):
     checker_timeout: int
     checker_type: str
     env_path: str
-    default_score: Optional[float]
+    default_score: float
     get_period: int
+    active: bool
 
-    def __init__(self,
-                 id: Optional[int],
-                 name: str,
-                 checker: str,
-                 gets: int,
-                 puts: int,
-                 places: int,
-                 checker_timeout: int,
-                 checker_type: str,
-                 env_path: str,
-                 get_period: int,
-                 default_score: Optional[float] = None):
-        super(Task, self).__init__()
-        self.id = id
-        self.name = name
-        self.checker = checker
-        self.gets = gets
-        self.puts = puts
-        self.places = places
-        self.checker_timeout = checker_timeout
-        self.checker_type = checker_type
-        self.env_path = env_path
-        self.default_score = default_score
-        self.get_period = get_period
+    table_name = 'Tasks'
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'checker': self.checker,
-            'gets': self.gets,
-            'puts': self.puts,
-            'places': self.places,
-            'checker_timeout': self.checker_timeout,
-            'checker_type': self.checker_type,
-            'env_path': self.env_path,
-            'default_score': self.default_score,
-            'get_period': self.get_period,
-        }
+    defaults = {
+        'active': True,
+    }
 
-    def to_dict_for_participants(self):
+    __slots__ = (
+        'id',
+        'name',
+        'checker',
+        'gets',
+        'puts',
+        'places',
+        'checker_timeout',
+        'env_path',
+        'checker_type',
+        'get_period',
+        'default_score',
+        'active',
+    )
+
+    def to_dict_for_participants(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'name': self.name,
         }
 
-    def to_json_for_participants(self):
-        return kjson.dumps(self.to_dict_for_participants())
+    def to_json_for_participants(self) -> str:
+        return kjson.dumps(self.to_dict_for_participants())  # type: ignore
 
     @property
-    def checker_tags(self):
+    def checker_tags(self) -> List[str]:
         return self.checker_type.split('_')
 
     @property
-    def is_checker_gevent_optimized(self):
+    def is_checker_gevent_optimized(self) -> bool:
         return 'gevent' in self.checker_tags
 
     @property
-    def checker_returns_flag_id(self):
+    def checker_returns_flag_id(self) -> bool:
         return 'nfr' not in self.checker_tags
 
     @property
-    def checker_provides_public_flag_data(self):
+    def checker_provides_public_flag_data(self) -> bool:
         return 'pfr' in self.checker_tags
 
-    def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict'):
+    def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict') -> 'Flag':
         if not self.checker_returns_flag_id:
             flag.public_flag_data = ''
         elif self.checker_provides_public_flag_data:
@@ -167,14 +211,15 @@ class Task(Model):
 
         return flag
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Task({self.id}, {self.name})"
 
 
 class Flag(Model):
     """Model representing a flag
 
-        Contains flag round, id, team, task, the value itself and additional data for the checker
+        Contains flag round, id, team, task, the value itself
+        and additional data for the checker
     """
     round: int
     id: Optional[int]
@@ -185,38 +230,20 @@ class Flag(Model):
     private_flag_data: Optional[str]
     vuln_number: Optional[int]
 
-    def __init__(self,
-                 id: Optional[int],
-                 team_id: int,
-                 task_id: int,
-                 flag: str,
-                 round: int,
-                 public_flag_data: Optional[str],
-                 private_flag_data: Optional[str],
-                 vuln_number: Optional[int]):
-        super(Flag, self).__init__()
-        self.id = id
-        self.team_id = team_id
-        self.flag = flag
-        self.round = round
-        self.public_flag_data = public_flag_data
-        self.private_flag_data = private_flag_data
-        self.task_id = task_id
-        self.vuln_number = vuln_number
+    table_name = 'Flags'
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'team_id': self.team_id,
-            'task_id': self.task_id,
-            'flag': self.flag,
-            'round': self.round,
-            'public_flag_data': self.public_flag_data,
-            'private_flag_data': self.private_flag_data,
-            'vuln_number': self.vuln_number,
-        }
+    __slots__ = (
+        'id',
+        'team_id',
+        'task_id',
+        'flag',
+        'round',
+        'public_flag_data',
+        'private_flag_data',
+        'vuln_number',
+    )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Flag({self.id}, task {self.task_id}, team {self.team_id})"
 
 
@@ -227,23 +254,12 @@ class GameState(Model):
     """
     round_start: int
     round: int
-    team_tasks: List[dict]
+    team_tasks: List[Dict[str, Any]]
 
-    def __init__(self, round_start: int, round: int, team_tasks: List[dict]):
-        super(GameState, self).__init__()
-        self.round_start = round_start
-        self.round = round
-        self.team_tasks = team_tasks
+    __slots__ = ('round_start', 'round', 'team_tasks')
 
-    def to_dict(self):
-        return {
-            'round_start': self.round_start,
-            'round': self.round,
-            'team_tasks': self.team_tasks
-        }
-
-    def __str__(self):
-        return f"GameState for round {self.round}"
+    def __str__(self) -> str:
+        return f"GameState for round {self.round}: {self.to_dict()}"
 
 
 class CheckerVerdict(Model):
@@ -254,34 +270,20 @@ class CheckerVerdict(Model):
     status: TaskStatus
     action: Action
 
-    def __init__(self,
-                 private_message: str,
-                 public_message: str,
-                 command: str,
-                 action: Action,
-                 status: TaskStatus):
-        super(CheckerVerdict, self).__init__()
-        self.private_message = private_message
-        self.public_message = public_message
-        self.command = command
+    __slots__ = (
+        'public_message',
+        'private_message',
+        'command',
+        'status',
+        'action',
+    )
 
-        if isinstance(status, int):
-            self.status = TaskStatus(status)
-        else:
-            self.status = status
+    def __init__(self, **kwargs: Any):
+        super(CheckerVerdict, self).__init__(**kwargs)
+        if isinstance(self.status, int):
+            self.status = TaskStatus(self.status)
 
-        self.action = action
-
-    def to_dict(self):
-        return {
-            'private_message': self.private_message,
-            'public_message': self.public_message,
-            'command': self.command,
-            'status': self.status.value,
-            'action': self.action,
-        }
-
-    def __str__(self):
+    def __str__(self) -> str:
         return f'CheckerVerdict ({self.action} {self.status.name})'
 
 
@@ -299,42 +301,57 @@ class GlobalConfig(Model):
     real_round: Optional[int]
     game_running: Optional[bool]
 
-    def __init__(self,
-                 id: Optional[int],
-                 flag_lifetime: int,
-                 game_hardness: float,
-                 inflation: bool,
-                 round_time: int,
-                 game_mode: str,
-                 timezone: str,
-                 start_time: datetime.datetime,
-                 real_round: Optional[int] = None,
-                 game_running: Optional[bool] = None):
-        super(GlobalConfig, self).__init__()
-        self.id = id
-        self.flag_lifetime = flag_lifetime
-        self.game_hardness = game_hardness
-        self.inflation = inflation
-        self.round_time = round_time
-        self.game_mode = game_mode
-        self.timezone = timezone
-        self.start_time = start_time
-        self.real_round = real_round
-        self.game_running = game_running
+    table_name = 'GlobalConfig'
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'flag_lifetime': self.flag_lifetime,
-            'game_hardness': self.game_hardness,
-            'inflation': self.inflation,
-            'round_time': self.round_time,
-            'game_mode': self.game_mode,
-            'timezone': self.timezone,
-            'start_time': self.start_time,
-            'real_round': self.real_round,
-            'game_running': self.game_running,
-        }
+    __slots__ = (
+        'id',
+        'flag_lifetime',
+        'game_hardness',
+        'inflation',
+        'round_time',
+        'game_mode',
+        'timezone',
+        'start_time',
+        'real_round',
+        'game_running',
+    )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.to_dict())
+
+
+class AttackResult(Model):
+    attacker_id: int
+    victim_id: int
+    task_id: int
+    submit_ok: bool
+    message: str
+    attacker_delta: float
+    victim_delta: float
+
+    __slots__ = (
+        'attacker_id',
+        'victim_id',
+        'task_id',
+        'submit_ok',
+        'message',
+        'attacker_delta',
+        'victim_delta',
+    )
+
+    defaults = {
+        'victim_id': 0,
+        'task_id': 0,
+        'submit_ok': False,
+        'message': '',
+        'attacker_delta': 0.0,
+        'victim_delta': 0.0,
+    }
+
+    labels = ('attacker_id', 'victim_id', 'task_id', 'submit_ok')
+
+    def get_label_key(self) -> Tuple[Any, ...]:
+        return tuple(getattr(self, k) for k in self.labels)
+
+    def get_label_values(self) -> Dict[str, Any]:
+        return {k: getattr(self, k) for k in self.labels}

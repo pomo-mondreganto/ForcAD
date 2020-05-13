@@ -16,7 +16,8 @@
             />
         </container>
         <footer class="footer">
-            Powered by <span class="team">C4T BuT S4D</span> CTF team
+            Powered by
+            <span class="team">C4T BuT S4D</span> CTF team
         </footer>
     </div>
 </template>
@@ -48,10 +49,10 @@ export default {
     },
 
     created: async function() {
-        const r = await axios.get(`${serverUrl}/api/config`);
+        const r = await axios.get(`${serverUrl}/api/config/`);
         const { round_time } = r.data;
         this.roundTime = round_time;
-        this.timer = setInterval(this.tick, 1000);
+        this.timer = setInterval(this.tick, 500);
     },
 
     methods: {

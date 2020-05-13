@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
-import os
 import traceback
 
 import argparse
+import os
 import shutil
 import subprocess
 import time
 import yaml
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = os.path.join(BASE_DIR, 'backend', 'config')
+BASE_DIR = Path(__file__).absolute().resolve().parent
+CONFIG_DIR = BASE_DIR / 'backend' / 'config'
 DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 
 CONFIG_FILENAME = 'config.yml'
 
@@ -30,8 +32,7 @@ def run_command(command, cwd=None, env=None):
 
 
 def setup_db(config):
-    postgres_env_path = os.path.join(
-        BASE_DIR,
+    postgres_env_path = BASE_DIR.joinpath(
         'docker_config',
         'postgres',
         'environment.env',
@@ -53,13 +54,11 @@ def setup_db(config):
         f'POSTGRES_DB={db}',
     ]
 
-    with open(postgres_env_path, 'w') as f:
-        f.write('\n'.join(postgres_config))
+    postgres_env_path.write_text('\n'.join(postgres_config))
 
 
 def setup_redis(config):
-    redis_env_path = os.path.join(
-        BASE_DIR,
+    redis_env_path = BASE_DIR.joinpath(
         'docker_config',
         'redis',
         'environment.env',
@@ -77,33 +76,29 @@ def setup_redis(config):
         f'REDIS_PASSWORD={password}',
     ]
 
-    with open(redis_env_path, 'w') as f:
-        f.write('\n'.join(redis_config))
+    redis_env_path.write_text('\n'.join(redis_config))
 
 
 def setup_flower(config):
-    flower_env_path = os.path.join(
-        BASE_DIR,
+    flower_env_path = BASE_DIR.joinpath(
         'docker_config',
         'celery',
-        'flower_environment.env',
+        'flower.env',
     )
 
-    flower_config = config['flower']
-    flower_username = flower_config['username']
-    flower_password = flower_config['password']
+    admin_config = config['admin']
+    flower_username = admin_config['username']
+    flower_password = admin_config['password']
     flower_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'FLOWER_BASIC_AUTH={flower_username}:{flower_password}',
     ]
 
-    with open(flower_env_path, 'w') as f:
-        f.write('\n'.join(flower_config))
+    flower_env_path.write_text('\n'.join(flower_config))
 
 
 def setup_rabbitmq(config):
-    rabbitmq_env_path = os.path.join(
-        BASE_DIR,
+    rabbitmq_env_path = BASE_DIR.joinpath(
         'docker_config',
         'rabbitmq',
         'environment.env',
@@ -125,42 +120,89 @@ def setup_rabbitmq(config):
         f'RABBITMQ_DEFAULT_VHOST={vhost}',
     ]
 
-    with open(rabbitmq_env_path, 'w') as f:
-        f.write('\n'.join(rabbitmq_config))
+    rabbitmq_env_path.write_text('\n'.join(rabbitmq_config))
 
 
-def setup_config(_args):
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+def setup_webapi(config):
+    webapi_env_path = BASE_DIR.joinpath(
+        'docker_config',
+        'webapi',
+        'environment.env',
+    )
+
+    admin_config = config['admin']
+    username = admin_config['username']
+    password = admin_config['password']
+
+    admin_config = [
+        "# THIS FILE IS MANAGED BY 'control.py'",
+        f'ADMIN_USERNAME={username}',
+        f'ADMIN_PASSWORD={password}',
+    ]
+
+    webapi_env_path.write_text('\n'.join(admin_config))
+
+
+def prepare_docker_compose(args):
+    conf_path = BASE_DIR / 'docker-compose.yml'
+    base_conf = yaml.safe_load(conf_path.open(mode='r'))
+
+    if not os.environ.get('TEST'):
+        if 'redis' in args and args.redis:
+            del base_conf['services']['redis']
+
+        if 'database' in args and args.database:
+            del base_conf['services']['postgres']
+
+    res_path = BASE_DIR / 'docker-compose-base.yml'
+    with res_path.open(mode='w') as f:
+        yaml.dump(base_conf, f)
+
+
+def setup_config(args):
+    override_config(args)
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    config = yaml.safe_load(conf_path.open(mode='r'))
     setup_db(config)
     setup_redis(config)
     setup_flower(config)
     setup_rabbitmq(config)
+    setup_webapi(config)
+    prepare_docker_compose(args)
 
 
-def setup_worker(args):
-    conf_path = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
-    config = yaml.load(open(conf_path), Loader=yaml.FullLoader)
+def override_config(args):
+    conf_path = CONFIG_DIR / CONFIG_FILENAME
+    config = yaml.safe_load(conf_path.open(mode='r'))
 
     # create config backup
-    backup_path = os.path.join(CONFIG_DIR, f'config_backup_{int(time.time())}.yml')
-    with open(backup_path, 'w') as f:
-        yaml.dump(config, f)
+    backup_path = CONFIG_DIR / f'config_backup_{int(time.time())}.yml'
+    shutil.copy2(conf_path, backup_path)
 
     # patch config host variables to connect to the right place
-    config['storages']['redis']['host'] = args.redis
-    config['storages']['db']['host'] = args.database
-    config['storages']['rabbitmq']['host'] = args.rabbitmq
+    if 'redis' in args and args.redis:
+        config['storages']['redis']['host'] = args.redis
 
-    with open(conf_path, 'w') as f:
-        yaml.dump(config, f)
+    if 'database' in args and args.database:
+        config['storages']['db']['host'] = args.database
 
-    setup_config(args)
+    if 'rabbitmq' in args:
+        config['storages']['rabbitmq']['host'] = args.rabbitmq
+
+    with conf_path.open(mode='w') as f:
+        yaml.safe_dump(config, f)
 
 
 def print_tokens(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'exec', 'webapi',
+        'python3', '/app/scripts/print_tokens.py',
+    ]
     res = subprocess.check_output(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'exec', 'webapi', 'python3', '/app/scripts/print_tokens.py'],
+        command,
         cwd=BASE_DIR,
     )
 
@@ -172,26 +214,40 @@ def print_file_exception_info(_func, path, _exc_info):
 
 
 def reset_game(_args):
-    data_path = os.path.join(BASE_DIR, 'docker_volumes/postgres/data')
+    data_path = BASE_DIR / 'docker_volumes' / 'postgres' / 'data'
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
+    full_compose = BASE_DIR / 'docker-compose.yml'
+    command = [
+        'docker-compose',
+        '-f', full_compose,
+        'down', '-v',
+        '--remove-orphans',
+    ]
     run_command(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'down', '-v', '--remove-orphans'],
+        command,
         cwd=BASE_DIR,
     )
 
 
 def build(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'build',
+    ]
     run_command(
-        ['docker-compose', '-f', DOCKER_COMPOSE_FILE, 'build'],
+        command,
         cwd=BASE_DIR,
     )
 
 
 def start_game(args):
     command = [
-        'docker-compose', '-f',
-        DOCKER_COMPOSE_FILE,
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
         'up', '--build', '-d',
         '--scale', f'celery={args.instances}',
     ]
@@ -201,6 +257,7 @@ def start_game(args):
 def scale_celery(args):
     command = [
         'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
         'up', '-d',
         '--no-recreate',
@@ -213,14 +270,49 @@ def scale_celery(args):
 
 def run_worker(args):
     # patch configuration
-    setup_worker(args)
+    override_config(args)
+    setup_config(args)
 
     command = [
-        'docker-compose', '-f',
-        DOCKER_COMPOSE_FILE,
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
         'up', '--build', '-d',
         '--scale', f'celery={args.instances}',
         'celery',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
+def pause_game(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'stop',
+        'celerybeat',
+        'gevent_flag_receiver',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
+def resume_game(_args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'start',
+        'celerybeat',
+        'gevent_flag_receiver',
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
+def run_flake(_args):
+    command = [
+        'flake8',
+        '--ignore', 'E402',
+        'control.py', 'backend',
     ]
     run_command(command, cwd=BASE_DIR)
 
@@ -229,42 +321,104 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     subparsers = parser.add_subparsers()
 
-    setup_parser = subparsers.add_parser('setup', help='Transfer centralized config to environment files')
+    setup_parser = subparsers.add_parser(
+        'setup',
+        help='Transfer centralized config to environment files, '
+             'prepare base docker-compose file',
+    )
     setup_parser.set_defaults(func=setup_config)
+    setup_parser.add_argument('--redis', type=str,
+                              help='External redis address '
+                                   '(disables built-in redis container)',
+                              required=False)
+    setup_parser.add_argument('--database', type=str,
+                              help='External postgres address '
+                                   '(disables built-in postgres container)',
+                              required=False)
 
-    print_tokens_parser = subparsers.add_parser('print_tokens', help='Print team tokens')
+    print_tokens_parser = subparsers.add_parser(
+        'print_tokens',
+        help='Print team tokens',
+    )
     print_tokens_parser.set_defaults(func=print_tokens)
 
-    reset_parser = subparsers.add_parser('reset', help='Reset the game & cleanup')
+    reset_parser = subparsers.add_parser(
+        'reset',
+        help='Reset the game & cleanup',
+    )
     reset_parser.set_defaults(func=reset_game)
-    reset_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build compose file')
+    reset_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build compose file')
 
-    build_parser = subparsers.add_parser('build', help='Build the images, don\'t run')
+    build_parser = subparsers.add_parser(
+        'build',
+        help='Build the images, don\'t run',
+    )
     build_parser.set_defaults(func=build)
-    build_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
+    build_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build with prebuilt images')
 
-    start_parser = subparsers.add_parser('start', help='Start the forcad, building if necessary (with cache)')
+    start_parser = subparsers.add_parser(
+        'start',
+        help='Start the forcad, building if necessary (with cache)',
+    )
     start_parser.set_defaults(func=start_game)
-    start_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
-    start_parser.add_argument('-i', '--instances', type=int, metavar='N', default=1,
-                              help='Number of celery worker instances', required=False)
+    start_parser.add_argument('-f', '--fast', action='store_true',
+                              help='Use faster build with prebuilt images')
+    start_parser.add_argument('-i', '--instances', type=int, metavar='N',
+                              default=1,
+                              help='Number of celery worker instances',
+                              required=False)
 
-    scale_celery_parser = subparsers.add_parser('scale_celery', help='Scale the number of celery worker containers')
+    scale_celery_parser = subparsers.add_parser(
+        'scale_celery',
+        help='Scale the number of celery worker containers',
+    )
     scale_celery_parser.set_defaults(func=scale_celery)
-    scale_celery_parser.add_argument('-i', '--instances', type=int, metavar='N',
-                                     help='Number of celery worker instances', required=True)
+    scale_celery_parser.add_argument('-i', '--instances', type=int,
+                                     metavar='N',
+                                     help='Number of celery worker instances',
+                                     required=True)
 
-    worker_parser = subparsers.add_parser('worker', help='Start the celery workers only')
+    worker_parser = subparsers.add_parser(
+        'worker',
+        help='Start the celery workers only',
+    )
     worker_parser.set_defaults(func=run_worker)
-    worker_parser.add_argument('-i', '--instances', type=int, metavar='N', default=1,
-                               help='Number of celery worker instances', required=False)
-    worker_parser.add_argument('-f', '--fast', action='store_true', help='Use faster build with prebuilt images')
+    worker_parser.add_argument('-i', '--instances', type=int, metavar='N',
+                               default=1,
+                               help='Number of celery worker instances',
+                               required=False)
+    worker_parser.add_argument('-f', '--fast', action='store_true',
+                               help='Use faster build with prebuilt images')
     worker_parser.add_argument('--redis', type=str,
-                               help='Redis address for the worker to connect', required=True)
+                               help='Redis address for the worker to connect',
+                               required=True)
     worker_parser.add_argument('--rabbitmq', type=str,
-                               help='RabbitMQ address for the worker to connect', required=True)
+                               help='RabbitMQ address for the worker',
+                               required=True)
     worker_parser.add_argument('--database', type=str,
-                               help='PostgreSQL address for the worker to connect', required=True)
+                               help='Postgres address for the worker',
+                               required=True)
+
+    pause_game_parser = subparsers.add_parser(
+        'pause_game',
+        help='Stop updating rounds & receiving flags',
+    )
+    pause_game_parser.set_defaults(func=pause_game)
+
+    resume_game_parser = subparsers.add_parser(
+        'resume_game',
+        help='Start updating rounds & receiving flags '
+             '(counterpart of pause_game command)',
+    )
+    resume_game_parser.set_defaults(func=resume_game)
+
+    flake_parser = subparsers.add_parser(
+        'flake',
+        help='Run flake8 validation',
+    )
+    flake_parser.set_defaults(func=run_flake)
 
     parsed = parser.parse_args()
 

@@ -1,13 +1,13 @@
-import os
-
 import subprocess
 import sys
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BACKEND_DIR = os.path.join(PROJECT_DIR, 'backend')
-TESTS_DIR = os.path.join(PROJECT_DIR, 'tests')
-sys.path.insert(0, BACKEND_DIR)
-sys.path.insert(0, TESTS_DIR)
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
+BACKEND_DIR = PROJECT_DIR / 'backend'
+TESTS_DIR = PROJECT_DIR / 'tests'
+sys.path.insert(0, str(BACKEND_DIR))
+sys.path.insert(0, str(TESTS_DIR))
 
 from helpers import wait_rounds
 

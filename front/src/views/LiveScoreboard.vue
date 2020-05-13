@@ -5,10 +5,10 @@
             class="pony"
             width="640"
             height="480"
-            frameBorder="0"
+            frameborder="0"
             scrolling="no"
-            marginHeight="0"
-            marginWidth="0"
+            marginheight="0"
+            marginwidth="0"
             title="pony"
         />
         <live-scoreboard />

@@ -6,6 +6,7 @@ docker_volumes/*
 __pycache__
 
 !docker_volumes/**/.gitkeep
+!docker_config/**/.gitkeep
 
 backend/config/*config.yml
 backend/config/config_backup*
@@ -14,6 +15,7 @@ checkers/*
 !checkers/bin/.gitkeep
 
 *.env
+docker-compose-base.yml
 
 # Created by https://www.gitignore.io/api/node
 # Edit at https://www.gitignore.io/?templates=node
