@@ -2,7 +2,6 @@ from contextlib import contextmanager, asynccontextmanager
 
 import aiopg
 import aioredis
-import asyncio
 import redis
 import socketio
 from kombu import Connection
@@ -28,7 +27,7 @@ _sio_wro_manager = None
 _rmq_connection = None
 
 
-def get_db_pool():
+def get_db_pool() -> pool.SimpleConnectionPool:
     global _db_pool
 
     if not _db_pool:
@@ -42,7 +41,7 @@ def get_db_pool():
     return _db_pool
 
 
-async def get_async_db_pool():
+async def get_async_db_pool() -> aiopg.pool.Pool:
     global _async_db_pool
 
     if not _async_db_pool:
@@ -54,7 +53,7 @@ async def get_async_db_pool():
 
 
 @contextmanager
-def db_cursor(dict_cursor=False):
+def db_cursor(dict_cursor: bool = False):  # type: ignore
     db_pool = get_db_pool()
     conn = db_pool.getconn()
     if dict_cursor:
@@ -69,7 +68,7 @@ def db_cursor(dict_cursor=False):
 
 
 @asynccontextmanager
-async def async_db_cursor(dict_cursor=False):
+async def async_db_cursor(dict_cursor: bool = False):  # type: ignore
     db_pool = await get_async_db_pool()
     conn = await db_pool.acquire()
 
@@ -85,23 +84,20 @@ async def async_db_cursor(dict_cursor=False):
         await db_pool.release(conn)
 
 
-def get_redis_storage():
+def get_redis_storage() -> redis.StrictRedis:
     global _redis_storage
 
     if not _redis_storage:
         redis_config = config.get_redis_config()
+        redis_config['decode_responses'] = True
         _redis_storage = redis.StrictRedis(
             **redis_config,
-            decode_responses=True,
         )
 
     return _redis_storage
 
 
-async def get_async_redis_storage(loop=None):
-    if loop is None:
-        loop = asyncio.get_event_loop()
-
+async def get_async_redis_storage() -> aioredis.Redis:
     global _async_redis_storage
 
     if not _async_redis_storage:
@@ -112,14 +108,13 @@ async def get_async_redis_storage(loop=None):
             address=address,
             db=db,
             password=redis_config.get('password', None),
-            loop=loop,
             encoding='utf-8',
         )
 
     return _async_redis_storage
 
 
-def get_async_sio_manager():
+def get_async_sio_manager() -> socketio.AsyncAioPikaManager:
     global _async_sio_manager
 
     if _async_sio_manager is None:
@@ -133,7 +128,7 @@ def get_async_sio_manager():
     return _async_sio_manager
 
 
-def get_wro_sio_manager():
+def get_wro_sio_manager() -> socketio.KombuManager:
     global _sio_wro_manager
 
     if _sio_wro_manager is None:
@@ -147,7 +142,7 @@ def get_wro_sio_manager():
     return _sio_wro_manager
 
 
-def get_broker_connection():
+def get_broker_connection() -> Connection:
     global _rmq_connection
 
     if _rmq_connection is None:

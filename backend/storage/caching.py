@@ -1,3 +1,5 @@
+from typing import Any
+
 import helplib
 import storage
 from helplib import models
@@ -13,7 +15,7 @@ WHERE attacker_id = %s AND flag_id IN (SELECT id from flag_ids)
 _SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %s"
 
 
-def cache_teams(pipeline):
+def cache_teams(pipeline: Any) -> None:
     """
     Put "teams" table data from database to cache.
 
@@ -32,7 +34,7 @@ def cache_teams(pipeline):
         pipeline.set(f'team:token:{team.token}', team.id)
 
 
-def cache_tasks(pipeline):
+def cache_tasks(pipeline: Any) -> None:
     """
     Put active tasks table data from database to cache.
 
@@ -49,7 +51,7 @@ def cache_tasks(pipeline):
         pipeline.sadd('tasks', *[task.to_json() for task in tasks])
 
 
-def cache_last_stolen(team_id: int, current_round: int, pipeline):
+def cache_last_stolen(team_id: int, current_round: int, pipeline: Any) -> None:
     """
     Caches stolen flags from "flag_lifetime" rounds
 
@@ -79,7 +81,7 @@ def cache_last_stolen(team_id: int, current_round: int, pipeline):
         )
 
 
-def cache_last_flags(current_round: int, pipeline):
+def cache_last_flags(current_round: int, pipeline: Any) -> None:
     """
     Cache all generated flags from last "flag_lifetime" rounds.
 
@@ -118,7 +120,7 @@ def cache_last_flags(current_round: int, pipeline):
         pipeline.expire(round_flags_key, expires)
 
 
-def cache_global_config(pipeline):
+def cache_global_config(pipeline: Any) -> None:
     """Put global config to cache (without round or game_running)."""
     global_config = storage.game.get_db_global_config()
     data = global_config.to_json()

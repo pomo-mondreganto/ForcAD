@@ -46,7 +46,7 @@ def get_tasks() -> List[models.Task]:
     return tasks
 
 
-async def tasks_async_getter(redis_aio, pipe):
+async def tasks_async_getter(redis_aio, pipe):  # type: ignore
     """Cache tasks if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
@@ -67,7 +67,7 @@ async def get_all_tasks_async() -> List[models.Task]:
 
 
 def update_task_status(task_id: int, team_id: int, current_round: int,
-                       checker_verdict: models.CheckerVerdict):
+                       checker_verdict: models.CheckerVerdict) -> None:
     """
     Update task status in database.
 
@@ -242,7 +242,7 @@ async def update_task(task: models.Task) -> models.Task:
     return task
 
 
-async def delete_task(task_id: int):
+async def delete_task(task_id: int) -> None:
     """Set active = False on a task."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Task.get_delete_query(), {'id': task_id})

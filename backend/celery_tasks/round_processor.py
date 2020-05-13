@@ -1,11 +1,10 @@
 import random
 
 import itertools
-# noinspection PyProtectedMember
 from celery import Task
 from celery.utils.log import get_task_logger
 from kombu.utils import json as kjson
-from typing import Optional
+from typing import Optional, Any
 
 import celery_tasks.modes
 import storage
@@ -17,14 +16,15 @@ _FULL_UPDATE_ROUND_TYPES = ['full', 'puts']
 _GS_UPDATE_ROUND_TYPES = ['full', 'puts', 'check_gets']
 
 
-def get_round_processor(round_type: str, task_id: Optional[int] = None):
+def get_round_processor(round_type: str,
+                        task_id: Optional[int] = None) -> 'RoundProcessor':
     """Get RoundProcessor instance for specified round type"""
     return RoundProcessor(round_type=round_type, task_id=task_id)
 
 
 class RoundProcessor(Task):
     @property
-    def name(self):
+    def name(self) -> str:
         tmp = f'celery_tasks.round_processor.RoundProcessor_{self.round_type}'
         if self.task_id is not None:
             tmp += f'_{self.task_id}'
@@ -34,14 +34,14 @@ class RoundProcessor(Task):
         self.round_type = round_type
         self.task_id = task_id
 
-    def should_update_round(self):
+    def should_update_round(self) -> bool:
         return self.round_type in _FULL_UPDATE_ROUND_TYPES
 
-    def should_update_game_state(self):
+    def should_update_game_state(self) -> bool:
         return self.round_type in _GS_UPDATE_ROUND_TYPES
 
     @staticmethod
-    def update_game_state(current_round):
+    def update_game_state(current_round: int) -> None:
         if not current_round:
             return
 
@@ -65,7 +65,7 @@ class RoundProcessor(Task):
         )
 
     @staticmethod
-    def update_round(finished_round):
+    def update_round(finished_round: int) -> None:
         logger.info(f'Updating round to {finished_round + 1}')
 
         storage.game.set_round_start(r=finished_round + 1)
@@ -80,7 +80,7 @@ class RoundProcessor(Task):
             pipeline.set('real_round', finished_round + 1).execute()
 
     @staticmethod
-    def update_attack_data(current_round):
+    def update_attack_data(current_round: int) -> None:
         logger.info(f'Updating attack data contents for round {current_round}')
 
         tasks = storage.tasks.get_tasks()
@@ -91,7 +91,7 @@ class RoundProcessor(Task):
                 transaction=True) as pipeline:
             pipeline.set('attack_data', kjson.dumps(flags)).execute()
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> None:
         """Process new round
             Updates current round variable, then processes all teams.
             This function also caches previous state and notifies frontend of
@@ -127,20 +127,21 @@ class RoundProcessor(Task):
         tasks = storage.tasks.get_tasks()
         random.shuffle(tasks)
 
-        args = itertools.product(teams, tasks, [round_to_check])
+        round_args = itertools.product(teams, tasks, [round_to_check])
 
         if self.round_type == 'full':
             logger.info("Running full round")
-            celery_tasks.modes.run_full_round.starmap(args).apply_async()
+            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()
         elif self.round_type == 'check_gets':
             logger.info("Running check_gets round")
-            celery_tasks.modes.run_check_gets_round.starmap(args).apply_async()
+            celery_tasks.modes.run_check_gets_round.starmap(
+                round_args).apply_async()
         elif self.round_type == 'puts':
             logger.info("Running puts round")
-            celery_tasks.modes.run_puts_round.starmap(args).apply_async()
+            celery_tasks.modes.run_puts_round.starmap(round_args).apply_async()
         else:
             logger.critical(
                 f"Invalid round type supplied: {self.round_type}, "
                 f"falling back to full"
             )
-            celery_tasks.modes.run_full_round.starmap(args).apply_async()
+            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()

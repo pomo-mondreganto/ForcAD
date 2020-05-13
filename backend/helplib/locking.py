@@ -1,18 +1,23 @@
-import os
 from contextlib import contextmanager
+
+import os
+from redis.client import Pipeline
+from typing import Iterator
 
 from helplib import exceptions
 
 
 @contextmanager
-def acquire_redis_lock(pipeline, name, timeout=5000):
+def acquire_redis_lock(pipeline: Pipeline,
+                       name: str,
+                       timeout: int = 5000) -> Iterator:
     try:
         while True:
             try:
                 nonce = os.urandom(10)
                 unlocked = pipeline.set(name, nonce, nx=True, px=timeout)
                 if pipeline.transaction:
-                    unlocked, = unlocked.execute()
+                    unlocked, = unlocked.execute()  # type: ignore
 
                 if not unlocked:
                     raise exceptions.LockedException

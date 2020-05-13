@@ -31,7 +31,7 @@ def get_round_start(r: int) -> int:
     return start_time
 
 
-def set_round_start(r: int):
+def set_round_start(r: int) -> None:
     """Set start time for round as str."""
     cur_time = int(time.time())
     with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
@@ -67,14 +67,14 @@ def get_real_round_from_db() -> int:
     return r
 
 
-def update_real_round_in_db(new_round: int):
+def update_real_round_in_db(new_round: int) -> None:
     """Update real_round of global config stored in DB."""
     with storage.db_cursor() as (conn, curs):
         curs.execute(_UPDATE_REAL_ROUND_QUERY, (new_round,))
         conn.commit()
 
 
-def set_game_running(new_value: bool):
+def set_game_running(new_value: bool) -> None:
     """Update game_running value in db."""
     with storage.db_cursor() as (conn, curs):
         curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
@@ -115,7 +115,7 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
-async def global_config_async_getter(redis_aio, pipe):
+async def global_config_async_getter(redis_aio, pipe):  # type: ignore
     """Async version of get_current_global_config."""
     await async_cache_helper(
         redis_aio=redis_aio,
@@ -140,8 +140,7 @@ def construct_game_state_from_db(current_round: int
     return state
 
 
-def construct_latest_game_state(current_round: int
-                                ) -> Optional[models.GameState]:
+def construct_latest_game_state(current_round: int) -> models.GameState:
     """Get game state from latest teamtasks from redis stream."""
     teamtasks = storage.tasks.get_last_teamtasks()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
@@ -155,14 +154,9 @@ def construct_latest_game_state(current_round: int
     return state
 
 
-def game_state_getter(pipe):
-    """Get game state for current round (asynchronous version)."""
-    pipe.get('game_state')
-
-
-async def get_attack_data(loop) -> str:
+async def get_attack_data() -> str:
     """Get public flag ids for task that provide them."""
-    redis_pool = await storage.get_async_redis_storage(loop)
+    redis_pool = await storage.get_async_redis_storage()
     attack_data = await redis_pool.get('attack_data')
     return attack_data
 

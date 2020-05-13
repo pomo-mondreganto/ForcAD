@@ -1,4 +1,5 @@
 from collections import defaultdict
+from logging import Logger
 
 import gevent
 from gevent.queue import Queue, Empty
@@ -9,7 +10,7 @@ from helplib import models
 
 
 class SubmitMonitor:
-    def __init__(self, logger):
+    def __init__(self, logger: Logger):
         self._logger = logger
         self._q = Queue()
         self._running = False
@@ -24,19 +25,19 @@ class SubmitMonitor:
 
         self._labels = ['attacker_id', 'victim_id', 'task_id', 'submit_ok']
 
-    def add(self, ar: models.AttackResult):
+    def add(self, ar: models.AttackResult) -> None:
         self._q.put_nowait(ar)
 
-    def inc_ok(self):
+    def inc_ok(self) -> None:
         self._ok_submits += 1
 
-    def inc_bad(self):
+    def inc_bad(self) -> None:
         self._bad_submits += 1
 
-    def inc_conns(self):
+    def inc_conns(self) -> None:
         self._connections += 1
 
-    def _process_statistics(self):
+    def _process_statistics(self) -> None:
         new_ok, new_bad = self._ok_submits, self._bad_submits
         new_conn = self._connections
         self._logger.info(
@@ -50,7 +51,7 @@ class SubmitMonitor:
         self._was_bad = new_bad
         self._was_conn = new_conn
 
-    def _process_attacks_queue(self):
+    def _process_attacks_queue(self) -> None:
         conn = storage.get_broker_connection()
         with conn.channel() as channel:
             producer = Producer(channel)
@@ -79,7 +80,7 @@ class SubmitMonitor:
                     routing_key='forcad-monitoring',
                 )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self) -> None:
         if self._running:
             self._logger.error(
                 'Only one instance of submit monitor can be running',

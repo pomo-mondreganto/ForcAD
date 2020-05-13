@@ -1,14 +1,18 @@
 import importlib.util
+from logging import Logger
 from traceback import format_exc
 
 import gevent
 
 import helplib
+from helplib import models
 from helplib.exceptions import CheckerTimeoutException
 from helplib.types import Action, TaskStatus
 
 
-def set_verdict_error(verdict, action, message):
+def set_verdict_error(verdict: models.CheckerVerdict,
+                      action: Action,
+                      message: str) -> None:
     verdict.status = TaskStatus.CHECK_FAILED
     verdict.public_message = f'{action} failed'
     verdict.private_message = message
@@ -22,7 +26,7 @@ def run_generic_action_in_thread(checker_path: str,
                                  timeout: int,
                                  action_args: tuple,
                                  action_kwargs: dict,
-                                 logger):
+                                 logger: Logger) -> models.CheckerVerdict:
     verdict = helplib.models.CheckerVerdict(
         command=f'checker.{action}()',
         action=action,
@@ -34,8 +38,8 @@ def run_generic_action_in_thread(checker_path: str,
     try:
         spec = importlib.util.spec_from_file_location(task_name, checker_path)
         checker_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(checker_module)
-        checker = checker_module.Checker(host)
+        spec.loader.exec_module(checker_module)  # type: ignore
+        checker = checker_module.Checker(host)  # type: ignore
         finished_exception = checker.get_check_finished_exception()
     except BaseException as e:
         tb = format_exc()

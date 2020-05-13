@@ -9,11 +9,11 @@ class TaskStatus(enum.Enum):
     DOWN = 104
     CHECK_FAILED = 110
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     @property
-    def counter(self):
+    def counter(self):  # type: ignore
         return self.value
 
 
@@ -23,9 +23,9 @@ class Action(enum.Enum):
     PUT = 1
     GET = 2
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     @property
-    def counter(self):
+    def counter(self):  # type: ignore
         return self.value

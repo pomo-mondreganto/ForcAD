@@ -4,8 +4,6 @@ from pathlib import Path
 BASE_DIR = Path(__file__).absolute().resolve().parents[1]
 sys.path.insert(0, str(BASE_DIR))
 
-import asyncio
-
 from sanic import Blueprint
 from sanic.response import json as json_response, html, text
 
@@ -59,7 +57,7 @@ async def get_game_config(_request):
 
 @client_bp.route('/attack_data/')
 async def serve_attack_data(_request):
-    attack_data = await storage.game.get_attack_data(asyncio.get_event_loop())
+    attack_data = await storage.game.get_attack_data()
     return text(attack_data, content_type='application/json')
 
 

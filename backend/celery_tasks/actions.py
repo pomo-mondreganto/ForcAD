@@ -2,7 +2,7 @@ import random
 import secrets
 
 from celery import shared_task
-from typing import Optional
+from typing import Optional, Any
 
 import storage
 from celery_tasks.auxiliary import logger
@@ -11,7 +11,7 @@ from helplib.types import TaskStatus, Action
 
 
 @shared_task
-def noop(data):
+def noop(data: Any) -> Any:
     """Helper task to return checker verdict"""
     return data
 
@@ -37,8 +37,8 @@ def put_action(_prev_verdict: Optional[models.CheckerVerdict],
     place = secrets.choice(range(1, task.places + 1))
     flag = flags.generate_flag(
         service=task.name[0].upper(),
-        team_id=team.id,
-        task_id=task.id,
+        team_id=team.id or 0,
+        task_id=task.id or 0,
         current_round=current_round,
     )
     flag.private_flag_data = secrets.token_hex(20)
@@ -111,8 +111,8 @@ def get_action(prev_verdict: models.CheckerVerdict,
         command="",
     )
 
-    flag = storage.flags.get_random_round_flag(team_id=team.id,
-                                               task_id=task.id,
+    flag = storage.flags.get_random_round_flag(team_id=team.id or 0,
+                                               task_id=task.id or 0,
                                                from_round=round_to_check,
                                                current_round=current_round)
 

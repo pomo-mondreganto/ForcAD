@@ -1,20 +1,22 @@
-import os
 import shlex
+from logging import Logger
 
+import os
 import subprocess
-from typing import List
+from typing import List, Any, AnyStr, Optional, Tuple, Dict
 
 import helplib
 from helplib.types import TaskStatus, Action
 
 
-def run_command_gracefully(*popenargs,
-                           input=None,
-                           capture_output=False,
-                           timeout=None,
-                           check=False,
-                           terminate_timeout=3,
-                           **kwargs):
+def run_command_gracefully(command: List[str],
+                           input: Optional[AnyStr] = None,
+                           capture_output: bool = False,
+                           timeout: float = 0,
+                           check: bool = False,
+                           terminate_timeout: float = 3,
+                           **kwargs: Any
+                           ) -> Tuple[subprocess.CompletedProcess, bool]:
     """Wrapper around Popen from subprocess, shuts the process down gracefully
 
         First sends SIGTERM, waits for "terminate_timeout" seconds and if
@@ -22,6 +24,7 @@ def run_command_gracefully(*popenargs,
 
         It's similar to "run" function from subprocess module.
 
+        :param command: command to run
         :param input: see corresponding "run" parameter
         :param capture_output: see corresponding "run" parameter
         :param timeout: "soft" timeout, after which the SIGTERM is sent
@@ -37,7 +40,7 @@ def run_command_gracefully(*popenargs,
         kwargs['stderr'] = subprocess.PIPE
 
     killed = False
-    with subprocess.Popen(*popenargs, **kwargs) as proc:
+    with subprocess.Popen(command, **kwargs) as proc:
         try:
             stdout, stderr = proc.communicate(input, timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -75,11 +78,14 @@ def run_command_gracefully(*popenargs,
                 stderr=stderr
             )
 
-    res_proc = subprocess.CompletedProcess(proc.args, retcode, stdout, stderr)
+    res_proc: subprocess.CompletedProcess = subprocess.CompletedProcess(
+        args=proc.args, returncode=retcode,
+        stdout=stdout, stderr=stderr,
+    )
     return res_proc, killed
 
 
-def get_patched_environ(env_path: str):
+def get_patched_environ(env_path: str) -> Dict[str, str]:
     """Add path to the environment variable
 
         :param env_path: path to be inserted to environment
@@ -94,7 +100,7 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger) -> helplib.models.CheckerVerdict:
+                        logger: Logger) -> helplib.models.CheckerVerdict:
     """Runs generic checker command, calls "run_command_gracefully"
         and handles exceptions
 
@@ -148,7 +154,7 @@ def run_generic_command(command: List,
         public_message = 'Timeout'
 
     command_str = ' '.join(shlex.quote(x) for x in command)
-    result = helplib.models.CheckerVerdict(
+    verdict = helplib.models.CheckerVerdict(
         public_message=public_message,
         private_message=private_message,
         command=command_str,
@@ -156,4 +162,4 @@ def run_generic_command(command: List,
         status=status
     )
 
-    return result
+    return verdict

@@ -3,20 +3,22 @@ import secrets
 import datetime
 import yaml
 from kombu.utils import json as kjson
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Tuple, TypeVar, Type, TextIO
 
 from helplib.types import Action, TaskStatus
+
+T = TypeVar('T', bound='Model')
 
 
 # noinspection SqlResolve
 class Model(object):
     """Generic model implementing basic methods to load and print"""
 
-    __slots__ = ()
+    __slots__: Tuple[str, ...] = ()
     table_name = 'undefined'
-    defaults = {}
+    defaults: Dict[str, Any] = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         for attr in self.__slots__:
             if attr == 'id':
                 setattr(self, attr, kwargs.get(attr))
@@ -32,43 +34,43 @@ class Model(object):
                 setattr(self, attr, kwargs[attr])
 
     @classmethod
-    def from_json(cls, json_str: str):
+    def from_json(cls: Type[T], json_str: str) -> T:
         d = kjson.loads(json_str)
         return cls(**d)
 
     @classmethod
-    def from_yaml(cls, yaml_obj):
+    def from_yaml(cls: Type[T], yaml_obj: TextIO) -> T:
         d = yaml.safe_load(yaml_obj)
         return cls(**d)
 
     @classmethod
-    def from_dict(cls, d: dict):
+    def from_dict(cls: Type[T], d: Dict[str, Any]) -> T:
         return cls(**d)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {k: getattr(self, k) for k in self.__slots__}
 
-    def to_json(self):
-        return kjson.dumps(self.to_dict())
+    def to_json(self) -> str:
+        return kjson.dumps(self.to_dict())  # type: ignore
 
     @classmethod
-    def _get_column_names(cls):
+    def _get_column_names(cls) -> List[str]:
         return list(filter(lambda x: x != 'id', cls.__slots__))
 
     @classmethod
-    def get_select_all_query(cls):
+    def get_select_all_query(cls) -> str:
         return f'SELECT * FROM {cls.table_name}'
 
     @classmethod
-    def get_select_one_query(cls):
+    def get_select_one_query(cls) -> str:
         return f'SELECT * FROM {cls.table_name} WHERE id=%(id)s'
 
     @classmethod
-    def get_select_active_query(cls):
+    def get_select_active_query(cls) -> str:
         return f'SELECT * FROM {cls.table_name} WHERE active=TRUE'
 
     @classmethod
-    def get_insert_query(cls):
+    def get_insert_query(cls) -> str:
         column_names = cls._get_column_names()
         columns = ', '.join(column_names)
         values = ', '.join(f'%({column})s' for column in column_names)
@@ -79,7 +81,7 @@ class Model(object):
         return q
 
     @classmethod
-    def get_update_query(cls):
+    def get_update_query(cls) -> str:
         column_names = cls._get_column_names()
         update_data = ', '.join(
             f'{column}=%({column})s' for column in column_names
@@ -87,10 +89,10 @@ class Model(object):
         return f'UPDATE {cls.table_name} SET {update_data} WHERE id=%(id)s'
 
     @classmethod
-    def get_delete_query(cls):
+    def get_delete_query(cls) -> str:
         return f'UPDATE {cls.table_name} SET active=FALSE WHERE id=%(id)s'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
@@ -120,15 +122,15 @@ class Team(Model):
     )
 
     @staticmethod
-    def generate_token():
+    def generate_token() -> str:
         return secrets.token_hex(8)
 
-    def to_dict_for_participants(self):
+    def to_dict_for_participants(self) -> Dict[str, Any]:
         d = self.to_dict()
         d.pop('token', None)
         return d
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Team({self.id, self.name})"
 
 
@@ -172,32 +174,32 @@ class Task(Model):
         'active',
     )
 
-    def to_dict_for_participants(self):
+    def to_dict_for_participants(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'name': self.name,
         }
 
-    def to_json_for_participants(self):
-        return kjson.dumps(self.to_dict_for_participants())
+    def to_json_for_participants(self) -> str:
+        return kjson.dumps(self.to_dict_for_participants())  # type: ignore
 
     @property
-    def checker_tags(self):
+    def checker_tags(self) -> List[str]:
         return self.checker_type.split('_')
 
     @property
-    def is_checker_gevent_optimized(self):
+    def is_checker_gevent_optimized(self) -> bool:
         return 'gevent' in self.checker_tags
 
     @property
-    def checker_returns_flag_id(self):
+    def checker_returns_flag_id(self) -> bool:
         return 'nfr' not in self.checker_tags
 
     @property
-    def checker_provides_public_flag_data(self):
+    def checker_provides_public_flag_data(self) -> bool:
         return 'pfr' in self.checker_tags
 
-    def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict'):
+    def set_flag_data(self, flag: 'Flag', verdict: 'CheckerVerdict') -> 'Flag':
         if not self.checker_returns_flag_id:
             pass
         elif self.checker_provides_public_flag_data:
@@ -209,7 +211,7 @@ class Task(Model):
 
         return flag
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Task({self.id}, {self.name})"
 
 
@@ -241,7 +243,7 @@ class Flag(Model):
         'vuln_number',
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Flag({self.id}, task {self.task_id}, team {self.team_id})"
 
 
@@ -252,11 +254,11 @@ class GameState(Model):
     """
     round_start: int
     round: int
-    team_tasks: List[dict]
+    team_tasks: List[Dict[str, Any]]
 
     __slots__ = ('round_start', 'round', 'team_tasks')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"GameState for round {self.round}: {self.to_dict()}"
 
 
@@ -276,12 +278,12 @@ class CheckerVerdict(Model):
         'action',
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super(CheckerVerdict, self).__init__(**kwargs)
         if isinstance(self.status, int):
             self.status = TaskStatus(self.status)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'CheckerVerdict ({self.action} {self.status.name})'
 
 
@@ -314,7 +316,7 @@ class GlobalConfig(Model):
         'game_running',
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.to_dict())
 
 
@@ -348,8 +350,8 @@ class AttackResult(Model):
 
     labels = ('attacker_id', 'victim_id', 'task_id', 'submit_ok')
 
-    def get_label_key(self):
+    def get_label_key(self) -> Tuple[Any, ...]:
         return tuple(getattr(self, k) for k in self.labels)
 
-    def get_label_values(self):
+    def get_label_values(self) -> Dict[str, Any]:
         return {k: getattr(self, k) for k in self.labels}

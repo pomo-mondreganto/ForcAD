@@ -1,7 +1,7 @@
 import secrets
 from collections import defaultdict
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, DefaultDict, Union
 
 import helplib
 import storage
@@ -16,7 +16,7 @@ WHERE f.round >= %s AND f.task_id IN %s
 
 
 def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
-                        current_round: int):
+                        current_round: int) -> None:
     """
     Flag validation function.
 
@@ -90,7 +90,7 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
     return flag
 
 
-def get_flag_by_field(field_name: str, field_value,
+def get_flag_by_field(field_name: str, field_value: Union[str, int],
                       current_round: int) -> helplib.models.Flag:
     """
     Get flag by generic field.
@@ -150,7 +150,9 @@ def get_flag_by_id(flag_id: int, current_round: int) -> helplib.models.Flag:
                              current_round=current_round)
 
 
-def get_random_round_flag(team_id: int, task_id: int, from_round: int,
+def get_random_round_flag(team_id: int,
+                          task_id: int,
+                          from_round: int,
                           current_round: int) -> Optional[helplib.models.Flag]:
     """
     Get random flag for team generated for specified round and task.
@@ -180,9 +182,9 @@ def get_random_round_flag(team_id: int, task_id: int, from_round: int,
     return get_flag_by_id(flag_id, current_round)
 
 
-def get_attack_data(
-        current_round: int,
-        tasks: List[helplib.models.Task]) -> Dict[str, Dict[int, List[str]]]:
+def get_attack_data(current_round: int,
+                    tasks: List[helplib.models.Task],
+                    ) -> Dict[str, DefaultDict[int, List[str]]]:
     """
     Get unexpired flags for round.
 
@@ -204,7 +206,9 @@ def get_attack_data(
     else:
         flags = []
 
-    data = {task_names[task_id]: defaultdict(list) for task_id in task_ids}
+    data: Dict[str, DefaultDict[int, List[str]]] = {
+        task_names[task_id]: defaultdict(list) for task_id in task_ids
+    }
     for flag in flags:
         ip, task_id, flag_data = flag
         data[task_names[task_id]][ip].append(flag_data)

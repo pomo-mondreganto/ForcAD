@@ -22,7 +22,7 @@ def get_teams() -> List[models.Team]:
     return teams
 
 
-async def teams_async_getter(redis_aio, pipe):
+async def teams_async_getter(redis_aio, pipe) -> None:  # type: ignore
     """Cache teams if not cached, then add fetch command to pipe."""
     await async_cache_helper(
         redis_aio=redis_aio,
@@ -60,7 +60,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         return team_id
 
 
-async def create_team(team: models.Team):
+async def create_team(team: models.Team) -> models.Team:
     """Add new team to DB, reset cache & return created instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_insert_query(), team.to_dict())
@@ -82,7 +82,7 @@ async def create_team(team: models.Team):
     return team
 
 
-async def update_team(team: models.Team):
+async def update_team(team: models.Team) -> models.Team:
     """Update team, reset cache & return updated instance."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(team.get_update_query(), team.to_dict())
@@ -93,7 +93,7 @@ async def update_team(team: models.Team):
     return team
 
 
-async def delete_team(team_id: int):
+async def delete_team(team_id: int) -> None:
     """Set active = False on a team."""
     async with storage.async_db_cursor() as (_conn, curs):
         await curs.execute(models.Team.get_delete_query(), {'id': team_id})

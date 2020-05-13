@@ -1,4 +1,5 @@
 from celery import shared_task
+from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from typing import List
 
@@ -10,7 +11,9 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def exception_callback(result, exc, traceback):
+def exception_callback(result: AsyncResult,
+                       exc: Exception,
+                       traceback: str) -> None:
     action_name = result.task.split('.')[-1].split('_')[0].upper()
     action = Action[action_name]
 
@@ -85,8 +88,20 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict],
     if gets_verdict is not None:
         parsed_verdicts.append(gets_verdict)
 
-    result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
-    storage.tasks.update_task_status(task_id=task.id, team_id=team.id,
+    if verdicts:
+        result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
+    else:
+        logger.critical('No verdicts returned from actions!')
+        result_verdict = models.CheckerVerdict(
+            public_message='Checker failed',
+            private_message='No verdicts passed to handler',
+            command='',
+            status=TaskStatus.CHECK_FAILED,
+            action=Action.CHECK,
+        )
+
+    storage.tasks.update_task_status(task_id=task.id or 0,
+                                     team_id=team.id or 0,
                                      current_round=current_round,
                                      checker_verdict=result_verdict)
     return result_verdict

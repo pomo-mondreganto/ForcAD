@@ -1,16 +1,19 @@
 import aioredis
 import redis
-from typing import Callable, Optional, Iterable
+from typing import Callable, Optional, Iterable, Any, Dict
+
+ArgsType = Optional[Iterable[Any]]
+KwargsType = Optional[Dict[str, Any]]
 
 
-def cache_helper(pipeline,
+def cache_helper(pipeline: redis.client.Pipeline,
                  cache_key: str,
-                 cache_func: Callable,
-                 cache_args: Optional[Iterable] = None,
-                 cache_kwargs: Optional[dict] = None,
-                 on_cached: Optional[Callable] = None,
-                 on_cached_args: Optional[Iterable] = None,
-                 on_cached_kwargs: Optional[dict] = None):
+                 cache_func: Callable[..., Any],
+                 cache_args: ArgsType = None,
+                 cache_kwargs: KwargsType = None,
+                 on_cached: Optional[Callable[..., Any]] = None,
+                 on_cached_args: ArgsType = None,
+                 on_cached_kwargs: KwargsType = None) -> bool:
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:
@@ -44,16 +47,17 @@ def cache_helper(pipeline,
 
 
 async def async_cache_helper(
-        redis_aio,
+        redis_aio: aioredis.Redis,
         cache_key: str,
-        cache_func: Callable,
-        cache_args: Optional[Iterable] = None,
-        cache_kwargs: Optional[dict] = None):
+        cache_func: Callable[..., Any],
+        cache_args: ArgsType = None,
+        cache_kwargs: KwargsType = None) -> bool:
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:
         cache_kwargs = dict()
 
+    was_changed = False
     while True:
         try:
             await redis_aio.watch(cache_key)
@@ -62,6 +66,7 @@ async def async_cache_helper(
             tr = redis_aio.multi_exec()
             cache_kwargs['pipeline'] = tr
             if not cached:
+                was_changed = True
                 cache_func(*cache_args, **cache_kwargs)
 
             await tr.execute()
@@ -70,3 +75,5 @@ async def async_cache_helper(
             continue
         else:
             break
+
+    return was_changed

@@ -1,6 +1,7 @@
 from celery import shared_task
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
+from typing import Any
 
 import storage
 from helplib import locking
@@ -9,7 +10,7 @@ logger = get_task_logger(__name__)
 
 
 @worker_ready.connect
-def startup(**_kwargs):
+def startup(**_kwargs: Any) -> None:
     """Task to run on start of celery, schedules game start"""
     game_config = storage.game.get_current_global_config()
 
@@ -42,7 +43,7 @@ def startup(**_kwargs):
 
 
 @shared_task
-def start_game():
+def start_game() -> None:
     """Starts game
 
     Sets `game_running` in DB
