@@ -108,14 +108,14 @@ class RoundProcessor(Task):
         with storage.get_redis_storage().pipeline() as pipeline:
             with locking.acquire_redis_lock(pipeline, 'round_update:lock'):
                 current_round = storage.game.get_real_round_from_db()
-                round_to_check = current_round
+                round_to_process = current_round
 
                 if self.should_update_round():
                     self.update_round(current_round)
-                    round_to_check = current_round + 1
-                    self.update_attack_data(round_to_check)
+                    round_to_process = current_round + 1
+                    self.update_attack_data(round_to_process)
 
-        if not round_to_check:
+        if not round_to_process:
             logger.info("Not processing, round is 0")
             return
 
@@ -127,21 +127,23 @@ class RoundProcessor(Task):
         tasks = storage.tasks.get_tasks()
         random.shuffle(tasks)
 
-        round_args = itertools.product(teams, tasks, [round_to_check])
+        round_args = itertools.product(teams, tasks, [round_to_process])
 
         if self.round_type == 'full':
             logger.info("Running full round")
-            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()
+            round_func = celery_tasks.modes.run_full_round
         elif self.round_type == 'check_gets':
             logger.info("Running check_gets round")
-            celery_tasks.modes.run_check_gets_round.starmap(
-                round_args).apply_async()
+            round_func = celery_tasks.modes.run_check_gets_round
         elif self.round_type == 'puts':
             logger.info("Running puts round")
-            celery_tasks.modes.run_puts_round.starmap(round_args).apply_async()
+            round_func = celery_tasks.modes.run_puts_round
         else:
             logger.critical(
                 f"Invalid round type supplied: {self.round_type}, "
                 f"falling back to full"
             )
-            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()
+            round_func = celery_tasks.modes.run_full_round
+
+        for each in round_args:
+            round_func.s(*each).apply_async()
