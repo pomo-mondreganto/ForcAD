@@ -58,11 +58,13 @@ run 5-6 instances of `celery`).
 
 -   **Flower** is a beautiful celery monitoring app 
 
--   **Redis** acts as a cache, messaging query and backend for celery
+-   **Redis** acts as cache and backend for celery
+
+-   **RabbitMQ** is a messaging query for distribution
 
 -   **Postgres** is a persistent game storage
 
--   **Webapi** provides api for react frontend
+-   **Webapi** provides api for Vue.js frontend
 
 -   **Nginx** acts as a routing proxy that unites frontend, api and flower
 
@@ -123,51 +125,51 @@ Config file (`backend/config/config.yml`) is split into five main parts:
 
   -   `db`: PostgreSQL settings:
   
-     -   `dbname: system_db`
+      -   `dbname: system_db`
     
-     -   `host: postgres`
+      -   `host: postgres`
     
-     -   `password: **change_me**`
+      -   `password: **change_me**`
     
-     -   `port: 5432`
+      -   `port: 5432`
     
-     -   `user: system_admin`
+      -   `user: system_admin`
 
   -   `redis`: Redis settings:
   
-    -   `db: 0`
+      -   `db: 0`
     
-    -   `host: redis`
+      -   `host: redis`
     
-    -   `port: 6379`
+      -   `port: 6379`
     
-    -   `password: **change_me**`
+      -   `password: **change_me**`
     
   -   `rabbitmq`: Redis settings:
   
-    -   `host: rabbitmq`
+      -   `host: rabbitmq`
     
-    -   `port: 5672`
+      -   `port: 5672`
     
-    -   `password: **change_me**`
+      -   `password: **change_me**`
     
-    -   `user: system_admin`
+      -   `user: system_admin`
     
-    -   `vhost: forcad`
+      -   `vhost: forcad`
 
 -   **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
-  -   `password: **change_me**`
+    -   `password: **change_me**`
   
-  -   `username: system_admin`
+    -   `username: system_admin`
 
 -   **teams** contains playing teams. Example contents:
 
 ```yaml
 teams:
--   ip: 10.70.0.2
+- ip: 10.70.0.2
   name: Team1
--   ip: 10.70.1.2
+- ip: 10.70.1.2
   name: Team2
 ```
  
@@ -175,7 +177,7 @@ teams:
 
 ```yaml
 tasks:
--   checker: collacode/checker.py
+- checker: collacode/checker.py
   checker_type: forcad_gevent
   checker_timeout: 30
   default_score: 1500
@@ -184,7 +186,7 @@ tasks:
   places: 1
   puts: 3
 
--   checker: tiktak/checker.py
+- checker: tiktak/checker.py
   checker_type: hackerdom_nfr
   checker_timeout: 30
   gets: 2
@@ -221,19 +223,19 @@ if possible.
     (missing tags are ignored). Examples: `hackerdom_nfr` (hackerdom tag ignored), `gevent_pfr` (gevent checker with 
     public flag data returned). Currently supported tags:
 
-  -   `pfr`: on `PUT`, checker returns public flag data (e.g. username of flag user) as a public message,
+    -   `pfr`: on `PUT`, checker returns public flag data (e.g. username of flag user) as a public message,
     private flag data (`flag_id`) as private message, and public message is shown on `/api/attack_data` for participants.
     Without `pfr` tag public message is considered flag data if `PUT` is successful and isn't shown.
   
-  -   `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
+    -   `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. 
     That way, `flag_id` is used to seed the random generator in checkers so it would return the same values for `GET` and `PUT` 
 
-  -   `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
+    -   `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure 
 you know how it works. **Don't use it** on long and (or) large competitions! Example checker is [here](tests/service/checker/gevent_checker.py).
 
 More detailed explanation of checker tags can be found [in this issue](https://github.com/pomo-mondreganto/ForcAD/issues/18#issuecomment-618072993).
 
-- `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
+-   `env_path`: path or a combination of paths to be prepended to `PATH` env variable (e.g. path to chromedriver). 
 By default, `checkers/bin` is used, so all auxiliary executables can be but there.
 
 See more in [checker writing](#writing-a-checker) section.
@@ -314,7 +316,15 @@ See [this link](https://github.com/HackerDom/ructf-2017/wiki/Интерфейс-
 writing checkers for Hackerdom checksystem. Vulns' frequencies (e.g. put 1 flag for the first vuln for each 
 3 flags of the second) are not supported yet, but can be easily emulated with task place count and checker. 
 For example, for the above configuration (1:3) specify 4 places for the task, and then in checker `PUT` flag for the 
-first vuln if the supplied vuln is 1 and to the second vuln otherwise (vuln is 2, 3 or 4).    
+first vuln if the supplied vuln is 1 and to the second vuln otherwise (vuln is 2, 3 or 4):
+
+```python
+# How to store 3 times more flags for the second vuln
+if int(vuln) == 1:  # first vuln
+    pass
+elif int(vuln) in range(2, 5):  # second vuln
+    pass
+```
 
 #### Local files
 
