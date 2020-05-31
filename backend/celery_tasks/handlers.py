@@ -18,7 +18,7 @@ def exception_callback(result: AsyncResult,
     action = Action[action_name]
 
     kw = result.kwargs
-    team, task, current_round = kw['team'], kw['task'], kw['round']
+    team, task, current_round = kw['team'], kw['task'], kw['current_round']
 
     if action == Action.CHECK:
         prev_verdict = None
