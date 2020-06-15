@@ -308,6 +308,16 @@ def resume_game(_args):
     run_command(command, cwd=BASE_DIR)
 
 
+def run_docker_command(args):
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        *args.args,
+    ]
+    run_command(command, cwd=BASE_DIR)
+
+
 def run_flake(_args):
     command = [
         'flake8',
@@ -413,6 +423,18 @@ if __name__ == '__main__':
              '(counterpart of pause_game command)',
     )
     resume_game_parser.set_defaults(func=resume_game)
+
+    run_docker_parser = subparsers.add_parser(
+        'rd',
+        help='Run docker-compose command with correct compose files',
+    )
+    run_docker_parser.set_defaults(func=run_docker_command)
+    run_docker_parser.add_argument(
+        '-f', '--fast',
+        action='store_true',
+        help='Use faster build with prebuilt images',
+    )
+    run_docker_parser.add_argument('args', nargs='*')
 
     flake_parser = subparsers.add_parser(
         'flake',
