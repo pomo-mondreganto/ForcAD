@@ -1,14 +1,13 @@
 language: python
 
-python:
-  - "3.7"
-
 jobs:
   include:
     - os: linux
       dist: trusty
-    - os: osx
+      python: 3.7
+    - os: linux
       dist: focal
+      python: 3.8
 
 env:
   - TEST=1 TEST_TYPE=BLITZ DOCKER_COMPOSE_VERSION=1.25.0
