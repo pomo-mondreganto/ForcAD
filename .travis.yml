@@ -1,9 +1,7 @@
-language: python
-
 jobs:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       python: 3.7
     - os: linux
       dist: focal
