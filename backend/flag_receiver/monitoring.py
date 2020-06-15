@@ -43,7 +43,7 @@ class SubmitMonitor:
         self._logger.info(
             f"OK: {new_ok - self._was_ok:>6}, "
             f"BAD: {new_bad - self._was_bad:>6}, "
-            f"CONN: {new_conn - self._was_conn}, "
+            f"CONN: {new_conn - self._was_conn:>6}, "
             f"TOTOK: {new_ok:>6}, TOTBAD: {new_bad:>6}, "
             f"TOTCONN: {new_conn:>6}"
         )
@@ -89,6 +89,9 @@ class SubmitMonitor:
 
         self._running = True
         while True:
-            self._process_statistics()
-            self._process_attacks_queue()
+            try:
+                self._process_statistics()
+                self._process_attacks_queue()
+            except Exception as e:
+                self._logger.error(f"Error in monitoring: {e}")
             gevent.sleep(3)
