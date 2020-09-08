@@ -16,7 +16,7 @@
                 <div class="flags">flags</div>
                 <div class="checks">checks</div>
                 <div class="public">public</div>
-                <div class="private">public</div>
+                <div class="private">private</div>
                 <div class="command">command</div>
             </div>
             <div
@@ -60,7 +60,7 @@ export default {
         timer: Number,
     },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
             taskId: null,
@@ -72,13 +72,13 @@ export default {
     },
 
     methods: {
-        openTeam: function(id) {
+        openTeam: function (id) {
             clearInterval(this.timer);
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
     },
 
-    created: async function() {
+    created: async function () {
         this.taskId = this.$route.params.taskId;
         this.teamId = this.$route.params.teamId;
         let r = await this.$http.get(
@@ -115,7 +115,7 @@ export default {
     }
 
     & > :not(:first-child) > * {
-        height: 6em;
+        min-height: 6em;
     }
 
     & > :last-child > :last-child > * {
