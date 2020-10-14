@@ -1,9 +1,9 @@
-FROM python:3.7
+FROM python:3.7-slim
 
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq-dev \
+    && apt-get install -y --no-install-recommends gcc libpq-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,14 +21,6 @@ RUN chmod +x /await_start.sh
 ########## CUSTOMIZE ##########
 
 # uncomment blocks to enable features
-### pwntools dependencies ###
-################
-#RUN apt-get update \
-#    && apt-get install -y --no-install-recommends git libssl-dev libffi-dev build-essential \
-#    && apt-get clean \
-#    && rm -rf /var/lib/apt/lists/*
-#ENV PWNLIB_NOTERM=true
-################
 
 ### selenium (chromedriver) dependencies (from https://github.com/joyzoursky/docker-python-chromedriver) ###
 ################
