@@ -1,8 +1,8 @@
-import importlib.util
 from logging import Logger
 from traceback import format_exc
 
 import gevent
+import importlib.util
 
 import helplib
 from helplib import models
@@ -47,7 +47,7 @@ def run_generic_action_in_thread(checker_path: str,
 
         message = (
             'Exception while importing checker. '
-            'Your checker is not compatible with gevent_optimized option. '
+            'Your checker is not compatible with "gevent" checker tag. '
             f'Exception: {exc}'
         )
 
