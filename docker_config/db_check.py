@@ -6,9 +6,8 @@ variables.
 """
 
 import os
-import sys
-
 import psycopg2
+import sys
 
 
 def database_check():
@@ -18,11 +17,7 @@ def database_check():
     host = os.environ['POSTGRES_HOST']
     port = os.environ['POSTGRES_PORT']
 
-    print("HOST: {host}:{port}, DB: {dbname}, USER: {user}".format(
-        dbname=dbname,
-        user=user,
-        host=host,
-        port=port))
+    print(f"HOST: {host}:{port}, DB: {dbname}, USER: {user}")
 
     # noinspection PyBroadException
     try:

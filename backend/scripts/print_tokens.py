@@ -17,12 +17,7 @@ def run():
         curs.execute(_SELECT_TEAMS_NAME_TOKEN_QUERY)
         result = curs.fetchall()
 
-    print(
-        '\n'.join("{name}:{token}".format(
-            name=name,
-            token=token,
-        ) for name, token in result),
-    )
+    print('\n'.join(f"{name}:{token}" for name, token in result))
 
 
 if __name__ == '__main__':
