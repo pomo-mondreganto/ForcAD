@@ -3,9 +3,9 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from typing import List
 
-import storage.tasks
-from helplib import models, checkers
-from helplib.types import TaskStatus, Action
+from lib import storage, models
+from lib.helpers import checkers
+from lib.helpers.types import TaskStatus, Action
 
 logger = get_task_logger(__name__)
 

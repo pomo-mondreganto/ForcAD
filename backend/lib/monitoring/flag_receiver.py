@@ -5,8 +5,7 @@ import gevent
 from gevent.queue import Queue, Empty
 from kombu.messaging import Producer
 
-import storage
-from helplib import models
+from lib import models, storage
 
 
 class SubmitMonitor:
@@ -52,7 +51,7 @@ class SubmitMonitor:
         self._was_conn = new_conn
 
     def _process_attacks_queue(self) -> None:
-        conn = storage.get_broker_connection()
+        conn = storage.utils.get_broker_connection()
         with conn.channel() as channel:
             producer = Producer(channel)
             by_label = defaultdict(list)

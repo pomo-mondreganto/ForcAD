@@ -1,16 +1,8 @@
-import sys
-
-from pathlib import Path
-
-BASE_DIR = Path(__file__).absolute().resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
-
 from sanic.response import json as json_response
 
-import storage
-
-from .base import make_err_response
+from lib import storage
 from .api_base import ApiSet
+from .base import make_err_response
 
 
 class TeamTaskApi(ApiSet):

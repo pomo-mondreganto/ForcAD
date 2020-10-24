@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-
 import pytz
-import sys
-
+import yaml
 from pathlib import Path
 
-BASE_DIR = Path(__file__).absolute().resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
+from lib import models
+from lib import storage
 
-import storage
-import yaml
-
-from helplib import models
-
+BASE_DIR = Path(__file__).resolve().absolute().parents[1]
 CONFIG_DIR = BASE_DIR / 'config'
 CONFIG_FILENAME = 'config.yml'
 
@@ -29,7 +23,7 @@ def run():
     with conf_path.open(mode='r') as f:
         file_config = yaml.safe_load(f)
 
-    with storage.db_cursor() as (conn, curs):
+    with storage.utils.db_cursor() as (conn, curs):
         create_tables_path = SCRIPTS_DIR / 'create_tables.sql'
         create_tables_query = create_tables_path.read_text()
         curs.execute(create_tables_query)
@@ -129,11 +123,12 @@ def run():
         conn.commit()
 
     game_state = storage.game.construct_game_state_from_db(current_round=0)
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.utils.get_redis_storage().pipeline(
+            transaction=True) as pipeline:
         pipeline.set('game_state', game_state.to_json())
         pipeline.execute()
 
-    storage.get_wro_sio_manager().emit(
+    storage.utils.get_wro_sio_manager().emit(
         event='update_scoreboard',
         data={'data': game_state.to_dict()},
         namespace='/game_events',

@@ -5,7 +5,7 @@ import time
 from redis.client import Pipeline
 from typing import Iterator
 
-from helplib import exceptions
+from lib.helpers import exceptions
 
 
 @contextmanager

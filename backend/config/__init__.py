@@ -1,6 +1,6 @@
 import os
 
-import storage
+from lib import storage
 
 
 def get_web_credentials() -> dict:

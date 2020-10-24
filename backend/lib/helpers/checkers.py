@@ -2,11 +2,10 @@ from logging import Logger
 
 from typing import Optional, List
 
-import helplib
-from helplib import models
-from helplib.commands import run_generic_command
-from helplib.thread_actions import run_generic_action_in_thread
-from helplib.types import TaskStatus, Action
+from lib import models
+from lib.helpers.commands import run_generic_command
+from lib.helpers.thread_actions import run_generic_action_in_thread
+from lib.helpers.types import TaskStatus, Action
 
 
 def first_error_or_first_verdict(verdicts: List[models.CheckerVerdict]
@@ -34,22 +33,22 @@ class CheckerRunner:
         self.logger = logger
         self.flag = flag
 
-    def check(self) -> helplib.models.CheckerVerdict:
+    def check(self) -> models.CheckerVerdict:
         if self.task.is_checker_gevent_optimized:
             return self._check_in_thread()
         return self._check_as_process()
 
-    def put(self) -> helplib.models.CheckerVerdict:
+    def put(self) -> models.CheckerVerdict:
         if self.task.is_checker_gevent_optimized:
             return self._put_in_thread()
         return self._put_as_process()
 
-    def get(self) -> helplib.models.CheckerVerdict:
+    def get(self) -> models.CheckerVerdict:
         if self.task.is_checker_gevent_optimized:
             return self._get_in_thread()
         return self._get_as_process()
 
-    def _check_as_process(self) -> helplib.models.CheckerVerdict:
+    def _check_as_process(self) -> models.CheckerVerdict:
         """Check implementation using subprocess calling"""
         check_command = [
             self.task.checker,
@@ -66,7 +65,7 @@ class CheckerRunner:
             logger=self.logger,
         )
 
-    def _put_as_process(self) -> helplib.models.CheckerVerdict:
+    def _put_as_process(self) -> models.CheckerVerdict:
         """Put implementation using subprocess calling"""
         assert self.flag is not None, 'Can only be called when flag is passed'
 
@@ -88,7 +87,7 @@ class CheckerRunner:
             logger=self.logger,
         )
 
-    def _get_as_process(self) -> helplib.models.CheckerVerdict:
+    def _get_as_process(self) -> models.CheckerVerdict:
         """Get implementation using subprocess calling"""
         assert self.flag is not None, 'Can only be called when flag is passed'
 
@@ -110,7 +109,7 @@ class CheckerRunner:
             logger=self.logger
         )
 
-    def _check_in_thread(self) -> helplib.models.CheckerVerdict:
+    def _check_in_thread(self) -> models.CheckerVerdict:
         """Check implementation, gevent-compatible"""
 
         return run_generic_action_in_thread(
@@ -125,7 +124,7 @@ class CheckerRunner:
             action_kwargs={},
         )
 
-    def _put_in_thread(self) -> helplib.models.CheckerVerdict:
+    def _put_in_thread(self) -> models.CheckerVerdict:
         """Check implementation, gevent-compatible"""
         assert self.flag is not None, 'Can only be called when flag is passed'
 
@@ -147,7 +146,7 @@ class CheckerRunner:
             action_kwargs=kwargs,
         )
 
-    def _get_in_thread(self) -> helplib.models.CheckerVerdict:
+    def _get_in_thread(self) -> models.CheckerVerdict:
         """Check implementation, gevent-compatible"""
         assert self.flag is not None, 'Can only be called when flag is passed'
 

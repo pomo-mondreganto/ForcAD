@@ -5,7 +5,7 @@ from sanic.exceptions import Forbidden
 from sanic.response import json
 
 import config
-import storage
+from lib import storage
 
 
 async def check_session(request):
@@ -13,7 +13,7 @@ async def check_session(request):
         raise Forbidden('No session set')
 
     session = request.cookies['session']
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     data = await redis_aio.get(f'session:{session}')
     creds = config.get_web_credentials()
 
@@ -24,7 +24,7 @@ async def check_session(request):
 
 
 async def set_session(session, username):
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     await redis_aio.set(f'session:{session}', username)
 
 

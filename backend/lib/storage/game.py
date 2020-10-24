@@ -1,11 +1,9 @@
 import time
 from typing import Optional
 
-import storage
-from helplib import models
-from helplib.cache import cache_helper, async_cache_helper
-from helplib.exceptions import FlagSubmitException
-from storage import caching
+from lib import models, storage
+from lib.helpers.cache import cache_helper, async_cache_helper
+from lib.storage import caching, utils
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
@@ -22,7 +20,7 @@ _GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
 
 def get_round_start(r: int) -> int:
     """Get start time for round as unix timestamp."""
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
         start_time, = pipeline.get(f'round:{r}:start_time').execute()
     try:
         start_time = int(start_time)
@@ -34,7 +32,7 @@ def get_round_start(r: int) -> int:
 def set_round_start(r: int) -> None:
     """Set start time for round as str."""
     cur_time = int(time.time())
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
         pipeline.set(f'round:{r}:start_time', cur_time).execute()
 
 
@@ -44,7 +42,7 @@ def get_real_round() -> int:
 
     :returns: -1 if round not in cache, else round
     """
-    with storage.get_redis_storage().pipeline(transaction=False) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
         r, = pipeline.get('real_round').execute()
 
     try:
@@ -60,7 +58,7 @@ def get_real_round_from_db() -> int:
 
     Fully persistent to use with game management
     """
-    with storage.db_cursor() as (_, curs):
+    with utils.db_cursor() as (_, curs):
         curs.execute(_CURRENT_REAL_ROUND_QUERY)
         r, = curs.fetchone()
 
@@ -69,21 +67,21 @@ def get_real_round_from_db() -> int:
 
 def update_real_round_in_db(new_round: int) -> None:
     """Update real_round of global config stored in DB."""
-    with storage.db_cursor() as (conn, curs):
+    with utils.db_cursor() as (conn, curs):
         curs.execute(_UPDATE_REAL_ROUND_QUERY, (new_round,))
         conn.commit()
 
 
 def set_game_running(new_value: bool) -> None:
     """Update game_running value in db."""
-    with storage.db_cursor() as (conn, curs):
+    with utils.db_cursor() as (conn, curs):
         curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
         conn.commit()
 
 
 def get_game_running() -> bool:
     """Get current game_running value from db."""
-    with storage.db_cursor() as (_, curs):
+    with utils.db_cursor() as (_, curs):
         curs.execute(_GET_GAME_RUNNING_QUERY)
         game_running, = curs.fetchone()
 
@@ -92,7 +90,7 @@ def get_game_running() -> bool:
 
 def get_db_global_config() -> models.GlobalConfig:
     """Get global config from database."""
-    with storage.db_cursor(dict_cursor=True) as (_, curs):
+    with utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_GET_GLOBAL_CONFIG_QUERY)
         result = curs.fetchone()
 
@@ -101,11 +99,11 @@ def get_db_global_config() -> models.GlobalConfig:
 
 def get_current_global_config() -> models.GlobalConfig:
     """Get global config from cache is cached, cache it otherwise."""
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
             cache_key='global_config',
-            cache_func=storage.caching.cache_global_config,
+            cache_func=caching.cache_global_config,
             cache_args=(pipeline,),
         )
 
@@ -154,77 +152,6 @@ def construct_latest_game_state(current_round: int) -> models.GameState:
     return state
 
 
-async def get_attack_data() -> str:
-    """Get public flag ids for task that provide them."""
-    redis_pool = await storage.get_async_redis_storage()
-    attack_data = await redis_pool.get('attack_data')
-    return attack_data
-
-
-def handle_attack(attacker_id: int,
-                  flag_str: str,
-                  current_round: int) -> models.AttackResult:
-    """
-    Main routine for attack validation & state change.
-
-    Checks flag, locks team for update, calls rating recalculation,
-    then publishes redis message about stolen flag
-
-    :param attacker_id: id of the attacking team
-    :param flag_str: flag to be checked
-    :param current_round: round of the attack
-
-    :return: attacker rating change
-    """
-
-    result = models.AttackResult(attacker_id=attacker_id)
-
-    try:
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str,
-                                             current_round=current_round)
-        result.victim_id = flag.team_id
-        result.task_id = flag.task_id
-        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id,
-                                          current_round=current_round)
-        result.submit_ok = True
-
-        with storage.db_cursor() as (conn, curs):
-            curs.callproc(
-                "recalculate_rating",
-                (
-                    attacker_id,
-                    flag.team_id,
-                    flag.task_id,
-                    flag.id,
-                ),
-            )
-            attacker_delta, victim_delta = curs.fetchone()
-            conn.commit()
-
-        result.attacker_delta = attacker_delta
-        result.victim_delta = victim_delta
-        result.message = f'Flag accepted! Earned {attacker_delta} flag points!'
-
-        flag_data = {
-            'attacker_id': attacker_id,
-            'victim_id': flag.team_id,
-            'task_id': flag.task_id,
-            'attacker_delta': attacker_delta,
-            'victim_delta': victim_delta,
-        }
-
-        storage.get_wro_sio_manager().emit(
-            event='flag_stolen',
-            data={'data': flag_data},
-            namespace='/live_events',
-        )
-
-    except FlagSubmitException as e:
-        result.message = str(e)
-
-    return result
-
-
 async def construct_scoreboard() -> dict:
     """
     Get formatted scoreboard to serve to frontend
@@ -232,7 +159,7 @@ async def construct_scoreboard() -> dict:
     Fetches and constructs the full scoreboard (state, teams, tasks, config)
     using asyncio (for sanic webapi)
     """
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     pipe.get('game_state')
     await storage.teams.teams_async_getter(redis_aio, pipe)

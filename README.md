@@ -90,8 +90,8 @@ global settings (that'll be the default value) and for each task independently.
 ### Flag format
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
-corresponding service name. You can change flag generation in function `generate_flag` in 
-[backend/helpers/flags.py](backend/helplib/flags.py)
+corresponding service name. You can change flag generation in function `Flag.generate` in 
+[backend/lib/models/flag.py](backend/lib/models/flag.py)
 
 Each flag is valid (and can be checked by checker) for `flag_lifetime` rounds (global config variable).    
 

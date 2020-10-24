@@ -1,8 +1,7 @@
 from typing import Any
 
-import helplib
-import storage
-from helplib import models
+from lib import models
+from lib.storage import utils, game
 
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
 WITH flag_ids AS (
@@ -21,7 +20,7 @@ def cache_teams(pipeline: Any) -> None:
 
     Just adds commands to pipeline stack, don't forget to execute afterwards.
     """
-    with storage.db_cursor(dict_cursor=True) as (_, curs):
+    with utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(models.Team.get_select_active_query())
         teams = curs.fetchall()
 
@@ -41,7 +40,7 @@ def cache_tasks(pipeline: Any) -> None:
     Just adds commands to pipeline stack (to support aioredis),
     don't forget to execute afterwards.
     """
-    with storage.db_cursor(dict_cursor=True) as (_, curs):
+    with utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(models.Task.get_select_active_query())
         tasks = curs.fetchall()
 
@@ -61,9 +60,9 @@ def cache_last_stolen(team_id: int, current_round: int, pipeline: Any) -> None:
     :param current_round: current round
     :param pipeline: redis connection to add command to
     """
-    game_config = storage.game.get_current_global_config()
+    game_config = game.get_current_global_config()
 
-    with storage.db_cursor() as (_, curs):
+    with utils.db_cursor() as (_, curs):
         curs.execute(
             _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY,
             (
@@ -90,15 +89,15 @@ def cache_last_flags(current_round: int, pipeline: Any) -> None:
     :param current_round: current round
     :param pipeline: redis connection to add command to
     """
-    game_config = storage.game.get_current_global_config()
+    game_config = game.get_current_global_config()
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
-    with storage.db_cursor(dict_cursor=True) as (_, curs):
+    with utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY,
                      (current_round - game_config.flag_lifetime,))
         flags = curs.fetchall()
 
-    flag_models = list(helplib.models.Flag.from_dict(data) for data in flags)
+    flag_models = list(models.Flag.from_dict(data) for data in flags)
 
     if flag_models:
         pipeline.delete(*[
@@ -122,6 +121,6 @@ def cache_last_flags(current_round: int, pipeline: Any) -> None:
 
 def cache_global_config(pipeline: Any) -> None:
     """Put global config to cache (without round or game_running)."""
-    global_config = storage.game.get_db_global_config()
+    global_config = game.get_db_global_config()
     data = global_config.to_json()
     pipeline.set('global_config', data)

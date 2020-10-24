@@ -8,15 +8,6 @@ from kombu import Connection
 from psycopg2 import pool, extras, _ext
 
 import config
-from storage import (
-    caching,
-    flags,
-    game,
-    tasks,
-    teams,
-)
-
-__all__ = ['caching', 'flags', 'game', 'tasks', 'teams']
 
 _redis_storage = None
 _async_redis_storage = None

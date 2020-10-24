@@ -3,10 +3,10 @@ from collections import defaultdict
 
 from typing import Optional, List, Dict, DefaultDict, Union
 
-import helplib
-import storage
-from helplib.cache import cache_helper
-from storage import caching
+from lib import models
+from lib.helpers import exceptions
+from lib.helpers.cache import cache_helper
+from lib.storage import caching, game, utils
 
 _GET_UNEXPIRED_FLAGS_QUERY = """
 SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
@@ -15,7 +15,7 @@ WHERE f.round >= %s AND f.task_id IN %s
 """
 
 
-def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
+def try_add_stolen_flag(flag: models.Flag, attacker: int,
                         current_round: int) -> None:
     """
     Flag validation function.
@@ -29,13 +29,13 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
 
     :raises FlagSubmitException: on validation error
     """
-    game_config = storage.game.get_current_global_config()
+    game_config = game.get_current_global_config()
     if current_round - flag.round > game_config.flag_lifetime:
-        raise helplib.exceptions.FlagSubmitException('Flag is too old')
+        raise exceptions.FlagSubmitException('Flag is too old')
     if flag.team_id == attacker:
-        raise helplib.exceptions.FlagSubmitException('Flag is your own')
+        raise exceptions.FlagSubmitException('Flag is your own')
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
         # optimization of redis request count
         cached_stolen = pipeline.exists(
             f'team:{attacker}:stolen_flags').execute()
@@ -54,29 +54,29 @@ def try_add_stolen_flag(flag: helplib.models.Flag, attacker: int,
         ).execute()
 
         if not is_new:
-            raise helplib.exceptions.FlagSubmitException('Flag already stolen')
+            raise exceptions.FlagSubmitException('Flag already stolen')
 
         pipeline.incr(f'team:{attacker}:task:{flag.task_id}:stolen')
         pipeline.incr(f'team:{flag.team_id}:task:{flag.task_id}:lost')
         pipeline.execute()
 
 
-def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
+def add_flag(flag: models.Flag) -> models.Flag:
     """Inserts a newly generated flag into the database and cache.
 
     :param flag: Flag model instance to be inserted
     :returns: flag with set "id" field
     """
 
-    with storage.db_cursor() as (conn, curs):
+    with utils.db_cursor() as (conn, curs):
         curs.execute(flag.get_insert_query(), flag.to_dict())
         flag.id, = curs.fetchone()
         conn.commit()
 
-    game_config = storage.game.get_current_global_config()
+    game_config = game.get_current_global_config()
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
         round_flags_key = (
             f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
         )
@@ -91,7 +91,7 @@ def add_flag(flag: helplib.models.Flag) -> helplib.models.Flag:
 
 
 def get_flag_by_field(field_name: str, field_value: Union[str, int],
-                      current_round: int) -> helplib.models.Flag:
+                      current_round: int) -> models.Flag:
     """
     Get flag by generic field.
 
@@ -101,7 +101,7 @@ def get_flag_by_field(field_name: str, field_value: Union[str, int],
     :returns: Flag model instance with flag.field_name == field_value
     :raises FlagSubmitException: if nothing found
     """
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
         cached, = pipeline.exists('flags:cached').execute()
         if not cached:
             cache_helper(
@@ -116,16 +116,16 @@ def get_flag_by_field(field_name: str, field_value: Union[str, int],
         flag_exists, flag_json = pipeline.execute()
 
     if not flag_exists:
-        raise helplib.exceptions.FlagSubmitException(
+        raise exceptions.FlagSubmitException(
             'Flag is invalid or too old',
         )
 
-    flag = helplib.models.Flag.from_json(flag_json)
+    flag = models.Flag.from_json(flag_json)
 
     return flag
 
 
-def get_flag_by_str(flag_str: str, current_round: int) -> helplib.models.Flag:
+def get_flag_by_str(flag_str: str, current_round: int) -> models.Flag:
     """
     Get flag by its string value.
 
@@ -138,7 +138,7 @@ def get_flag_by_str(flag_str: str, current_round: int) -> helplib.models.Flag:
                              current_round=current_round)
 
 
-def get_flag_by_id(flag_id: int, current_round: int) -> helplib.models.Flag:
+def get_flag_by_id(flag_id: int, current_round: int) -> models.Flag:
     """
     Get flag by its id value.
 
@@ -153,7 +153,7 @@ def get_flag_by_id(flag_id: int, current_round: int) -> helplib.models.Flag:
 def get_random_round_flag(team_id: int,
                           task_id: int,
                           from_round: int,
-                          current_round: int) -> Optional[helplib.models.Flag]:
+                          current_round: int) -> Optional[models.Flag]:
     """
     Get random flag for team generated for specified round and task.
 
@@ -164,7 +164,7 @@ def get_random_round_flag(team_id: int,
     :returns: Flag mode instance or None if no flag from rounds exist
     """
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
         cache_helper(
             pipeline=pipeline,
             cache_key='flags:cached',
@@ -183,7 +183,7 @@ def get_random_round_flag(team_id: int,
 
 
 def get_attack_data(current_round: int,
-                    tasks: List[helplib.models.Task],
+                    tasks: List[models.Task],
                     ) -> Dict[str, DefaultDict[int, List[str]]]:
     """
     Get unexpired flags for round.
@@ -193,11 +193,11 @@ def get_attack_data(current_round: int,
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}
 
-    config = storage.game.get_current_global_config()
+    config = game.get_current_global_config()
     need_round = current_round - config.flag_lifetime
 
     if task_ids:
-        with storage.db_cursor() as (_, curs):
+        with utils.db_cursor() as (_, curs):
             curs.execute(
                 _GET_UNEXPIRED_FLAGS_QUERY,
                 (need_round, task_ids)

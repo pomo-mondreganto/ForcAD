@@ -5,8 +5,8 @@ import os
 import subprocess
 from typing import List, Any, AnyStr, Optional, Tuple, Dict
 
-import helplib
-from helplib.types import TaskStatus, Action
+from lib import models
+from lib.helpers.types import TaskStatus, Action
 
 
 def run_command_gracefully(command: List[str],
@@ -100,7 +100,7 @@ def run_generic_command(command: List,
                         env_path: str,
                         timeout: int,
                         team_name: str,
-                        logger: Logger) -> helplib.models.CheckerVerdict:
+                        logger: Logger) -> models.CheckerVerdict:
     """Runs generic checker command, calls "run_command_gracefully"
         and handles exceptions
 
@@ -154,7 +154,7 @@ def run_generic_command(command: List,
         public_message = 'Timeout'
 
     command_str = ' '.join(shlex.quote(x) for x in command)
-    verdict = helplib.models.CheckerVerdict(
+    verdict = models.CheckerVerdict(
         public_message=public_message,
         private_message=private_message,
         command=command_str,

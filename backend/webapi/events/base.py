@@ -1,13 +1,8 @@
-import sys
-from pathlib import Path
-
-BASE_DIR = Path(__file__).absolute().resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
-
-import storage
 import socketio
 
-sio_manager = storage.get_async_sio_manager()
+from lib import storage
+
+sio_manager = storage.utils.get_async_sio_manager()
 sio = socketio.AsyncServer(
     async_mode='sanic',
     client_manager=sio_manager,

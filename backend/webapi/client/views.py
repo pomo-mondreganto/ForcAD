@@ -7,15 +7,14 @@ sys.path.insert(0, str(BASE_DIR))
 from sanic import Blueprint
 from sanic.response import json as json_response, html, text
 
-import storage
-from helplib import models
+from lib import models, storage
 
 client_bp = Blueprint('client_api')
 
 
 @client_bp.route('/teams/')
 async def get_teams(_request):
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
 
     await storage.teams.teams_async_getter(redis_aio, pipe)
@@ -30,7 +29,7 @@ async def get_teams(_request):
 
 @client_bp.route('/tasks/')
 async def get_tasks(_request):
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
 
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
@@ -45,7 +44,7 @@ async def get_tasks(_request):
 
 @client_bp.route('/config/')
 async def get_game_config(_request):
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
 
     await storage.game.global_config_async_getter(redis_aio, pipe)
@@ -57,7 +56,7 @@ async def get_game_config(_request):
 
 @client_bp.route('/attack_data/')
 async def serve_attack_data(_request):
-    attack_data = await storage.game.get_attack_data()
+    attack_data = await storage.attacks.get_attack_data()
     return text(attack_data, content_type='application/json')
 
 

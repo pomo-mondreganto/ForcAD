@@ -1,19 +1,11 @@
-import sys
-
-from pathlib import Path
-
-BASE_DIR = Path(__file__).absolute().resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
-
 import asyncio
-
 from sanic import Sanic, Blueprint
 from sanic_cors import CORS
 
-from webapi.monitoring import MonitorClient
-from webapi.client import client_bp
 from webapi.admin import admin_bp
+from webapi.client import client_bp
 from webapi.events import sio
+from webapi.monitoring import MonitorClient
 
 app = Sanic('forcad_api')
 app.enable_websocket(True)

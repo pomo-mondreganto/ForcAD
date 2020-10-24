@@ -2,17 +2,12 @@ import gevent.monkey
 
 gevent.monkey.patch_all()
 
-import sys
 import logging
 import gevent.pool
 import gevent.server
-from pathlib import Path
 
-BASE_DIR = Path(__file__).absolute().resolve().parents[2]
-sys.path.insert(0, str(BASE_DIR))
-
-import storage
-from flag_receiver.monitoring import SubmitMonitor
+from lib import storage
+from lib.monitoring.flag_receiver import SubmitMonitor
 
 
 class SubmitHandler:
@@ -64,9 +59,9 @@ class SubmitHandler:
             if current_round == -1:
                 socket.sendall(b'Game is unavailable\n')
 
-            ar = storage.game.handle_attack(attacker_id=team_id,
-                                            flag_str=flag_str,
-                                            current_round=current_round)
+            ar = storage.attacks.handle_attack(attacker_id=team_id,
+                                               flag_str=flag_str,
+                                               current_round=current_round)
             self._monitor.add(ar)
             if ar.submit_ok:
                 self._monitor.inc_ok()

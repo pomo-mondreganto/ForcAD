@@ -1,0 +1,8 @@
+FROM pomomondreganto/forcad_base:latest
+
+COPY backend /app
+
+COPY ./docker_config/gevent_flag_receiver/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

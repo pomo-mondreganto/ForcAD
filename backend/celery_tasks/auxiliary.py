@@ -3,8 +3,8 @@ from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
 from typing import Any
 
-import storage
-from helplib import locking
+from lib import storage
+from lib.helpers import locking
 
 logger = get_task_logger(__name__)
 
@@ -16,7 +16,8 @@ def startup(**_kwargs: Any) -> None:
 
     logger.info(f'Received game config: {game_config}')
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.utils.get_redis_storage().pipeline(
+            transaction=True) as pipeline:
         with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
             already_started = storage.game.get_game_running()
 
@@ -35,7 +36,7 @@ def startup(**_kwargs: Any) -> None:
                     pipeline.set('game_state', game_state.to_json())
                     pipeline.execute()
 
-                    storage.get_wro_sio_manager().emit(
+                    storage.utils.get_wro_sio_manager().emit(
                         event='update_scoreboard',
                         data={'data': game_state.to_dict()},
                         namespace='/game_events',
@@ -50,7 +51,8 @@ def start_game() -> None:
     """
     logger.info('Starting game')
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.utils.get_redis_storage().pipeline(
+            transaction=True) as pipeline:
         with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
             already_started = storage.game.get_game_running()
             if already_started:
@@ -68,7 +70,7 @@ def start_game() -> None:
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
-            storage.get_wro_sio_manager().emit(
+            storage.utils.get_wro_sio_manager().emit(
                 event='update_scoreboard',
                 data={'data': game_state.to_dict()},
                 namespace='/game_events',

@@ -1,13 +1,13 @@
-import random
 import secrets
 
+import random
 from celery import shared_task
 from typing import Optional, Any
 
-import storage
 from celery_tasks.auxiliary import logger
-from helplib import models, flags, checkers
-from helplib.types import TaskStatus, Action
+from lib import models, storage
+from lib.helpers import checkers
+from lib.helpers.types import TaskStatus, Action
 
 
 @shared_task
@@ -35,7 +35,7 @@ def put_action(_prev_verdict: Optional[models.CheckerVerdict],
     logger.info(f'Running PUT for team `{team.name}` task `{task.name}`')
 
     place = secrets.choice(range(1, task.places + 1))
-    flag = flags.generate_flag(
+    flag = models.Flag.generate(
         service=task.name[0].upper(),
         team_id=team.id or 0,
         task_id=task.id or 0,

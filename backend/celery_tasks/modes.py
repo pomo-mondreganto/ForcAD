@@ -5,7 +5,7 @@ from typing import Tuple
 import celery_tasks.actions
 import celery_tasks.auxiliary
 import celery_tasks.handlers
-from helplib import models
+from lib import models
 
 logger = get_task_logger(__name__)
 

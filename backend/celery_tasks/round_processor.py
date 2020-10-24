@@ -1,14 +1,13 @@
-import random
-
 import itertools
+import random
 from celery import Task
 from celery.utils.log import get_task_logger
 from kombu.utils import json as kjson
 from typing import Optional, Any
 
 import celery_tasks.modes
-import storage
-from helplib import locking
+from lib import storage
+from lib.helpers import locking
 
 logger = get_task_logger(__name__)
 
@@ -54,11 +53,11 @@ class RoundProcessor(Task):
             return
 
         logger.info(f'Publishing scoreboard for round {current_round}')
-        with storage.get_redis_storage().pipeline() as pipeline:
+        with storage.utils.get_redis_storage().pipeline() as pipeline:
             pipeline.set('game_state', game_state.to_json())
             pipeline.execute()
 
-        storage.get_wro_sio_manager().emit(
+        storage.utils.get_wro_sio_manager().emit(
             event='update_scoreboard',
             data={'data': game_state.to_dict()},
             namespace='/game_events',
@@ -75,7 +74,7 @@ class RoundProcessor(Task):
         # But all teamtasks with round >= real_round are
         # updated in the attack handler
         # So both old and new teamtasks will be updated properly
-        with storage.get_redis_storage().pipeline(
+        with storage.utils.get_redis_storage().pipeline(
                 transaction=True) as pipeline:
             pipeline.set('real_round', finished_round + 1).execute()
 
@@ -87,7 +86,7 @@ class RoundProcessor(Task):
         tasks = list(
             filter(lambda x: x.checker_provides_public_flag_data, tasks))
         flags = storage.flags.get_attack_data(current_round, tasks)
-        with storage.get_redis_storage().pipeline(
+        with storage.utils.get_redis_storage().pipeline(
                 transaction=True) as pipeline:
             pipeline.set('attack_data', kjson.dumps(flags)).execute()
 
@@ -105,7 +104,7 @@ class RoundProcessor(Task):
             logger.info('Game is not running, exiting')
             return
 
-        with storage.get_redis_storage().pipeline() as pipeline:
+        with storage.utils.get_redis_storage().pipeline() as pipeline:
             with locking.acquire_redis_lock(pipeline, 'round_update:lock'):
                 current_round = storage.game.get_real_round_from_db()
                 round_to_check = current_round

@@ -1,10 +1,9 @@
 from typing import List
 
-import storage
-from helplib import models
-from helplib.cache import cache_helper, async_cache_helper
-from helplib.types import TaskStatus, Action
-from storage import caching
+from lib import models, storage
+from lib.helpers.cache import cache_helper, async_cache_helper
+from lib.helpers.types import TaskStatus, Action
+from lib.storage import caching
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
@@ -32,15 +31,15 @@ ORDER BY id DESC
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database."""
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
         cache_helper(
-            pipeline=pipeline,
+            pipeline=pipe,
             cache_key='tasks',
             cache_func=caching.cache_tasks,
-            cache_args=(pipeline,),
+            cache_args=(pipe,),
         )
 
-        tasks, = pipeline.smembers('tasks').execute()
+        tasks, = pipe.smembers('tasks').execute()
         tasks = list(models.Task.from_json(task) for task in tasks)
 
     return tasks
@@ -58,7 +57,7 @@ async def tasks_async_getter(redis_aio, pipe):  # type: ignore
 
 async def get_all_tasks_async() -> List[models.Task]:
     """Get list of all tasks from database."""
-    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+    async with storage.utils.async_db_cursor(dict_cursor=True) as (_, curs):
         await curs.execute(models.Task.get_select_all_query())
         results = await curs.fetchall()
 
@@ -83,7 +82,7 @@ def update_task_status(task_id: int, team_id: int, current_round: int,
         if checker_verdict.action == Action.PUT:
             public = 'OK'
 
-    with storage.db_cursor(dict_cursor=True) as (conn, curs):
+    with storage.utils.db_cursor(dict_cursor=True) as (conn, curs):
         curs.callproc(
             'update_teamtasks_status',
             (
@@ -101,9 +100,9 @@ def update_task_status(task_id: int, team_id: int, current_round: int,
         conn.commit()
 
     data['round'] = current_round
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
-        pipeline.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
-                      approximate=False).execute()
+    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
+        pipe.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
+                  approximate=False).execute()
 
 
 def get_last_teamtasks() -> List[dict]:
@@ -111,11 +110,11 @@ def get_last_teamtasks() -> List[dict]:
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
-    with storage.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
         for team in teams:
             for task in tasks:
-                pipeline.xrevrange(f'teamtasks:{team.id}:{task.id}', count=1)
-        data = pipeline.execute()
+                pipe.xrevrange(f'teamtasks:{team.id}:{task.id}', count=1)
+        data = pipe.execute()
 
     data = sum(data, [])
 
@@ -135,7 +134,7 @@ def get_teamtasks_from_db() -> List[dict]:
 
     :returns: dictionary of team tasks or None
     """
-    with storage.db_cursor(dict_cursor=True) as (_, curs):
+    with storage.utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(_SELECT_TEAMTASKS_QUERY)
         data = curs.fetchall()
 
@@ -144,7 +143,7 @@ def get_teamtasks_from_db() -> List[dict]:
 
 async def get_teamtasks_of_team_async(team_id: int) -> List[dict]:
     """Fetch teamtasks for team for all tasks."""
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
     await storage.tasks.tasks_async_getter(redis_aio, pipe)
     tasks, = await pipe.execute()
@@ -211,7 +210,7 @@ def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
 
 async def create_task(task: models.Task) -> models.Task:
     """Add new task to DB, reset cache & return created instance."""
-    async with storage.async_db_cursor() as (_conn, curs):
+    async with storage.utils.async_db_cursor() as (_, curs):
         await curs.execute(task.get_insert_query(), task.to_dict())
         result, = await curs.fetchone()
         task.id = result
@@ -225,7 +224,7 @@ async def create_task(task: models.Task) -> models.Task:
         for each in insert_data:
             await curs.execute(TEAMTASK_INSERT_QUERY, each)
 
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     await redis_aio.delete('tasks')
 
     return task
@@ -233,10 +232,10 @@ async def create_task(task: models.Task) -> models.Task:
 
 async def update_task(task: models.Task) -> models.Task:
     """Update task, reset cache & return updated instance."""
-    async with storage.async_db_cursor() as (_conn, curs):
+    async with storage.utils.async_db_cursor() as (_, curs):
         await curs.execute(task.get_update_query(), task.to_dict())
 
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     await redis_aio.delete('tasks')
 
     return task
@@ -244,16 +243,16 @@ async def update_task(task: models.Task) -> models.Task:
 
 async def delete_task(task_id: int) -> None:
     """Set active = False on a task."""
-    async with storage.async_db_cursor() as (_conn, curs):
+    async with storage.utils.async_db_cursor() as (_, curs):
         await curs.execute(models.Task.get_delete_query(), {'id': task_id})
 
-    redis_aio = await storage.get_async_redis_storage()
+    redis_aio = await storage.utils.get_async_redis_storage()
     await redis_aio.delete('tasks')
 
 
 async def get_admin_teamtask_history(team_id: int, task_id: int) -> List[dict]:
     """Get teamtasks from log table by team & task ids pair."""
-    async with storage.async_db_cursor(dict_cursor=True) as (_conn, curs):
+    async with storage.utils.async_db_cursor(dict_cursor=True) as (_, curs):
         await curs.execute(
             _SELECT_TEAMTASK_LOG_QUERY,
             {

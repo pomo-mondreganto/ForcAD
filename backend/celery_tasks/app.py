@@ -2,7 +2,7 @@ from celery import Celery
 
 import celery_tasks.round_processor
 import config
-import storage
+from lib import storage
 
 celery_config = config.get_celery_config()
 

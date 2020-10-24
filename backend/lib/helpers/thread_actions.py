@@ -4,10 +4,9 @@ from traceback import format_exc
 import gevent
 import importlib.util
 
-import helplib
-from helplib import models
-from helplib.exceptions import CheckerTimeoutException
-from helplib.types import Action, TaskStatus
+from lib import models
+from lib.helpers import exceptions
+from lib.helpers.types import Action, TaskStatus
 
 
 def set_verdict_error(verdict: models.CheckerVerdict,
@@ -27,7 +26,7 @@ def run_generic_action_in_thread(checker_path: str,
                                  action_args: tuple,
                                  action_kwargs: dict,
                                  logger: Logger) -> models.CheckerVerdict:
-    verdict = helplib.models.CheckerVerdict(
+    verdict = models.CheckerVerdict(
         command=f'checker.{action}()',
         action=action,
         status=TaskStatus.CHECK_FAILED,
@@ -57,7 +56,7 @@ def run_generic_action_in_thread(checker_path: str,
         return verdict
 
     try:
-        with gevent.Timeout(timeout, CheckerTimeoutException):
+        with gevent.Timeout(timeout, exceptions.CheckerTimeoutException):
             checker.action(action.name.lower(), *action_args, **action_kwargs)
 
     except finished_exception:
@@ -75,7 +74,7 @@ def run_generic_action_in_thread(checker_path: str,
             verdict.public_message = checker.public
             verdict.private_message = checker.private
 
-    except helplib.exceptions.CheckerTimeoutException:
+    except exceptions.CheckerTimeoutException:
         logger.warning(
             f'{action} action for team `{team_name}` task {task_name} '
             'timed out'
