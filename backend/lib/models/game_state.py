@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 
 
 class GameState(BaseModel):

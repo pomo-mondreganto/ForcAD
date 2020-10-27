@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 
 
 class GlobalConfig(BaseModel):

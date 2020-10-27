@@ -1,7 +1,7 @@
 from kombu.utils import json as kjson
 from typing import Optional, List, Dict, Any
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 from .flag import Flag
 from .verdict import CheckerVerdict
 

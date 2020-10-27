@@ -5,7 +5,7 @@ from typing import Optional, List
 from lib import models
 from lib.helpers.commands import run_generic_command
 from lib.helpers.thread_actions import run_generic_action_in_thread
-from lib.helpers.types import TaskStatus, Action
+from lib.models import TaskStatus, Action
 
 
 def first_error_or_first_verdict(verdicts: List[models.CheckerVerdict]

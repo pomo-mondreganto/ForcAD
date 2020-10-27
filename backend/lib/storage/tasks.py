@@ -2,7 +2,7 @@ from typing import List
 
 from lib import models, storage
 from lib.helpers.cache import cache_helper, async_cache_helper
-from lib.helpers.types import TaskStatus, Action
+from lib.models import TaskStatus, Action
 from lib.storage import caching
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"

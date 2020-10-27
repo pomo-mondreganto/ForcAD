@@ -5,7 +5,7 @@ from typing import List
 
 from lib import storage, models
 from lib.helpers import checkers
-from lib.helpers.types import TaskStatus, Action
+from lib.models import TaskStatus, Action
 
 logger = get_task_logger(__name__)
 

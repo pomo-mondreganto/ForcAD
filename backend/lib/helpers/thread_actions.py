@@ -6,7 +6,7 @@ import importlib.util
 
 from lib import models
 from lib.helpers import exceptions
-from lib.helpers.types import Action, TaskStatus
+from lib.models import TaskStatus, Action
 
 
 def set_verdict_error(verdict: models.CheckerVerdict,

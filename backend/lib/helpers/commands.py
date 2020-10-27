@@ -6,7 +6,7 @@ import subprocess
 from typing import List, Any, AnyStr, Optional, Tuple, Dict
 
 from lib import models
-from lib.helpers.types import TaskStatus, Action
+from lib.models import TaskStatus, Action
 
 
 def run_command_gracefully(command: List[str],

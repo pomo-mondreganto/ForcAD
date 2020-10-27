@@ -1,6 +1,6 @@
 from typing import Dict, Any, Tuple
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 
 
 class AttackResult(BaseModel):

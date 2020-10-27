@@ -7,7 +7,7 @@ from typing import Optional, Any
 from auxiliary import logger
 from lib import models, storage
 from lib.helpers import checkers
-from lib.helpers.types import TaskStatus, Action
+from lib.models import TaskStatus, Action
 
 
 @shared_task

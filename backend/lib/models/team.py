@@ -2,7 +2,7 @@ import secrets
 
 from typing import Optional, Dict, Any
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 
 
 class Team(BaseModel):

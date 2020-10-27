@@ -3,7 +3,7 @@ import string
 
 from typing import Optional
 
-from lib.models.base import BaseModel
+from .base import BaseModel
 
 ALPHABET = string.ascii_uppercase + string.digits
 

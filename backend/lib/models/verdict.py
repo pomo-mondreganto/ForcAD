@@ -1,7 +1,7 @@
 from typing import Any
 
-from lib.helpers.types import Action, TaskStatus
-from lib.models.base import BaseModel
+from .base import BaseModel
+from .types import Action, TaskStatus
 
 
 class CheckerVerdict(BaseModel):
