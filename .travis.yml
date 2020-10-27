@@ -42,7 +42,7 @@ script:
   - python -m unittest discover -v -s tests
 
 after_failure:
-  - docker-compose -f docker-compose-tests.yml logs
+  - ./control.py rd -- logs
 
 after_script:
   - ./control.py reset
