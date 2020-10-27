@@ -31,7 +31,8 @@ Wait patiently for the images to build, it could take a few minutes, but happens
 Notice that `--fast` option uses the pre-built image, so if you modified the source code, omit this option to 
 run the full build.  
 
-That's all! Now you should be able to access the scoreboard at `http://0.0.0.0:8080/`.
+That's all! Now you should be able to access the scoreboard at `http://0.0.0.0:8080/`. Admin panel is accessible at 
+`http://0.0.0.0:8080/admin`.
 
 > Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks)
 
@@ -63,7 +64,12 @@ run 5-6 instances of `celery`).
 
 -   **Postgres** is a persistent game storage
 
--   **Webapi** provides api for Vue.js frontend
+-   **client_api** and **admin_api** provide data for Vue.js frontend
+
+-   **events** is a Socket.io server for all game events & live scoreboard reload
+
+-   **monitoring** is a Prometheus metrics exporter (currently only various flag statistics are 
+available at `/api/metrics`).
 
 -   **Nginx** acts as a routing proxy that unites frontend, api and flower
 

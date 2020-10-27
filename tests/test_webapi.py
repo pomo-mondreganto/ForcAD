@@ -9,7 +9,7 @@ class WebApiTestCase(TestCase):
         return 'http://127.0.0.1:8080'
 
     def get_team_list(self):
-        r = requests.get(f'{self.url}/api/teams/')
+        r = requests.get(f'{self.url}/api/client/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -19,7 +19,7 @@ class WebApiTestCase(TestCase):
         return data
 
     def get_task_list(self):
-        r = requests.get(f'{self.url}/api/tasks/')
+        r = requests.get(f'{self.url}/api/client/tasks/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -80,7 +80,7 @@ class WebApiTestCase(TestCase):
             self.assertIn('name', task)
 
     def test_team_history(self):
-        r = requests.get(f'{self.url}/api/teams/1/')
+        r = requests.get(f'{self.url}/api/client/teams/1/')
         self.assertTrue(r.ok)
 
         data = r.json()
