@@ -44,7 +44,7 @@ class Flag(BaseModel):
                  current_round: int) -> 'Flag':
         """Generate a new flag
 
-            :param service: service name of new flag (to pick first flag letter)
+            :param service: service of new flag (to pick the first flag letter)
             :param team_id: team id
             :param task_id: task id
             :param current_round: current round

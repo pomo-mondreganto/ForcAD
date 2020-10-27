@@ -123,8 +123,8 @@ def setup_rabbitmq(config):
     rabbitmq_env_path.write_text('\n'.join(rabbitmq_config))
 
 
-def setup_webapi(config):
-    webapi_env_path = BASE_DIR.joinpath(
+def setup_admin_api(config):
+    admin_api_env_path = BASE_DIR.joinpath(
         'docker_config',
         'services',
         'admin.env',
@@ -140,7 +140,7 @@ def setup_webapi(config):
         f'ADMIN_PASSWORD={password}',
     ]
 
-    webapi_env_path.write_text('\n'.join(admin_config))
+    admin_api_env_path.write_text('\n'.join(admin_config))
 
 
 def prepare_docker_compose(args):
@@ -167,7 +167,7 @@ def setup_config(args):
     setup_redis(config)
     setup_flower(config)
     setup_rabbitmq(config)
-    setup_webapi(config)
+    setup_admin_api(config)
     prepare_docker_compose(args)
 
 
@@ -198,7 +198,7 @@ def print_tokens(_args):
         'docker-compose',
         '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
-        'exec', 'webapi',
+        'exec', 'client_api',
         'python3', '/app/scripts/print_tokens.py',
     ]
     res = subprocess.check_output(

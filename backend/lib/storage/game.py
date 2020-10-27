@@ -157,7 +157,7 @@ async def construct_scoreboard() -> dict:
     Get formatted scoreboard to serve to frontend
 
     Fetches and constructs the full scoreboard (state, teams, tasks, config)
-    using asyncio (for sanic webapi)
+    using asyncio (for sanic api)
     """
     redis_aio = await utils.get_async_redis_storage()
     pipe = redis_aio.pipeline()
