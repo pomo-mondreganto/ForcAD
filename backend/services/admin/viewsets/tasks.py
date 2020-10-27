@@ -1,6 +1,7 @@
 from sanic.response import json as json_response
 
-from lib import models, storage, helpers
+from lib import models, storage
+from lib.helpers import events
 from .api_base import ApiSet
 from .base import make_err_response
 
@@ -23,7 +24,7 @@ class TaskApi(ApiSet):
             return make_err_response(f'Invalid task data: {e}')
 
         created = await storage.tasks.create_task(task)
-        await helpers.events.init_scoreboard_async()
+        await events.init_scoreboard_async()
         return json_response(created.to_dict(), status=201)
 
     @staticmethod
@@ -36,11 +37,11 @@ class TaskApi(ApiSet):
             return make_err_response(f'Invalid task data: {e}')
 
         updated = await storage.tasks.update_task(task)
-        await helpers.events.init_scoreboard_async()
+        await events.init_scoreboard_async()
         return json_response(updated.to_dict())
 
     @staticmethod
     async def destroy(_request, task_id):
         await storage.tasks.delete_task(task_id)
-        await helpers.events.init_scoreboard_async()
+        await events.init_scoreboard_async()
         return json_response('ok')

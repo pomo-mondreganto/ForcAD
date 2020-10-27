@@ -3,7 +3,7 @@ from unittest import TestCase
 import requests
 
 
-class WebApiTestCase(TestCase):
+class ClientApiTestCase(TestCase):
     @property
     def url(self):
         return 'http://127.0.0.1:8080'
@@ -29,11 +29,11 @@ class WebApiTestCase(TestCase):
         return data
 
     def test_status_page(self):
-        r = requests.get(f'{self.url}/api/status/')
+        r = requests.get(f'{self.url}/api/client/status/')
         self.assertTrue(r.ok)
 
     def test_attack_data_api(self):
-        r = requests.get(f'{self.url}/api/attack_data/')
+        r = requests.get(f'{self.url}/api/client/attack_data/')
         self.assertTrue(r.ok)
 
         data = r.json()
