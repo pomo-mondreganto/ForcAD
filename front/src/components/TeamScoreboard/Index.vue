@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import {serverUrl} from '@/config';
 
 export default {
     props: {
@@ -92,13 +92,13 @@ export default {
         this.teamId = this.$route.params.id;
         try {
             const { data: teams } = await this.$http.get(
-                `${serverUrl}/api/teams/`
+                `${serverUrl}/api/client/teams/`
             );
             const { data: tasks } = await this.$http.get(
-                `${serverUrl}/api/tasks/`
+                `${serverUrl}/api/client/tasks/`
             );
             let { data: states } = await this.$http.get(
-                `${serverUrl}/api/teams/${this.teamId}`
+                `${serverUrl}/api/client/teams/${this.teamId}`
             );
             this.team = teams.filter(({ id }) => id == this.teamId)[0];
             this.tasks = tasks.sort(({ id: idA }, { id: idB }) => idA - idB);
