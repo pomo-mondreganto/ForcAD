@@ -1,7 +1,6 @@
 from sanic.response import json as json_response
 
-from lib import models, storage
-from webapi.events import emit_init_scoreboard
+from lib import models, storage, helpers
 from .api_base import ApiSet
 from .base import make_err_response
 
@@ -25,7 +24,7 @@ class TeamApi(ApiSet):
             return make_err_response(f'Invalid team data: {e}')
 
         created = await storage.teams.create_team(team)
-        await emit_init_scoreboard()
+        await helpers.events.init_scoreboard_async()
         return json_response(created.to_dict(), status=201)
 
     @staticmethod
@@ -38,11 +37,11 @@ class TeamApi(ApiSet):
             return make_err_response(f'Invalid team data: {e}')
 
         updated = await storage.teams.update_team(team)
-        await emit_init_scoreboard()
+        await helpers.events.init_scoreboard_async()
         return json_response(updated.to_dict())
 
     @staticmethod
     async def destroy(_request, team_id):
         await storage.teams.delete_team(team_id)
-        await emit_init_scoreboard()
+        await helpers.events.init_scoreboard_async()
         return json_response('ok')

@@ -4,26 +4,26 @@
 
 set -e
 
-cd /app
+cd /app/services/tasks
 
-case ${CELERY_CONTAINER_TYPE} in
+case ${SERVICE} in
 "worker")
   echo "[*] Starting celery worker"
-  celery worker -A celery_tasks \
+  celery worker -A app \
     -E -l info \
     --pool=gevent \
     --concurrency=20
   ;;
 "beat")
   echo "[*] Starting celery beat"
-  celery beat -A celery_tasks \
+  celery beat -A services.tasks \
     -l info \
     --pidfile=/tmp/celerybeat.pid \
     --schedule=/tmp/celerybeat-schedule
   ;;
 "flower")
   echo "[*] Starting celery flower"
-  celery flower -A celery_tasks \
+  celery flower -A services.tasks \
     --basic_auth="$FLOWER_BASIC_AUTH" \
     --url-prefix=flower \
     --host=0.0.0.0 \

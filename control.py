@@ -126,8 +126,8 @@ def setup_rabbitmq(config):
 def setup_webapi(config):
     webapi_env_path = BASE_DIR.joinpath(
         'docker_config',
-        'webapi',
-        'environment.env',
+        'services',
+        'admin.env',
     )
 
     admin_config = config['admin']

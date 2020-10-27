@@ -14,7 +14,7 @@ from typing import Optional
 import config
 
 
-class MonitorClient:
+class MetricsServer:
     def __init__(self, app: Sanic):
         self.app = app
         self.flag_submits_metric = Counter(

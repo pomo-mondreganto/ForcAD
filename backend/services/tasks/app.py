@@ -1,18 +1,18 @@
 from celery import Celery
 
-import celery_tasks.round_processor
 import config
 from lib import storage
+from round_processor import get_round_processor
 
 celery_config = config.get_celery_config()
 
 app = Celery(
     __name__,
     include=[
-        'celery_tasks.auxiliary',
-        'celery_tasks.actions',
-        'celery_tasks.handlers',
-        'celery_tasks.modes',
+        'auxiliary',
+        'actions',
+        'handlers',
+        'modes',
     ],
 )
 
@@ -24,7 +24,7 @@ if game_config.game_mode == 'blitz':
     tasks = storage.tasks.get_tasks()
 
     beat_schedule = {}
-    puts_processor = celery_tasks.round_processor.get_round_processor(
+    puts_processor = get_round_processor(
         round_type='puts',
     )
     app.register_task(puts_processor)
@@ -34,7 +34,7 @@ if game_config.game_mode == 'blitz':
     }
 
     for task in tasks:
-        check_get_processor = celery_tasks.round_processor.get_round_processor(
+        check_get_processor = get_round_processor(
             round_type='check_gets',
             task_id=task.id,
         )
@@ -45,11 +45,11 @@ if game_config.game_mode == 'blitz':
         }
 else:
     app.register_task(
-        celery_tasks.round_processor.get_round_processor(round_type='full')
+        get_round_processor(round_type='full')
     )
     beat_schedule = {
         'process_full_round': {
-            'task': 'celery_tasks.round_processor.RoundProcessor_full',
+            'task': 'tasks.round_processor.RoundProcessor_full',
             'schedule': game_config.round_time,
         },
     }

@@ -5,7 +5,7 @@ from celery.utils.log import get_task_logger
 from kombu.utils import json as kjson
 from typing import Optional, Any
 
-import celery_tasks.modes
+import modes
 from lib import storage
 from lib.helpers import locking
 
@@ -24,7 +24,7 @@ def get_round_processor(round_type: str,
 class RoundProcessor(Task):
     @property
     def name(self) -> str:
-        tmp = f'celery_tasks.round_processor.RoundProcessor_{self.round_type}'
+        tmp = f'tasks.round_processor.RoundProcessor_{self.round_type}'
         if self.task_id is not None:
             tmp += f'_{self.task_id}'
         return tmp
@@ -130,17 +130,17 @@ class RoundProcessor(Task):
 
         if self.round_type == 'full':
             logger.info("Running full round")
-            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()
+            modes.run_full_round.starmap(round_args).apply_async()
         elif self.round_type == 'check_gets':
             logger.info("Running check_gets round")
-            celery_tasks.modes.run_check_gets_round.starmap(
+            modes.run_check_gets_round.starmap(
                 round_args).apply_async()
         elif self.round_type == 'puts':
             logger.info("Running puts round")
-            celery_tasks.modes.run_puts_round.starmap(round_args).apply_async()
+            modes.run_puts_round.starmap(round_args).apply_async()
         else:
             logger.critical(
                 f"Invalid round type supplied: {self.round_type}, "
                 f"falling back to full"
             )
-            celery_tasks.modes.run_full_round.starmap(round_args).apply_async()
+            modes.run_full_round.starmap(round_args).apply_async()

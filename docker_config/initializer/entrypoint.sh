@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
+
+cd /app
 
 set +e
 echo "[*] Checking is postgres container started"
@@ -17,7 +19,7 @@ else
   set -e
 
   echo "[*] Resetting & initializing database"
-  python3 /app/scripts/full_reset.py
+  python3 ./scripts/full_reset.py
 
   echo "[+] Successfully initialized"
 fi

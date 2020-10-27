@@ -1,6 +1,7 @@
 FROM python:3.7
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=${PYTHONPATH}:/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libpq-dev \
@@ -20,6 +21,7 @@ RUN chmod +x /await_start.sh
 
 COPY backend /app
 
+COPY ./docker_config/services/functions.sh /functions.sh
 COPY ./docker_config/services/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

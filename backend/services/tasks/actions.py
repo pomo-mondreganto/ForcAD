@@ -4,7 +4,7 @@ import random
 from celery import shared_task
 from typing import Optional, Any
 
-from celery_tasks.auxiliary import logger
+from auxiliary import logger
 from lib import models, storage
 from lib.helpers import checkers
 from lib.helpers.types import TaskStatus, Action
