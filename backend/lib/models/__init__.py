@@ -7,7 +7,7 @@ from .team import Team
 from .verdict import CheckerVerdict
 
 __all__ = (
-    AttackResult, Flag, GameState,
-    GlobalConfig, Task, Team,
-    CheckerVerdict,
+    'AttackResult', 'Flag', 'GameState',
+    'GlobalConfig', 'Task', 'Team',
+    'CheckerVerdict',
 )
