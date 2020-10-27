@@ -36,7 +36,7 @@ async def handle_connect(sid, _environ):
     await emit_init_scoreboard(sid)
 
 
-sio.attach(app)
+sio.attach(app, socketio_path='socket.io')
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

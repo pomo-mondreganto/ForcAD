@@ -79,7 +79,7 @@ services:
     <<: *default-ms
     environment:
       - TEST
-      - SERVICE=events
+      - SERVICE=monitoring
 
   tcp_receiver:
     <<: *default-ms
@@ -87,7 +87,7 @@ services:
       - 31337:31337
     environment:
       - TEST
-      - SERVICE=events
+      - SERVICE=tcp_receiver
 
   nginx:
     image: nginx:1.17.9-alpine
@@ -99,6 +99,12 @@ services:
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
       - ./front/dist:/var/www/front:delegated
     restart: on-failure
+    depends_on:
+      - flower
+      - client_api
+      - admin_api
+      - events
+      - monitoring
 
   redis:
     image: redis:5.0.8-alpine

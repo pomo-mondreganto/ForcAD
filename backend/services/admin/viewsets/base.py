@@ -1,7 +1,7 @@
 from sanic import Blueprint
 from sanic.response import json as json_response
 
-admin_bp = Blueprint('admin_api', url_prefix='/admin')
+admin_bp = Blueprint('admin_api')
 
 
 def make_err_response(err, status=400):
