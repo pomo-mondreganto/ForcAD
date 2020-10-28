@@ -21,16 +21,17 @@ pep257:
 pylint:
   disable:
     - import-error
+    - import-self
     - invalid-str-returned
     - logging-fstring-interpolation
-    - wrong-import-position
     - redefined-builtin
     - too-many-arguments
     - undefined-variable
+    - wrong-import-position
   options:
     max-locals: 20
 
 pyflakes:
   disable:
-    - F999
     - F405
+    - F999
