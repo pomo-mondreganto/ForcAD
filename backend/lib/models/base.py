@@ -3,7 +3,7 @@ from kombu.utils import json as kjson
 from typing import List, Dict, Any, Tuple, TypeVar, Type, TextIO
 
 # noinspection PyTypeChecker
-T = TypeVar('T', bound='Model')
+T = TypeVar('T', bound='BaseModel')
 
 
 # noinspection SqlResolve
