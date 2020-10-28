@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 
 import os
-import time
 from redis.client import Pipeline
 from typing import Iterator
 
@@ -12,7 +11,6 @@ from helplib import exceptions
 def acquire_redis_lock(pipeline: Pipeline,
                        name: str,
                        timeout: int = 5000) -> Iterator:
-    lock_time = None
     try:
         while True:
             try:
@@ -26,7 +24,6 @@ def acquire_redis_lock(pipeline: Pipeline,
             except exceptions.LockedException:
                 continue
             else:
-                lock_time = time.monotonic()
                 break
 
         yield True
