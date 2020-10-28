@@ -17,9 +17,10 @@ def acquire_redis_lock(pipeline: Pipeline,
         while True:
             try:
                 nonce = os.urandom(10)
-                unlocked = pipeline.set(name, nonce, nx=True, px=timeout)
-                if pipeline.transaction:
-                    unlocked, = unlocked.execute()  # type: ignore
+                unlocked, = pipeline.set(
+                    name, nonce,
+                    nx=True, px=timeout,
+                ).execute()  # type: ignore
 
                 if not unlocked:
                     raise exceptions.LockedException
@@ -34,8 +35,6 @@ def acquire_redis_lock(pipeline: Pipeline,
         # Lock was acquired and a lot of time left
         # until lock is invalidated, safe to delete
         if lock_time is not None:
-            lock_deadline = lock_time + timeout
+            lock_deadline = lock_time + timeout / 1000
             if lock_deadline - time.monotonic() > 0.5:
-                res = pipeline.delete(name)
-                if pipeline.transaction:
-                    res.execute()
+                pipeline.delete(name).execute()
