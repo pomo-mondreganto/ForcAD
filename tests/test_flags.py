@@ -1,12 +1,12 @@
+from collections import defaultdict
+from unittest import TestCase
+
+import requests
 import socket
 import subprocess
 import sys
 import time
-from collections import defaultdict
 from pathlib import Path
-from unittest import TestCase
-
-import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
@@ -47,7 +47,7 @@ class FlagSubmitTestCase(TestCase):
 
         query = '''
         SELECT * FROM flags F 
-        INNER JOIN teams T on F.team_id = T.id 
+        INNER JOIN teams T on F.team_id = T.id
         WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s 
         '''
         curs.execute(query, (team_token,))
@@ -80,7 +80,7 @@ class FlagSubmitTestCase(TestCase):
         return results
 
     def get_teams(self):
-        r = requests.get(f'http://127.0.0.1:8080/api/client/teams/')
+        r = requests.get('http://127.0.0.1:8080/api/client/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()

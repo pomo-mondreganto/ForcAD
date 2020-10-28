@@ -1,5 +1,15 @@
+ignore-paths:
+  - tests/service/checker
+  - docker_config/db_check.py
+
+strictness: medium
+autodetect: true
+max-line-length: 79
+
 pep8:
   full: true
+  disable:
+    - E402
 
 pep257:
   disable:
@@ -11,4 +21,10 @@ pep257:
 pylint:
   disable:
     - import-error
+    - invalid-str-returned
+    - logging-fstring-interpolation
+    - wrong-import-position
+    - redefined-builtin
     - too-many-arguments
+  options:
+    max-locals: 20

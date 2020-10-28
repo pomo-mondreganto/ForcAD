@@ -1,13 +1,14 @@
+from typing import List, Dict, Any, Tuple, TypeVar, Type, TextIO
+
 import yaml
 from kombu.utils import json as kjson
-from typing import List, Dict, Any, Tuple, TypeVar, Type, TextIO
 
 # noinspection PyTypeChecker
 T = TypeVar('T', bound='BaseModel')
 
 
 # noinspection SqlResolve
-class BaseModel(object):
+class BaseModel:
     """Generic model implementing basic methods to load and print"""
 
     __slots__: Tuple[str, ...] = ()

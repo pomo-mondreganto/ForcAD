@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Mapping
 
 from sanic.exceptions import NotFound, MethodNotSupported
 
@@ -28,7 +28,7 @@ class ApiSet:
         )
 
         self.request = None
-        self.kwargs: Optional[dict] = None
+        self.kwargs: Mapping = {}
         self.auth = auth
 
     async def _try_call(self, func):

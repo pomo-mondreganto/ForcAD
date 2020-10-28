@@ -1,6 +1,5 @@
 import secrets
 
-from functools import wraps
 from sanic.exceptions import Forbidden
 from sanic.response import json
 
@@ -47,12 +46,3 @@ async def login(request):
 async def status(request):
     await check_session(request)
     return json({'status': 'ok'})
-
-
-def login_required(func):
-    @wraps(func)
-    async def wrapper(request, *args, **kwargs):
-        await check_session(request)
-        return await func(request, *args, **kwargs)
-
-    return wrapper

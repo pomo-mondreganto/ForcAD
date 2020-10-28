@@ -18,7 +18,7 @@ class GameStatusTestCase(TestCase):
         wait_rounds(3)
 
     def get_teams(self):
-        r = requests.get(f'http://127.0.0.1:8080/api/client/teams/')
+        r = requests.get('http://127.0.0.1:8080/api/client/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()
