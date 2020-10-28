@@ -21,15 +21,16 @@ def put_action(_prev_verdict: Optional[models.CheckerVerdict],
                team: models.Team,
                task: models.Task,
                current_round: int) -> models.CheckerVerdict:
-    """Run "put" checker action
+    """
+    Run "put" checker action.
 
-        :param _prev_verdict: verdict passed by check action in chain
-        :param team: models.Team instance
-        :param task: models.Task instance
-        :param current_round: current round
-        :returns verdict: models.CheckerVerdict instance
+    :param _prev_verdict: verdict passed by check action in chain
+    :param team: models.Team instance
+    :param task: models.Task instance
+    :param current_round: current round
+    :returns verdict: models.CheckerVerdict instance
 
-        If "check" action fails, put is not run.
+    If "check" action fails, put is not run.
     """
 
     logger.info(f'Running PUT for team `{team.name}` task `{task.name}`')
@@ -65,16 +66,16 @@ def get_action(prev_verdict: models.CheckerVerdict,
                team: models.Team,
                task: models.Task,
                current_round: int) -> models.CheckerVerdict:
-    """Run "get" checker action
+    """
+    Run "get" checker action.
 
-        :param prev_verdict: verdict passed by previous check or get in chain
-        :param team: models.Team instance
-        :param task: models.Task instance
-        :param current_round: current round
-        :returns: previous result & self result
+    :param prev_verdict: verdict passed by previous check or get in chain
+    :param team: models.Team instance
+    :param task: models.Task instance
+    :param current_round: current round
+    :returns: previous result & self result
 
-        If "check" or previous "get" actions fail, get is not run.
-
+    If "check" or previous "get" actions fail, get is not run.
     """
     if prev_verdict.status != TaskStatus.UP:
         if prev_verdict.action == Action.GET:
@@ -135,7 +136,8 @@ def get_action(prev_verdict: models.CheckerVerdict,
 def check_action(team: models.Team,
                  task: models.Task,
                  current_round: int) -> models.CheckerVerdict:
-    """Run "check" checker action
+    """
+    Run "check" checker action.
 
     :param team: models.Team instance
     :param task: models.Task instance

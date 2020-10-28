@@ -52,9 +52,9 @@ def cache_tasks(pipeline: Any) -> None:
 
 def cache_last_stolen(team_id: int, current_round: int, pipeline: Any) -> None:
     """
-    Caches stolen flags from "flag_lifetime" rounds
+    Caches stolen flags from "flag_lifetime" rounds.
 
-    Just adds commands to pipeline stack, don't forget to execute afterwards
+    Just adds commands to pipeline stack, don't forget to execute afterwards.
 
     :param team_id: attacker team id
     :param current_round: current round
@@ -84,7 +84,7 @@ def cache_last_flags(current_round: int, pipeline: Any) -> None:
     """
     Cache all generated flags from last "flag_lifetime" rounds.
 
-    Just adds commands to pipeline stack, don't forget to execute afterwards
+    Just adds commands to pipeline stack, don't forget to execute afterwards.
 
     :param current_round: current round
     :param pipeline: redis connection to add command to

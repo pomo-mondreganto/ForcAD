@@ -56,10 +56,11 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict],
                             team: models.Team,
                             task: models.Task,
                             current_round: int) -> models.CheckerVerdict:
-    """Parse returning verdicts and return the final one
+    """
+    Parse returning verdicts and return the final one.
 
-        If there were any errors, the first one'll be returned
-        Otherwise, verdict of the first (sequentially) action will be returned
+    If there were any errors, the first one'll be returned
+    Otherwise, verdict of the first (sequentially) action will be returned.
     """
     check_verdict = None
     puts_verdicts = []

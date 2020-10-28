@@ -2,5 +2,8 @@ pep8:
     full: true
 
 pep257:
-    disable:
-      - D212
+  disable:
+    - D105
+    - D107
+    - D203
+    - D212

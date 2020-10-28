@@ -17,7 +17,7 @@ def handle_attack(attacker_id: int,
     Main routine for attack validation & state change.
 
     Checks flag, locks team for update, calls rating recalculation,
-    then publishes redis message about stolen flag
+    then publishes redis message about stolen flag.
 
     :param attacker_id: id of the attacking team
     :param flag_str: flag to be checked

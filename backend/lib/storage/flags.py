@@ -62,7 +62,8 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int,
 
 
 def add_flag(flag: models.Flag) -> models.Flag:
-    """Inserts a newly generated flag into the database and cache.
+    """
+    Inserts a newly generated flag into the database and cache.
 
     :param flag: Flag model instance to be inserted
     :returns: flag with set "id" field
