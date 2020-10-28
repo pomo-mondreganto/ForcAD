@@ -2,16 +2,11 @@ from unittest import TestCase
 
 import requests
 
-from helpers import wait_rounds
-
 
 class ClientApiTestCase(TestCase):
     @property
     def url(self):
         return 'http://127.0.0.1:8080'
-
-    def setUp(self) -> None:
-        wait_rounds(2)
 
     def get_team_list(self):
         r = requests.get(f'{self.url}/api/client/teams/')
