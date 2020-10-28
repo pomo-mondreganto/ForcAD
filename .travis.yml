@@ -25,7 +25,7 @@ before_install:
 
 install:
   - python tests/setup_forcad.py
-  - pip install -r control_requirements.txt
+  - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
   - pip install -r backend/requirements.txt
   - ./control.py setup

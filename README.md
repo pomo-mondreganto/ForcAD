@@ -23,7 +23,7 @@ set `start_time`, `timezone` (e.g. `Europe/Moscow`) and `round_time` (in seconds
 `storages.rabbitmq.password` for database and cache, 
 `admin.password` for `celery` visualization, which contains flags).
 
-4.  Install `control_requirements.txt` (`pip3 install -r control_requirements.txt`) and run `./control.py setup` 
+4.  Install `requirements.txt` (`pip3 install -r requirements.txt`) and run `./control.py setup` 
 to transfer config variables
 
 5.  Run `./control.py start --fast` to start the system. 
