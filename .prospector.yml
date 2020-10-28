@@ -12,4 +12,3 @@ pylint:
   disable:
     - import-error
     - too-many-arguments
-    -
