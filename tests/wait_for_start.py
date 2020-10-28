@@ -27,7 +27,7 @@ def wait_for_container(name):
 
 def wait_all():
     wait_for_container(INITIALIZER_CONTAINER_NAME)
-    wait_rounds(2)
+    wait_rounds(3)
 
 
 if __name__ == '__main__':

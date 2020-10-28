@@ -5,8 +5,6 @@ import time
 from redis.client import Pipeline
 from typing import Iterator
 
-from lib.helpers import exceptions
-
 
 @contextmanager
 def acquire_redis_lock(pipeline: Pipeline,
@@ -15,18 +13,13 @@ def acquire_redis_lock(pipeline: Pipeline,
     lock_time = None
     try:
         while True:
-            try:
-                nonce = os.urandom(10)
-                unlocked, = pipeline.set(
-                    name, nonce,
-                    nx=True, px=timeout,
-                ).execute()  # type: ignore
+            nonce = os.urandom(10)
+            unlocked, = pipeline.set(
+                name, nonce,
+                nx=True, px=timeout,
+            ).execute()  # type: ignore
 
-                if not unlocked:
-                    raise exceptions.LockedException
-            except exceptions.LockedException:
-                continue
-            else:
+            if unlocked:
                 lock_time = time.monotonic()
                 break
 
