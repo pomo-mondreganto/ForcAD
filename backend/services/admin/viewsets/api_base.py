@@ -53,6 +53,8 @@ class ApiSet:
         return await self._try_call('destroy')
 
     class Dispatch:
+        """Functor to provide method & auth validation for the viewset."""
+
         def __init__(self, base):
             self.base = base
             self.__name__ = f'{base.__class__.__name__}.Dispatch'

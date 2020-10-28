@@ -9,10 +9,11 @@ ALPHABET = string.ascii_uppercase + string.digits
 
 
 class Flag(BaseModel):
-    """Model representing a flag
+    """
+    Model representing a flag.
 
-        Contains flag round, id, team, task, the value itself
-        and additional data for the checker
+    Contains flag round, id, team, task, the value itself
+    and additional data for the checker.
     """
     round: int
     id: Optional[int]

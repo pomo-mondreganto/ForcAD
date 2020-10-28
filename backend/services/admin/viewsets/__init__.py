@@ -1,3 +1,5 @@
+"""Simple "viewsets" implementation for models' REST API."""
+
 from .authentication import login, status
 from .base import admin_bp
 from .tasks import TaskApi

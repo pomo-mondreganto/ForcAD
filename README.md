@@ -131,35 +131,24 @@ Config file (`backend/config/config.yml`) is split into five main parts:
   -   `db`: PostgreSQL settings:
   
       -   `dbname: system_db`
-    
       -   `host: postgres`
-    
       -   `password: **change_me**`
-    
       -   `port: 5432`
-    
       -   `user: system_admin`
 
   -   `redis`: Redis settings:
   
       -   `db: 0`
-    
       -   `host: redis`
-    
       -   `port: 6379`
-    
       -   `password: **change_me**`
     
   -   `rabbitmq`: Redis settings:
   
       -   `host: rabbitmq`
-    
       -   `port: 5672`
-    
       -   `password: **change_me**`
-    
       -   `user: system_admin`
-    
       -   `vhost: forcad`
 
 -   **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
