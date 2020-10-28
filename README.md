@@ -154,7 +154,6 @@ Config file (`backend/config/config.yml`) is split into five main parts:
 -   **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
     -   `password: **change_me**`
-  
     -   `username: system_admin`
 
 -   **teams** contains playing teams. Example contents:

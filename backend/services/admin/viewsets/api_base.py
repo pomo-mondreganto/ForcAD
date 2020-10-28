@@ -1,15 +1,17 @@
+from typing import Optional
+
 from sanic.exceptions import NotFound, MethodNotSupported
 
 from .authentication import check_session
 
 
 class ApiSet:
-    model = None
+    model: str = None
 
-    def get_id_kwarg(self):
+    def get_id_kwarg(self) -> str:
         return f'{self.model}_id'
 
-    def __init__(self, bp, auth=False):
+    def __init__(self, bp, auth: bool = False):
         if self.model is None:
             raise AssertionError(f'{self.__class__.__name__}.model '
                                  f'must be defined')
@@ -26,7 +28,7 @@ class ApiSet:
         )
 
         self.request = None
-        self.kwargs = None
+        self.kwargs: Optional[dict] = None
         self.auth = auth
 
     async def _try_call(self, func):

@@ -22,7 +22,7 @@ def wait_for_container(name):
         print(f'Error in container {name}')
         p = subprocess.Popen(['docker-compose', 'logs'], cwd=PROJECT_DIR)
         p.wait()
-        exit(1)
+        sys.exit(1)
 
 
 def wait_all():

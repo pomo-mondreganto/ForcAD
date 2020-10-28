@@ -82,13 +82,13 @@ class SubmitHandler:
 if __name__ == '__main__':
     receiver_logger = logging.getLogger('gevent_flag_receiver')
 
-    logFormatter = logging.Formatter(
+    log_formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(message)s",
     )
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setFormatter(logFormatter)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
 
-    receiver_logger.addHandler(consoleHandler)
+    receiver_logger.addHandler(console_handler)
     receiver_logger.setLevel(logging.INFO)
 
     submit_monitor = SubmitMonitor(receiver_logger)

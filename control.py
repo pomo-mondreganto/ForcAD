@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
-import traceback
-
 import argparse
 import os
 import shutil
 import subprocess
+import sys
 import time
-import yaml
+import traceback
 from pathlib import Path
+
+import yaml
 
 BASE_DIR = Path(__file__).absolute().resolve().parent
 CONFIG_DIR = BASE_DIR / 'backend' / 'config'
@@ -28,7 +29,7 @@ def run_command(command, cwd=None, env=None):
     rc = p.wait()
     if rc != 0:
         print('[-] Failed!')
-        exit(1)
+        sys.exit(1)
 
 
 def setup_db(config):
@@ -454,4 +455,4 @@ if __name__ == '__main__':
     except Exception as e:
         tb = traceback.format_exc()
         print('Got exception:', e, tb)
-        exit(1)
+        sys.exit(1)
