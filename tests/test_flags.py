@@ -46,9 +46,9 @@ class FlagSubmitTestCase(TestCase):
         curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
         query = '''
-        SELECT * FROM flags F 
+        SELECT * FROM flags F
         INNER JOIN teams T on F.team_id = T.id
-        WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s 
+        WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s
         '''
         curs.execute(query, (team_token,))
         return curs.fetchall()
@@ -66,7 +66,7 @@ class FlagSubmitTestCase(TestCase):
         if not token_valid:
             self.assertIn('Invalid', response)
             sock.close()
-            return
+            return []
 
         self.assertIn('enter your flags', response)
         results = []

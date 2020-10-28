@@ -26,5 +26,11 @@ pylint:
     - wrong-import-position
     - redefined-builtin
     - too-many-arguments
+    - undefined-variable
   options:
     max-locals: 20
+
+pyflakes:
+  disable:
+    - F999
+    - F405
