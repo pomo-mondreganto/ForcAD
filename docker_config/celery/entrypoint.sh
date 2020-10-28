@@ -9,7 +9,8 @@ cd /app/services/tasks
 case ${SERVICE} in
 "worker")
   echo "[*] Starting celery worker"
-  celery worker -A app \
+  celery -A app \
+    worker \
     -E -l info \
     --pool=gevent \
     --concurrency=20

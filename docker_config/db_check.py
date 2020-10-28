@@ -31,19 +31,15 @@ def database_check():
     except:
         sys.exit(1)
 
-    sys.exit(0)
-
 
 def broker_check():
-    amqp_host = os.environ['RABBITMQ_HOST']
-    amqp_user = os.environ['RABBITMQ_DEFAULT_USER']
-    amqp_port = os.environ['RABBITMQ_PORT']
-    amqp_pass = os.environ['RABBITMQ_DEFAULT_PASS']
-    amqp_vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
+    host = os.environ['RABBITMQ_HOST']
+    user = os.environ['RABBITMQ_DEFAULT_USER']
+    port = os.environ['RABBITMQ_PORT']
+    password = os.environ['RABBITMQ_DEFAULT_PASS']
+    vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
 
-    broker_url = f'amqp://{amqp_user}:{amqp_pass}@{amqp_host}:{amqp_port}/{amqp_vhost}'
-
-    print(f'Broker URL: {broker_url}')
+    broker_url = f'amqp://{user}:{password}@{host}:{port}/{vhost}'
     c = kombu.Connection(broker_url)
 
     # noinspection PyBroadException
@@ -51,8 +47,6 @@ def broker_check():
         c.connect()
     except:
         sys.exit(1)
-
-    sys.exit(0)
 
 
 if __name__ == "__main__":
