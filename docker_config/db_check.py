@@ -43,7 +43,9 @@ def broker_check():
 
     broker_url = f'amqp://{amqp_user}:{amqp_pass}@{amqp_host}:{amqp_port}/{amqp_vhost}'
 
+    print(f'Broker URL: {broker_url}')
     c = kombu.Connection(broker_url)
+
     # noinspection PyBroadException
     try:
         c.connect()

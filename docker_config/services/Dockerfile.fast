@@ -1,7 +1,5 @@
 FROM pomomondreganto/forcad_base:latest
 
-ENV PYTHONPATH=${PYTHONPATH}:/app
-
 COPY backend /app
 
 COPY ./docker_config/services/functions.sh /functions.sh

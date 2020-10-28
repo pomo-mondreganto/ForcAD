@@ -1,7 +1,5 @@
 FROM pomomondreganto/forcad_base:latest
 
-ENV PYTHONPATH=${PYTHONPATH}:/app
-
 ########## CUSTOMIZE ##########
 
 ENV PWNLIB_NOTERM=true
