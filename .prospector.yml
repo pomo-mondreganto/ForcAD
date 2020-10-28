@@ -7,3 +7,9 @@ pep257:
     - D107
     - D203
     - D212
+
+pylint:
+  disable:
+    - import-error
+    - too-many-arguments
+    -

@@ -1,12 +1,12 @@
-from collections import defaultdict
-from unittest import TestCase
-
-import requests
 import socket
 import subprocess
 import sys
 import time
+from collections import defaultdict
 from pathlib import Path
+from unittest import TestCase
+
+import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
@@ -165,7 +165,7 @@ class FlagSubmitTestCase(TestCase):
                     y,
                     key=lambda x: (
                         lambda z: (
-                            int(z[:z.find('-')]), int(z[z.find('-') + 1:])
+                            tuple(map(int, z.split('-'))),
                         )
                     )(x['timestamp']),
                 )[-1],
