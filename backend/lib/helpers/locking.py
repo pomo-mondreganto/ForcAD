@@ -33,7 +33,9 @@ def acquire_redis_lock(pipeline: Pipeline,
     finally:
         # Lock was acquired and a lot of time left
         # until lock is invalidated, safe to delete
-        if lock_time is not None and time.monotonic() - lock_time > 0.5:
-            res = pipeline.delete(name)
-            if pipeline.transaction:
-                res.execute()
+        if lock_time is not None:
+            lock_deadline = lock_time + timeout
+            if lock_deadline - time.monotonic() > 0.5:
+                res = pipeline.delete(name)
+                if pipeline.transaction:
+                    res.execute()
