@@ -1,0 +1,21 @@
+api:
+  dashboard: true
+
+accessLog: { }
+
+log:
+  level: DEBUG
+
+entryPoints:
+  http:
+    address: ":80"
+
+providers:
+  docker:
+    exposedByDefault: false
+
+http:
+  routers:
+    monitoring:
+      rule: "PathPrefix(`/api/metrics`)"
+      service: monitoring

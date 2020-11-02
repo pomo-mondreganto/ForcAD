@@ -25,13 +25,13 @@ services:
       dockerfile: ./docker_config/initializer/Dockerfile.fast
     restart: "no"
 
-  client_api:
+  client:
     build:
       context: .
       dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
     restart: "no"
 
-  admin_api:
+  admin:
     build:
       context: .
       dockerfile: *fast-services-dockerfile

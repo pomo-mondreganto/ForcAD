@@ -24,10 +24,15 @@ services:
       context: .
       dockerfile: ./docker_config/initializer/Dockerfile.fast
 
-  admin_api:
+  client:
     build:
       context: .
       dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
+
+  admin:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile
 
   events:
     build:
