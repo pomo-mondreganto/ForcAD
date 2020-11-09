@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
+import traceback
+
 import argparse
 import os
 import shutil
 import subprocess
 import sys
 import time
-import traceback
-from pathlib import Path
-
 import yaml
+from pathlib import Path
+from typing import Tuple, List
 
 BASE_DIR = Path(__file__).absolute().resolve().parent
 CONFIG_DIR = BASE_DIR / 'backend' / 'config'
@@ -24,12 +25,20 @@ elif os.environ.get('LOCAL'):
     CONFIG_FILENAME = 'local_config.yml'
 
 
-def run_command(command, cwd=None, env=None):
+def run_command(command: List[str], cwd=None, env=None):
     p = subprocess.Popen(command, cwd=cwd, env=env)
     rc = p.wait()
     if rc != 0:
         print('[-] Failed!')
         sys.exit(1)
+
+
+def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
+    if ':' in value:
+        host, port = value.split(':', 1)
+        port = int(port)
+        return host, port
+    return value, default_port
 
 
 def setup_db(config):
@@ -182,13 +191,19 @@ def override_config(args):
 
     # patch config host variables to connect to the right place
     if 'redis' in args and args.redis:
-        config['storages']['redis']['host'] = args.redis
+        host, port = parse_host_data(args.redis, 6379)
+        config['storages']['redis']['host'] = host
+        config['storages']['redis']['port'] = port
 
     if 'database' in args and args.database:
-        config['storages']['db']['host'] = args.database
+        host, port = parse_host_data(args.database, 5432)
+        config['storages']['db']['host'] = host
+        config['storages']['db']['port'] = port
 
-    if 'rabbitmq' in args:
-        config['storages']['rabbitmq']['host'] = args.rabbitmq
+    if 'rabbitmq' in args and args.rabbitmq:
+        host, port = parse_host_data(args.rabbitmq, 5672)
+        config['storages']['rabbitmq']['host'] = host
+        config['storages']['rabbitmq']['port'] = port
 
     with conf_path.open(mode='w') as f:
         yaml.safe_dump(config, f)
