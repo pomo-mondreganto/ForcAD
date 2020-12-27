@@ -38,13 +38,13 @@ jobs:
       - name: Build ForcAD
         run: ./control.py build
 
-      - name: Setup environment
-        run: export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
-      - name: Start
-        run: ./control.py start && python tests/wait_for_start.py && docker ps && env
-
-      - name: Run tests
-        run: python -m unittest discover -v -s tests
+      - name: Start & run tests
+        run: |
+          export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
+          ./control.py start
+          python tests/wait_for_start.py
+          docker ps && env
+          python -m unittest discover -v -s tests
 
   linter:
     runs-on: ubuntu-20.04
