@@ -49,7 +49,7 @@ export default {
     },
 
     created: async function() {
-        const r = await axios.get(`${serverUrl}/api/config/`);
+        const r = await axios.get(`${serverUrl}/api/client/config/`);
         const { round_time } = r.data;
         this.roundTime = round_time;
         this.timer = setInterval(this.tick, 500);
