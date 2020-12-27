@@ -15,6 +15,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
+      COMPOSE_INTERACTIVE_NO_CLI: 1
       TEST: 1
       TEST_TYPE: ${{ matrix.test_type }}
     steps:
