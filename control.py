@@ -214,7 +214,7 @@ def print_tokens(_args):
         'docker-compose',
         '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
-        'exec', 'client_api',
+        'exec', '-T', 'client_api',
         'python3', '/app/scripts/print_tokens.py',
     ]
     res = subprocess.check_output(
@@ -307,7 +307,7 @@ def pause_game(_args):
         '-f', DOCKER_COMPOSE_FILE,
         'stop',
         'celerybeat',
-        'gevent_flag_receiver',
+        'tcp_receiver',
     ]
     run_command(command, cwd=BASE_DIR)
 
@@ -319,7 +319,7 @@ def resume_game(_args):
         '-f', DOCKER_COMPOSE_FILE,
         'start',
         'celerybeat',
-        'gevent_flag_receiver',
+        'tcp_receiver',
     ]
     run_command(command, cwd=BASE_DIR)
 
