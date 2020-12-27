@@ -15,20 +15,13 @@ class SubmitHandler:
         self._logger = logger
         self._monitor = monitor
 
-    def __call__(self, socket, address):
-        self._logger.debug(f'Accepted connection from {address}')
-        self._monitor.inc_conns()
-
-        socket.sendall(b'Welcome! Please, enter your team token:\n')
-        rfile = socket.makefile(mode='rb')
-
+    def _run_loop(self, address, socket, rfile):
         token = rfile.readline()
         try:
             token = token.decode().strip()
         except UnicodeDecodeError:
             self._logger.debug(f'Could not decode token from {address}')
             socket.sendall(b'Invalid team token\n')
-            rfile.close()
             return
 
         team_id = storage.teams.get_team_id_by_token(token)
@@ -36,7 +29,6 @@ class SubmitHandler:
         if not team_id:
             self._logger.debug(f'Bad token from {address}')
             socket.sendall(b'Invalid team token\n')
-            rfile.close()
             return
 
         socket.sendall(b'Now enter your flags, one in a line:\n')
@@ -77,6 +69,26 @@ class SubmitHandler:
 
             socket.sendall(ar.message.encode() + b'\n')
             gevent.sleep(0)  # handle some other flag
+
+    def __call__(self, socket, address):
+        self._logger.debug(f'Accepted connection from {address}')
+        self._monitor.inc_conns()
+
+        try:
+            socket.sendall(b'Welcome! Please, enter your team token:\n')
+        except ConnectionResetError:
+            self._logger.warning(f'{address} might be spamming')
+            socket.close()
+            return
+
+        rfile = socket.makefile(mode='rb')
+
+        try:
+            self._run_loop(address, socket, rfile)
+        except ConnectionResetError:
+            self._logger.warning(f'Connection reset with {address}')
+        finally:
+            rfile.close()
 
 
 if __name__ == '__main__':
