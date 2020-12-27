@@ -41,7 +41,7 @@ jobs:
       - name: Setup environment
         run: export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
       - name: Start
-        run: ./control.py start && python tests/wait_for_start.py && docker ps
+        run: ./control.py start && python tests/wait_for_start.py && docker ps && env
 
       - name: Run tests
         run: python -m unittest discover -v -s tests
@@ -51,5 +51,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Install requirements
+        run: pip install -r tests/requirements.txt
       - name: Run flake
         run: ./control.py flake
