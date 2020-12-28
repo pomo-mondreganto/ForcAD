@@ -1,7 +1,19 @@
 name: tests
 on:
-  - push
-  - pull_request
+  push:
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - "static/**"
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+      - created
+      - edited
+
 jobs:
   tests:
     strategy:
@@ -17,6 +29,7 @@ jobs:
     env:
       TEST: 1
       TEST_TYPE: ${{ matrix.test_type }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
