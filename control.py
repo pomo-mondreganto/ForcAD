@@ -234,6 +234,21 @@ def reset_game(_args):
     data_path = BASE_DIR / 'docker_volumes' / 'postgres' / 'data'
     shutil.rmtree(data_path, onerror=print_file_exception_info)
 
+    command = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+        'run', 'initializer',
+        'python3', '/app/scripts/reset_db.py',
+    ]
+    print('Trying to wipe the database')
+    subprocess.run(
+        command,
+        cwd=BASE_DIR,
+        stdout=subprocess.DEVNULL,
+        check=False,
+    )
+
     full_compose = BASE_DIR / 'docker-compose.yml'
     command = [
         'docker-compose',

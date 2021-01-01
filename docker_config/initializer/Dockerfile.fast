@@ -1,4 +1,4 @@
-FROM pomomondreganto/forcad_base:latest
+FROM ghcr.io/pomo-mondreganto/forcad_base:latest
 
 COPY backend /app
 
