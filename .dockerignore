@@ -5,7 +5,7 @@
 
 front/node_modules
 
-control.py
-control_requirements.txt
+/control.py
+/requirements.txt
 README.md
 .mypy_cache

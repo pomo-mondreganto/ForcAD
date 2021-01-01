@@ -1,0 +1,9 @@
+FROM pomomondreganto/forcad_base:latest
+
+COPY backend /app
+
+COPY ./docker_config/services/functions.sh /functions.sh
+COPY ./docker_config/services/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

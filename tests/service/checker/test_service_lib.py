@@ -39,5 +39,9 @@ class CheckMachine:
         )
         self.checker.check_response(r, 'Could not get flag')
         data = self.checker.get_json(r, 'Invalid response from /get/')
-        self.checker.assert_in('flag', data, 'Could not get flag', status=Status.CORRUPT)
+        self.checker.assert_in(
+            'flag', data,
+            'Could not get flag',
+            status=Status.CORRUPT,
+        )
         return data['flag']

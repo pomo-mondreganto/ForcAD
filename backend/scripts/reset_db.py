@@ -2,21 +2,17 @@
 
 import psycopg2
 import redis
-import sys
 import time
-
 from pathlib import Path
 
+from lib import storage
+
 BASE_DIR = Path(__file__).absolute().resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
-
-import storage
-
 SCRIPTS_DIR = BASE_DIR / 'scripts'
 
 
 def run():
-    conn = storage.get_db_pool().getconn()
+    conn = storage.utils.get_db_pool().getconn()
     curs = conn.cursor()
 
     create_query_path = SCRIPTS_DIR / 'drop_query.sql'
@@ -33,7 +29,7 @@ def run():
 
     while True:
         try:
-            storage.get_redis_storage().flushall()
+            storage.utils.get_redis_storage().flushall()
         except (
                 redis.exceptions.ConnectionError,
                 redis.exceptions.BusyLoadingError):

@@ -1,101 +1,114 @@
 version: '2.4'
 
+x-service: &default-ms
+  build:
+    context: .
+    dockerfile: ./docker_config/services/Dockerfile
+  env_file: &db-environment
+    - ./docker_config/postgres/environment.env
+    - ./docker_config/redis/environment.env
+    - ./docker_config/rabbitmq/environment.env
+  restart: on-failure
+
+x-celery-service: &default-celery-ms
+  build:
+    context: .
+    dockerfile: ./docker_config/celery/Dockerfile
+  volumes:
+    - ./checkers/:/checkers/
+  env_file: *db-environment
+  restart: on-failure
+
 services:
   celery:
-    build:
-      context: .
-      dockerfile: docker_config/celery/Dockerfile
+    <<: *default-celery-ms
     environment:
       - TEST
-      - CELERY_CONTAINER_TYPE=worker
-    volumes:
-      - ./checkers/:/checkers/
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    restart: on-failure
+      - SERVICE=worker
 
   celerybeat:
-    build:
-      context: .
-      dockerfile: docker_config/celery/Dockerfile
+    <<: *default-celery-ms
     environment:
       - TEST
-      - CELERY_CONTAINER_TYPE=beat
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
-    restart: on-failure
+      - SERVICE=beat
 
   flower:
-    build:
-      context: .
-      dockerfile: docker_config/celery/Dockerfile
+    <<: *default-celery-ms
     environment:
       - TEST
-      - CELERY_CONTAINER_TYPE=flower
+      - SERVICE=flower
     env_file:
+      - ./docker_config/celery/flower.env
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
-      - ./docker_config/celery/flower.env
       - ./docker_config/rabbitmq/environment.env
-    restart: on-failure
-
 
   initializer:
     build:
       context: .
-      dockerfile: docker_config/initializer/Dockerfile
-    env_file:
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
+      dockerfile: ./docker_config/initializer/Dockerfile
+    env_file: *db-environment
     environment:
       - TEST
     restart: on-failure
 
-  webapi:
-    build:
-      context: .
-      dockerfile: docker_config/webapi/Dockerfile
-    env_file:
-      - ./docker_config/webapi/environment.env
-      - ./docker_config/postgres/environment.env
-      - ./docker_config/redis/environment.env
-      - ./docker_config/rabbitmq/environment.env
+  client_api:
+    <<: *default-ms
     environment:
       - TEST
-    restart: on-failure
+      - SERVICE=api
 
-  gevent_flag_receiver:
-    build:
-      context: .
-      dockerfile: docker_config/gevent_flag_receiver/Dockerfile
+  admin_api:
+    <<: *default-ms
+    environment:
+      - TEST
+      - SERVICE=admin
     env_file:
+      - ./docker_config/services/admin.env
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
       - ./docker_config/rabbitmq/environment.env
+
+  events:
+    <<: *default-ms
+    environment:
+      - TEST
+      - SERVICE=events
+
+  monitoring:
+    <<: *default-ms
+    environment:
+      - TEST
+      - SERVICE=monitoring
+
+  tcp_receiver:
+    <<: *default-ms
     ports:
       - 31337:31337
     environment:
       - TEST
-    tty: true
-    restart: on-failure
+      - SERVICE=tcp_receiver
 
   nginx:
-    build:
-      context: .
-      dockerfile: docker_config/nginx/Dockerfile
+    image: nginx:1.17.9-alpine
     ports:
       - 8080:80
       - 80:80
+    volumes:
+      - ./docker_config/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
+      - ./front/dist:/var/www/front:delegated
     restart: on-failure
+    depends_on:
+      - flower
+      - client_api
+      - admin_api
+      - events
+      - monitoring
 
   redis:
     image: redis:5.0.8-alpine
-    command: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD"]
+    command: [ "sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD" ]
     restart: on-failure
     sysctls:
       net.core.somaxconn: 1024

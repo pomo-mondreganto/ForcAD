@@ -7,29 +7,39 @@ services:
   celery:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: &fast-celery-dockerfile ./docker_config/celery/Dockerfile.fast
 
   celerybeat:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: *fast-celery-dockerfile
 
   flower:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: *fast-celery-dockerfile
 
   initializer:
     build:
       context: .
-      dockerfile: docker_config/initializer/Dockerfile.fast
+      dockerfile: ./docker_config/initializer/Dockerfile.fast
 
-  webapi:
+  admin_api:
     build:
       context: .
-      dockerfile: docker_config/webapi/Dockerfile.fast
+      dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
 
-  gevent_flag_receiver:
+  events:
     build:
       context: .
-      dockerfile: docker_config/gevent_flag_receiver/Dockerfile.fast
+      dockerfile: *fast-services-dockerfile
+
+  monitoring:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile
+
+  tcp_receiver:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile

@@ -32,9 +32,9 @@ class AdminAuthMixin:
 
 class BaseAdminTestCase(TestCase, AdminAuthMixin):
     def test_unauthenticated(self):
-        r = requests.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        r = requests.get('http://127.0.0.1:8080/api/admin/teams/')
         self.assertFalse(r.ok)
-        r = requests.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = requests.get('http://127.0.0.1:8080/api/admin/tasks/')
         self.assertFalse(r.ok)
 
     def test_authentication(self):
@@ -48,15 +48,15 @@ class BaseAdminTestCase(TestCase, AdminAuthMixin):
         )
         self.assertFalse(r.ok)
 
-        r = self.s1.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        r = self.s1.get('http://127.0.0.1:8080/api/admin/teams/')
         self.assertFalse(r.ok)
-        r = self.s1.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s1.get('http://127.0.0.1:8080/api/admin/tasks/')
         self.assertFalse(r.ok)
 
         self.s2 = self.get_admin_sess()
-        r = self.s2.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        r = self.s2.get('http://127.0.0.1:8080/api/admin/teams/')
         self.assertTrue(r.ok)
-        r = self.s2.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s2.get('http://127.0.0.1:8080/api/admin/tasks/')
         self.assertTrue(r.ok)
 
     def tearDown(self):
@@ -71,7 +71,7 @@ class TeamsTestCase(TestCase, AdminAuthMixin):
         self.s = self.get_admin_sess()
 
     def get_teams(self):
-        r = self.s.get(f'http://127.0.0.1:8080/api/admin/teams/')
+        r = self.s.get('http://127.0.0.1:8080/api/admin/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -94,8 +94,8 @@ class TeamsTestCase(TestCase, AdminAuthMixin):
         full_data = r.json()
         self.assertTrue(full_data.get('active'))
 
-        for key in new_team_data.keys():
-            self.assertEqual(new_team_data[key], full_data.get(key))
+        for k, v in new_team_data.items():
+            self.assertEqual(v, full_data.get(k))
 
         new_teams = self.get_teams()
         self.assertIn(full_data, new_teams)
@@ -116,8 +116,8 @@ class TeamsTestCase(TestCase, AdminAuthMixin):
 
         full_data = r.json()
 
-        for key in update_data.keys():
-            self.assertEqual(update_data[key], full_data.get(key))
+        for k, v in update_data.items():
+            self.assertEqual(v, full_data.get(k))
 
         new_teams = self.get_teams()
         self.assertIn(full_data, new_teams)
@@ -142,7 +142,7 @@ class TasksTestCase(TestCase, AdminAuthMixin):
         self.s = self.get_admin_sess()
 
     def get_tasks(self):
-        r = self.s.get(f'http://127.0.0.1:8080/api/admin/tasks/')
+        r = self.s.get('http://127.0.0.1:8080/api/admin/tasks/')
         self.assertTrue(r.ok)
 
         data = r.json()
@@ -171,8 +171,8 @@ class TasksTestCase(TestCase, AdminAuthMixin):
 
         full_data = r.json()
 
-        for key in new_task_data.keys():
-            self.assertEqual(new_task_data[key], full_data.get(key))
+        for k, v in new_task_data.items():
+            self.assertEqual(v, full_data.get(k))
 
         new_tasks = self.get_tasks()
         self.assertIn(full_data, new_tasks)
@@ -202,8 +202,8 @@ class TasksTestCase(TestCase, AdminAuthMixin):
 
         self.assertTrue(full_data.get('active'))
 
-        for key in update_data.keys():
-            self.assertEqual(update_data[key], full_data.get(key))
+        for k, v in update_data.items():
+            self.assertEqual(v, full_data.get(k))
 
         new_tasks = self.get_tasks()
         self.assertIn(full_data, new_tasks)
@@ -224,7 +224,7 @@ class TasksTestCase(TestCase, AdminAuthMixin):
 
     def test_teamtasks_api(self):
         r = self.s.get(
-            f'http://127.0.0.1:8080/api/admin/teamtasks/',
+            'http://127.0.0.1:8080/api/admin/teamtasks/',
             params={'team_id': 1, 'task_id': 1},
         )
         self.assertTrue(r.ok)

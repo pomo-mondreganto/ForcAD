@@ -1,0 +1,76 @@
+name: tests
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - "static/**"
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+      - created
+      - edited
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - ubuntu-18.04
+        test_type:
+          - BLITZ
+          - CLASSIC
+
+    runs-on: ${{ matrix.os }}
+    env:
+      TEST: 1
+      TEST_TYPE: ${{ matrix.test_type }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Setup tests
+        run: python tests/setup_forcad.py
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+          pip install -r tests/requirements.txt
+          pip install -r backend/requirements.txt
+      - name: Setup ForcAD
+        run: ./control.py setup
+      - name: Build ForcAD
+        run: ./control.py build
+
+      - name: Start & run tests
+        run: |
+          export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
+          ./control.py start
+          python tests/wait_for_start.py
+          docker ps && env
+          python -m unittest discover -v -s tests
+
+  linter:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Install requirements
+        run: pip install -r tests/requirements.txt
+      - name: Run flake
+        run: ./control.py flake

@@ -1,6 +1,7 @@
 FROM python:3.7
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=${PYTHONPATH}:/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libpq-dev \

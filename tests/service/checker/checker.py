@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
-
 import requests
+import sys
 from checklib import *
 
 PORT = 10000
@@ -61,9 +60,10 @@ if __name__ == '__main__':
             cquit(Status.ERROR, 'System error', 'Unknown action: ' + action)
 
         cquit(Status.ERROR)
-    except (requests.exceptions.ConnectionError, requests.exceptions.ConnectTimeout):
+    except (
+    requests.exceptions.ConnectionError, requests.exceptions.ConnectTimeout):
         cquit(Status.DOWN, 'Connection error')
-    except SystemError as e:
+    except SystemError:
         raise
     except Exception as e:
         cquit(Status.ERROR, 'System error', str(e))

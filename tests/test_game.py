@@ -1,8 +1,8 @@
-import sys
-from pathlib import Path
 from unittest import TestCase
 
 import requests
+import sys
+from pathlib import Path
 
 PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
 BACKEND_DIR = PROJECT_DIR / 'backend'
@@ -18,14 +18,14 @@ class GameStatusTestCase(TestCase):
         wait_rounds(3)
 
     def get_teams(self):
-        r = requests.get(f'http://127.0.0.1:8080/api/teams/')
+        r = requests.get('http://127.0.0.1:8080/api/client/teams/')
         self.assertTrue(r.ok)
 
         data = r.json()
         return data
 
     def get_team_history(self, team_id):
-        r = requests.get(f'http://127.0.0.1:8080/api/teams/{team_id}/')
+        r = requests.get(f'http://127.0.0.1:8080/api/client/teams/{team_id}/')
         self.assertTrue(r.ok)
 
         data = r.json()

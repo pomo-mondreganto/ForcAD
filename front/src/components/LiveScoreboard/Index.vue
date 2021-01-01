@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import {serverUrl} from '@/config';
 import io from 'socket.io-client';
 
 export default {
@@ -31,10 +31,10 @@ export default {
     created: async function() {
         try {
             const { data: teams } = await this.$http.get(
-                `${serverUrl}/api/teams/`
+                `${serverUrl}/api/client/teams/`
             );
             const { data: tasks } = await this.$http.get(
-                `${serverUrl}/api/tasks/`
+                `${serverUrl}/api/client/tasks/`
             );
             this.teams = teams;
             this.tasks = tasks;

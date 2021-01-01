@@ -1,6 +1,6 @@
 import os
 
-import storage
+from lib import storage
 
 
 def get_web_credentials() -> dict:
@@ -30,7 +30,7 @@ def get_db_config() -> dict:
 
 
 def get_broker_url() -> str:
-    """Get broker url for RabbitMQ from config"""
+    """Get broker url for RabbitMQ from config."""
     host = os.environ['RABBITMQ_HOST']
     user = os.environ['RABBITMQ_DEFAULT_USER']
     port = os.environ['RABBITMQ_PORT']

@@ -1,6 +1,37 @@
+ignore-paths:
+  - tests/service/checker
+  - docker_config/db_check.py
+
+strictness: medium
+autodetect: true
+max-line-length: 79
+
 pep8:
-    full: true
+  full: true
+  disable:
+    - E402
 
 pep257:
-    disable:
-      - D212
+  disable:
+    - D105
+    - D107
+    - D203
+    - D212
+
+pylint:
+  disable:
+    - import-error
+    - import-self
+    - invalid-str-returned
+    - logging-fstring-interpolation
+    - redefined-builtin
+    - too-many-arguments
+    - undefined-variable
+    - wrong-import-position
+  options:
+    max-locals: 20
+
+pyflakes:
+  disable:
+    - F405
+    - F999

@@ -4,37 +4,55 @@ services:
   celery:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: &fast-celery-dockerfile ./docker_config/celery/Dockerfile.fast
     restart: "no"
 
   celerybeat:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: *fast-celery-dockerfile
     restart: "no"
 
   flower:
     build:
       context: .
-      dockerfile: docker_config/celery/Dockerfile.fast
+      dockerfile: *fast-celery-dockerfile
     restart: "no"
 
   initializer:
     build:
       context: .
-      dockerfile: docker_config/initializer/Dockerfile.fast
+      dockerfile: ./docker_config/initializer/Dockerfile.fast
     restart: "no"
 
-  webapi:
+  client_api:
     build:
       context: .
-      dockerfile: docker_config/webapi/Dockerfile.fast
+      dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
     restart: "no"
 
-  gevent_flag_receiver:
+  admin_api:
     build:
       context: .
-      dockerfile: docker_config/gevent_flag_receiver/Dockerfile.fast
+      dockerfile: *fast-services-dockerfile
+    restart: "no"
+
+  events:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile
+    restart: "no"
+
+  monitoring:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile
+    restart: "no"
+
+  tcp_receiver:
+    build:
+      context: .
+      dockerfile: *fast-services-dockerfile
     restart: "no"
 
   nginx:
@@ -52,7 +70,7 @@ services:
   test_service:
     build:
       context: .
-      dockerfile: docker_config/test_service/Dockerfile
+      dockerfile: ./docker_config/test_service/Dockerfile
     ports:
       - 10000:10000
     restart: "no"

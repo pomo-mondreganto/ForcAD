@@ -23,7 +23,7 @@ set `start_time`, `timezone` (e.g. `Europe/Moscow`) and `round_time` (in seconds
 `storages.rabbitmq.password` for database and cache, 
 `admin.password` for `celery` visualization, which contains flags).
 
-4.  Install `control_requirements.txt` (`pip3 install -r control_requirements.txt`) and run `./control.py setup` 
+4.  Install `requirements.txt` (`pip3 install -r requirements.txt`) and run `./control.py setup` 
 to transfer config variables
 
 5.  Run `./control.py start --fast` to start the system. 
@@ -31,7 +31,8 @@ Wait patiently for the images to build, it could take a few minutes, but happens
 Notice that `--fast` option uses the pre-built image, so if you modified the source code, omit this option to 
 run the full build.  
 
-That's all! Now you should be able to access the scoreboard at `http://0.0.0.0:8080/`.
+That's all! Now you should be able to access the scoreboard at `http://0.0.0.0:8080/`. Admin panel is accessible at 
+`http://0.0.0.0:8080/admin`.
 
 > Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks)
 
@@ -63,7 +64,12 @@ run 5-6 instances of `celery`).
 
 -   **Postgres** is a persistent game storage
 
--   **Webapi** provides api for Vue.js frontend
+-   **client_api** and **admin_api** provide data for Vue.js frontend
+
+-   **events** is a Socket.io server for all game events & live scoreboard reload
+
+-   **monitoring** is a Prometheus metrics exporter (currently only various flag statistics are 
+available at `/api/metrics`).
 
 -   **Nginx** acts as a routing proxy that unites frontend, api and flower
 
@@ -90,8 +96,8 @@ global settings (that'll be the default value) and for each task independently.
 ### Flag format
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of 
-corresponding service name. You can change flag generation in function `generate_flag` in 
-[backend/helpers/flags.py](backend/helplib/flags.py)
+corresponding service name. You can change flag generation in function `Flag.generate` in 
+[backend/lib/models/flag.py](backend/lib/models/flag.py)
 
 Each flag is valid (and can be checked by checker) for `flag_lifetime` rounds (global config variable).    
 
@@ -125,41 +131,29 @@ Config file (`backend/config/config.yml`) is split into five main parts:
   -   `db`: PostgreSQL settings:
   
       -   `dbname: system_db`
-    
       -   `host: postgres`
-    
       -   `password: **change_me**`
-    
       -   `port: 5432`
-    
       -   `user: system_admin`
 
   -   `redis`: Redis settings:
   
       -   `db: 0`
-    
       -   `host: redis`
-    
       -   `port: 6379`
-    
       -   `password: **change_me**`
     
   -   `rabbitmq`: Redis settings:
   
       -   `host: rabbitmq`
-    
       -   `port: 5672`
-    
       -   `password: **change_me**`
-    
       -   `user: system_admin`
-    
       -   `vhost: forcad`
 
 -   **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
     -   `password: **change_me**`
-  
     -   `username: system_admin`
 
 -   **teams** contains playing teams. Example contents:
