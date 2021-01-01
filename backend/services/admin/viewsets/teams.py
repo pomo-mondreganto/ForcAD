@@ -11,7 +11,7 @@ class TeamApi(ApiSet):
 
     @staticmethod
     def list():
-        teams = storage.teams.get_teams()
+        teams = storage.teams.get_all_teams()
         dumped = [team.to_dict() for team in teams]
         return jsonify(dumped)
 

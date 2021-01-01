@@ -1,4 +1,5 @@
 import redis
+import time
 from typing import Callable, Optional, Iterable, Any, Dict
 
 ArgsType = Optional[Iterable[Any]]
@@ -9,18 +10,11 @@ def cache_helper(pipeline: redis.client.Pipeline,
                  cache_key: str,
                  cache_func: Callable[..., Any],
                  cache_args: ArgsType = None,
-                 cache_kwargs: KwargsType = None,
-                 on_cached: Optional[Callable[..., Any]] = None,
-                 on_cached_args: ArgsType = None,
-                 on_cached_kwargs: KwargsType = None) -> bool:
+                 cache_kwargs: KwargsType = None):
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:
         cache_kwargs = dict()
-    if on_cached_args is None:
-        on_cached_args = tuple()
-    if on_cached_kwargs is None:
-        on_cached_kwargs = dict()
 
     was_changed = False
     while True:
@@ -33,12 +27,10 @@ def cache_helper(pipeline: redis.client.Pipeline,
             if not cached:
                 was_changed = True
                 cache_func(*cache_args, **cache_kwargs)
-            elif on_cached is not None:
-                on_cached(*on_cached_args, **on_cached_kwargs)
 
             pipeline.execute()
         except redis.WatchError:
-            continue
+            time.sleep(0.05)
         else:
             break
 

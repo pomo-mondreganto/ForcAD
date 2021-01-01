@@ -45,6 +45,16 @@ def get_tasks() -> List[models.Task]:
     return tasks
 
 
+def get_all_tasks() -> List[models.Task]:
+    """Get list of all tasks, including inactive."""
+    with storage.utils.db_cursor(dict_cursor=True) as (_, curs):
+        curs.execute(models.Task.get_select_all_query())
+        tasks = curs.fetchall()
+
+    tasks = list(models.Task.from_dict(task) for task in tasks)
+    return tasks
+
+
 def update_task_status(task_id: int, team_id: int, current_round: int,
                        checker_verdict: models.CheckerVerdict) -> None:
     """
@@ -184,11 +194,6 @@ def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
     return teamtasks
 
 
-def flush_tasks_cache():
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
-        pipe.delete('tasks').execute()
-
-
 def create_task(task: models.Task) -> models.Task:
     """Add new task to DB, reset cache & return created instance."""
     with storage.utils.db_cursor() as (conn, curs):
@@ -198,7 +203,7 @@ def create_task(task: models.Task) -> models.Task:
 
         insert_data = [
             (task.id, team.id, task.default_score, -1)
-            for team in storage.teams.get_teams()
+            for team in storage.teams.get_all_teams()
         ]
         # todo: execute_many
         for each in insert_data:
@@ -206,7 +211,7 @@ def create_task(task: models.Task) -> models.Task:
 
         conn.commit()
 
-    flush_tasks_cache()
+    storage.caching.flush_tasks_cache()
     return task
 
 
@@ -216,7 +221,7 @@ def update_task(task: models.Task) -> models.Task:
         curs.execute(task.get_update_query(), task.to_dict())
         conn.commit()
 
-    flush_tasks_cache()
+    storage.caching.flush_tasks_cache()
     return task
 
 
@@ -226,7 +231,7 @@ def delete_task(task_id: int) -> None:
         curs.execute(models.Task.get_delete_query(), {'id': task_id})
         conn.commit()
 
-    flush_tasks_cache()
+    storage.caching.flush_tasks_cache()
 
 
 def get_admin_teamtask_history(team_id: int, task_id: int) -> List[dict]:

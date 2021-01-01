@@ -11,7 +11,7 @@ class TaskApi(ApiSet):
 
     @staticmethod
     def list():
-        tasks = storage.tasks.get_tasks()
+        tasks = storage.tasks.get_all_tasks()
         dumped = [task.to_dict() for task in tasks]
         return jsonify(dumped)
 

@@ -6,7 +6,7 @@ from lib.helpers.cache import cache_helper
 
 
 def get_teams() -> List[models.Team]:
-    """Get list of teams registered in the database."""
+    """Get list of active teams."""
     with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
@@ -18,6 +18,16 @@ def get_teams() -> List[models.Team]:
         teams, = pipe.smembers('teams').execute()
         teams = list(models.Team.from_json(team) for team in teams)
 
+    return teams
+
+
+def get_all_teams() -> List[models.Team]:
+    """Get list of all teams, including inactive."""
+    with storage.utils.db_cursor(dict_cursor=True) as (_, curs):
+        curs.execute(models.Team.get_select_all_query())
+        teams = curs.fetchall()
+
+    teams = list(models.Team.from_dict(team) for team in teams)
     return teams
 
 
@@ -39,11 +49,6 @@ def get_team_id_by_token(token: str) -> Optional[int]:
         return team_id
 
 
-def flush_teams_cache():
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
-        pipe.delete('teams').execute()
-
-
 def create_team(team: models.Team) -> models.Team:
     """Add new team to DB, reset cache & return created instance."""
     with storage.utils.db_cursor() as (conn, curs):
@@ -53,14 +58,14 @@ def create_team(team: models.Team) -> models.Team:
 
         insert_data = [
             (task.id, team.id, task.default_score, -1)
-            for task in storage.tasks.get_tasks()
+            for task in storage.tasks.get_all_tasks()
         ]
         for each in insert_data:
             curs.execute(storage.tasks.TEAMTASK_INSERT_QUERY, each)
 
         conn.commit()
 
-    flush_teams_cache()
+    storage.caching.flush_teams_cache()
     return team
 
 
@@ -70,7 +75,7 @@ def update_team(team: models.Team) -> models.Team:
         curs.execute(team.get_update_query(), team.to_dict())
         conn.commit()
 
-    flush_teams_cache()
+    storage.caching.flush_teams_cache()
     return team
 
 
@@ -80,4 +85,4 @@ def delete_team(team_id: int) -> None:
         curs.execute(models.Team.get_delete_query(), {'id': team_id})
         conn.commit()
 
-    flush_teams_cache()
+    storage.caching.flush_teams_cache()
