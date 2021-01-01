@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/pomo-mondreganto/ForcAD.svg?branch=master)](https://travis-ci.com/pomo-mondreganto/ForcAD)
+![tests](https://github.com/pomo-mondreganto/ForcAD/workflows/tests/badge.svg)
 
 # ForcAD
 
