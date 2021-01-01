@@ -1,48 +1,49 @@
 import secrets
 
-from sanic.exceptions import Forbidden
-from sanic.response import json
+from flask import request, jsonify
 
 import config
 from lib import storage
+from .utils import abort_with_error
 
 
-async def check_session(request):
+def check_session():
     if 'session' not in request.cookies:
-        raise Forbidden('No session set')
+        abort_with_error('No session set', 403)
 
     session = request.cookies['session']
-    redis_aio = await storage.utils.get_async_redis_storage()
-    data = await redis_aio.get(f'session:{session}')
+    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        data, = pipe.get(f'session:{session}').execute()
+
     creds = config.get_web_credentials()
 
     if data != creds['username']:
-        raise Forbidden('Invalid session')
+        abort_with_error('Invalid session', 403)
 
     return True
 
 
-async def set_session(session, username):
-    redis_aio = await storage.utils.get_async_redis_storage()
-    await redis_aio.set(f'session:{session}', username)
+def set_session(session, username):
+    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        pipe.set(f'session:{session}', username).execute()
 
 
-async def login(request):
+def login():
     username = request.json.get('username')
     password = request.json.get('password')
 
     creds = config.get_web_credentials()
     if username != creds['username'] or password != creds['password']:
-        raise Forbidden('Invalid credentials')
+        abort_with_error('Invalid credentials', 403)
 
     session = secrets.token_hex(32)
-    await set_session(session, username)
+    set_session(session, username)
 
-    response = json({'status': 'ok'})
-    response.cookies['session'] = session
+    response = jsonify({'status': 'ok'})
+    response.set_cookie('session', session, httponly=True)
     return response
 
 
-async def status(request):
-    await check_session(request)
-    return json({'status': 'ok'})
+def status():
+    check_session()
+    return jsonify({'status': 'ok'})

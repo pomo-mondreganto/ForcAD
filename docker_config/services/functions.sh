@@ -40,7 +40,7 @@ start_tcp_receiver() {
 start_web() {
   echo "[*] Starting web service $1"
   cd "services/$1"
-  gunicorn "app:app" --bind 0.0.0.0:5000 --worker-class sanic.worker.GunicornWorker
+  gunicorn "app:app" --bind 0.0.0.0:5000 --worker-class eventlet
 }
 
 start_api() {

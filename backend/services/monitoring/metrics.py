@@ -1,21 +1,18 @@
-import aio_pika
-import asyncio
-from kombu.utils import json as kjson
+import socket
+from flask import Flask, make_response
+from kombu import Message, Queue, Consumer
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     REGISTRY,
     Counter,
 )
 from prometheus_client.exposition import generate_latest
-from sanic import Sanic
-from sanic.response import raw
-from typing import Optional
 
-import config
+from lib import storage
 
 
 class MetricsServer:
-    def __init__(self, app: Sanic):
+    def __init__(self, app: Flask):
         self.app = app
         self.flag_submits_metric = Counter(
             name='flag_submits_total',
@@ -24,54 +21,48 @@ class MetricsServer:
         )
 
     @staticmethod
-    def get_data():
+    def _get_data() -> str:
         return generate_latest(REGISTRY)
 
-    def add_endpoint(self, name):
-        async def monitoring_endpoint(_request):
-            return raw(self.get_data(), content_type=CONTENT_TYPE_LATEST)
+    def add_endpoint(self, path: str):
+        def monitoring_endpoint():
+            response = make_response(self._get_data())
+            response.headers['Content-Type'] = CONTENT_TYPE_LATEST
+            return response
 
-        self.app.add_route(monitoring_endpoint, name)
+        self.app.add_url_rule(path, 'metrics', monitoring_endpoint)
 
-    async def process_message(self, message: aio_pika.IncomingMessage):
-        async with message.process():
-            try:
-                data = message.body.decode()
-            except UnicodeDecodeError:
-                return
-
-            data = kjson.loads(data)
-            if data['type'] == 'flag_submit':
-                self.flag_submits_metric.labels(**data['data']).inc(
-                    amount=data.get('value', 1),
-                )
-            else:
-                print('Unknown metric type:', data)
-
-    async def connect_consumer(self):
-        broker_url = config.get_broker_url()
-
-        wait_period = 2
-        exc: Optional[Exception] = None
-        for _ in range(5):
-            try:
-                connection = await aio_pika.connect_robust(broker_url)
-            except ConnectionError as e:
-                exc = e
-                print(
-                    f'Got connection error from broker, '
-                    f'waiting {wait_period}s',
-                )
-                await asyncio.sleep(wait_period)
-                wait_period *= 2
-            else:
-                break
+    def _process_message(self, body, message: Message):
+        # ack message first, metrics don't have to be exact
+        message.ack()
+        if body['type'] == 'flag_submit':
+            self.flag_submits_metric.labels(**body['data']).inc(
+                amount=body.get('value', 1),
+            )
         else:
-            print('Error connecting to broker')
-            raise exc
+            self.app.logger.error(f'Unknown metric type in {body}')
 
-        queue_name = 'forcad-monitoring'
-        channel = await connection.channel()
-        await channel.set_qos(prefetch_count=100)
-        queue = await channel.declare_queue(queue_name, auto_delete=True)
-        await queue.consume(self.process_message)
+    def consume(self, conn, queue):
+        with conn.channel() as channel:
+            consumer = Consumer(
+                channel=channel,
+                queues=[queue],
+                accept=['json'],
+            )
+            consumer.register_callback(self._process_message)
+            consumer.consume()
+            while True:
+                try:
+                    conn.drain_events(timeout=5)
+                except socket.timeout:
+                    self.app.logger.debug('Timeout waiting for events')
+                    conn.heartbeat_check()
+
+    def connect_consumer(self):
+        queue = Queue('forcad-monitoring')
+        while True:
+            with storage.utils.get_broker_connection() as conn:
+                try:
+                    self.consume(conn, queue)
+                except conn.connection_errors:
+                    pass
