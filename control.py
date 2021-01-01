@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import shlex
 import traceback
 
 import argparse
@@ -329,7 +330,7 @@ def run_docker_command(args):
         'docker-compose',
         '-f', BASE_COMPOSE_FILE,
         '-f', DOCKER_COMPOSE_FILE,
-        *args.args,
+        *shlex.split(args.command),
     ]
     run_command(command, cwd=BASE_DIR)
 
@@ -450,7 +451,11 @@ if __name__ == '__main__':
         action='store_true',
         help='Use faster build with prebuilt images',
     )
-    run_docker_parser.add_argument('args', nargs='*')
+    run_docker_parser.add_argument(
+        '-c', '--command',
+        type=str,
+        help='Docker-compose arguments (e.g. "logs -f --tail 200")',
+    )
 
     flake_parser = subparsers.add_parser(
         'flake',
