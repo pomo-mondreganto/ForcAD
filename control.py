@@ -285,11 +285,11 @@ def start_game(args):
     run_docker(['up', '--build', '-d', '--scale', f'celery={args.instances}'])
 
 
-def scale_celery(args):
+def scale(args):
     run_docker([
         'up', '-d', '--no-recreate', '--no-build',
-        '--scale', f'celery={args.instances}',
-        'celery',
+        '--scale', f'{args.service}={args.instances}',
+        args.service,
     ])
 
 
@@ -374,20 +374,24 @@ if __name__ == '__main__':
     start_parser.set_defaults(func=start_game)
     start_parser.add_argument('-f', '--fast', action='store_true',
                               help='Use faster build with prebuilt images')
-    start_parser.add_argument('-i', '--instances', type=int, metavar='N',
+    start_parser.add_argument('-w', '--workers', type=int, metavar='N',
                               default=1,
                               help='Number of celery worker instances',
                               required=False)
 
-    scale_celery_parser = subparsers.add_parser(
-        'scale_celery',
-        help='Scale the number of celery worker containers',
+    scale_parser = subparsers.add_parser(
+        'scale',
+        help='Scale any service (e.g. "celery" to increase number of workers)',
     )
-    scale_celery_parser.set_defaults(func=scale_celery)
-    scale_celery_parser.add_argument('-i', '--instances', type=int,
-                                     metavar='N',
-                                     help='Number of celery worker instances',
-                                     required=True)
+    scale_parser.set_defaults(func=scale)
+    scale_parser.add_argument('-s', '--service', type=str,
+                              metavar='SERVICE',
+                              help='Service name (see docker-compose file)',
+                              required=True)
+    scale_parser.add_argument('-i', '--instances', type=int,
+                              metavar='N',
+                              help='Number of instances',
+                              required=True)
 
     worker_parser = subparsers.add_parser(
         'worker',
