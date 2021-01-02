@@ -281,6 +281,7 @@ def build(_args):
 
 
 def start_game(args):
+    print(f'Using Forcad:{VERSION}')
     run_docker(['up', '--build', '-d', '--scale', f'celery={args.instances}'])
 
 

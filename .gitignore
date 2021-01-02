@@ -2,9 +2,7 @@
 .idea
 __pycache__
 
-docker_volumes/*
-!docker_volumes/**/.gitkeep
-!docker_config/**/.gitkeep
+docker_volumes
 
 backend/config/*config.yml
 backend/config/config_backup*

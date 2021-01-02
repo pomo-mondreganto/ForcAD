@@ -10,7 +10,6 @@ control.py
 docker-compose-fast.yml
 docker-compose.yml
 docker_config
-docker_volumes
 front/dist
 LICENSE
 README.md

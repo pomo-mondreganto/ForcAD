@@ -1,5 +1,3 @@
-# Created by .ignore support plugin (hsz.mobi)
-*.pid
 .DS_Store
 .idea
 
@@ -7,5 +5,7 @@ front/node_modules
 
 /control.py
 /requirements.txt
-README.md
+/README.md
 .mypy_cache
+
+docker_volumes
