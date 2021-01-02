@@ -282,7 +282,7 @@ def build(_args):
 
 def start_game(args):
     print(f'Using Forcad:{VERSION}')
-    run_docker(['up', '--build', '-d', '--scale', f'celery={args.instances}'])
+    run_docker(['up', '--build', '-d', '--scale', f'celery={args.workers}'])
 
 
 def scale(args):
@@ -300,7 +300,7 @@ def run_worker(args):
 
     run_docker([
         'up', '--build', '-d',
-        '--scale', f'celery={args.instances}',
+        '--scale', f'celery={args.workers}',
         'celery',
     ])
 
@@ -398,7 +398,7 @@ if __name__ == '__main__':
         help='Start the celery workers only',
     )
     worker_parser.set_defaults(func=run_worker)
-    worker_parser.add_argument('-i', '--instances', type=int, metavar='N',
+    worker_parser.add_argument('-w', '--workers', type=int, metavar='N',
                                default=1,
                                help='Number of celery worker instances',
                                required=False)
