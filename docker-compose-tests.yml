@@ -1,59 +1,53 @@
 version: '2.4'
 
+x-celery-test: &celery-test
+  build:
+    context: .
+    dockerfile: ./docker_config/celery/Dockerfile.fast
+    args:
+      version: ${FORCAD_VERSION:-latest}
+  restart: "no"
+
+x-service-test: &service-test
+  build:
+    context: .
+    dockerfile: ./docker_config/services/Dockerfile.fast
+    args:
+      version: ${FORCAD_VERSION:-latest}
+  restart: "no"
+
 services:
   celery:
-    build:
-      context: .
-      dockerfile: &fast-celery-dockerfile ./docker_config/celery/Dockerfile.fast
-    restart: "no"
+    <<: *celery-test
 
   celerybeat:
-    build:
-      context: .
-      dockerfile: *fast-celery-dockerfile
-    restart: "no"
+    <<: *celery-test
 
   flower:
-    build:
-      context: .
-      dockerfile: *fast-celery-dockerfile
-    restart: "no"
+    <<: *celery-test
 
   initializer:
     build:
       context: .
       dockerfile: ./docker_config/initializer/Dockerfile.fast
+      args:
+        version: ${FORCAD_VERSION:-latest}
     restart: "no"
 
   client_api:
-    build:
-      context: .
-      dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
-    restart: "no"
+    <<: *service-test
 
   admin_api:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
-    restart: "no"
+    <<: *service-test
 
   events:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
-    restart: "no"
+    <<: *service-test
 
   monitoring:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
-    restart: "no"
+    <<: *service-test
 
   tcp_receiver:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
-    restart: "no"
+    <<: *service-test
 
   nginx:
     restart: "no"

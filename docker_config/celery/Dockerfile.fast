@@ -1,4 +1,6 @@
-FROM pomomondreganto/forcad_base:latest
+ARG version=latest
+
+FROM ghcr.io/pomo-mondreganto/forcad_base:${version}
 
 ########## CUSTOMIZE ##########
 

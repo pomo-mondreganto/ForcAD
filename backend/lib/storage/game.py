@@ -2,7 +2,7 @@ import time
 from typing import Optional
 
 from lib import models, storage
-from lib.helpers.cache import cache_helper, async_cache_helper
+from lib.helpers.cache import cache_helper
 from lib.storage import caching, utils
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
@@ -113,16 +113,6 @@ def get_current_global_config() -> models.GlobalConfig:
     return global_config
 
 
-async def global_config_async_getter(redis_aio, pipe):  # type: ignore
-    """Async version of get_current_global_config."""
-    await async_cache_helper(
-        redis_aio=redis_aio,
-        cache_key='global_config',
-        cache_func=caching.cache_global_config,
-    )
-    pipe.get('global_config')
-
-
 def construct_game_state_from_db(current_round: int
                                  ) -> Optional[models.GameState]:
     """Get game state for specified round with teamtasks from db."""
@@ -152,41 +142,36 @@ def construct_latest_game_state(current_round: int) -> models.GameState:
     return state
 
 
-async def construct_scoreboard() -> dict:
+def construct_scoreboard() -> dict:
     """
-    Get formatted scoreboard to serve to frontend
+    Get formatted scoreboard to serve to frontend.
 
-    Fetches and constructs the full scoreboard (state, teams, tasks, config)
-    using asyncio (for sanic api)
+    Fetches and constructs the full scoreboard (state, teams, tasks, config).
     """
-    redis_aio = await utils.get_async_redis_storage()
-    pipe = redis_aio.pipeline()
-    pipe.get('game_state')
-    await storage.teams.teams_async_getter(redis_aio, pipe)
-    await storage.tasks.tasks_async_getter(redis_aio, pipe)
-    await global_config_async_getter(redis_aio, pipe)
-    state, teams, tasks, game_config = await pipe.execute()
+
+    teams = [
+        team.to_dict_for_participants()
+        for team in storage.teams.get_teams()
+    ]
+    tasks = [
+        task.to_dict_for_participants()
+        for task in storage.tasks.get_tasks()
+    ]
+    cfg = storage.game.get_current_global_config().to_dict()
+
+    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        state, = pipe.get('game_state').execute()
 
     try:
         state = models.GameState.from_json(state).to_dict()
     except TypeError:
         state = None
 
-    teams = [
-        models.Team.from_json(team).to_dict_for_participants()
-        for team in teams
-    ]
-    tasks = [
-        models.Task.from_json(task).to_dict_for_participants()
-        for task in tasks
-    ]
-    game_config = models.GlobalConfig.from_json(game_config).to_dict()
-
     data = {
         'state': state,
         'teams': teams,
         'tasks': tasks,
-        'config': game_config,
+        'config': cfg,
     }
 
     return data

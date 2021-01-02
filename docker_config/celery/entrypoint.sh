@@ -17,14 +17,16 @@ case ${SERVICE} in
   ;;
 "beat")
   echo "[*] Starting celery beat"
-  celery beat -A services.tasks \
+  celery -A app \
+    beat \
     -l info \
     --pidfile=/tmp/celerybeat.pid \
     --schedule=/tmp/celerybeat-schedule
   ;;
 "flower")
   echo "[*] Starting celery flower"
-  celery flower -A services.tasks \
+  celery -A app \
+    flower \
     --basic_auth="$FLOWER_BASIC_AUTH" \
     --url-prefix=flower \
     --host=0.0.0.0 \

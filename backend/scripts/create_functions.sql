@@ -152,3 +152,22 @@ BEGIN
                  ORDER BY submit_time;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION fix_teamtasks()
+    RETURNS VOID
+AS
+$$
+BEGIN
+    INSERT INTO teamtasks (task_id, team_id, status, score)
+    WITH product AS (
+        SELECT teams.id as team_id, tasks.id as task_id, tasks.default_score as default_score
+        FROM teams
+                 CROSS JOIN tasks
+    )
+    SELECT task_id, team_id, -1, default_score
+    FROM product
+    ON CONFLICT (task_id, team_id) DO NOTHING;
+
+END;
+$$ LANGUAGE plpgsql;

@@ -1,22 +1,22 @@
-from sanic.response import json as json_response
+from flask import request, jsonify
 
 from lib import models, storage
 from lib.helpers import events
 from .api_base import ApiSet
-from .base import make_err_response
+from .utils import make_err_response
 
 
 class TeamApi(ApiSet):
     model = 'team'
 
     @staticmethod
-    async def list(_request):
-        teams = await storage.teams.get_all_teams_async()
+    def list():
+        teams = storage.teams.get_all_teams()
         dumped = [team.to_dict() for team in teams]
-        return json_response(dumped)
+        return jsonify(dumped)
 
     @staticmethod
-    async def create(request):
+    def create():
         try:
             data = request.json
             data['token'] = models.Team.generate_token()
@@ -24,12 +24,12 @@ class TeamApi(ApiSet):
         except TypeError as e:
             return make_err_response(f'Invalid team data: {e}')
 
-        created = await storage.teams.create_team(team)
-        await events.init_scoreboard_async()
-        return json_response(created.to_dict(), status=201)
+        created = storage.teams.create_team(team)
+        events.init_scoreboard()
+        return jsonify(created.to_dict()), 201
 
     @staticmethod
-    async def update(request, team_id):
+    def update(team_id):
         try:
             data = request.json
             data['id'] = team_id
@@ -37,12 +37,12 @@ class TeamApi(ApiSet):
         except TypeError as e:
             return make_err_response(f'Invalid team data: {e}')
 
-        updated = await storage.teams.update_team(team)
-        await events.init_scoreboard_async()
-        return json_response(updated.to_dict())
+        updated = storage.teams.update_team(team)
+        events.init_scoreboard()
+        return jsonify(updated.to_dict())
 
     @staticmethod
-    async def destroy(_request, team_id):
-        await storage.teams.delete_team(team_id)
-        await events.init_scoreboard_async()
-        return json_response('ok')
+    def destroy(team_id):
+        storage.teams.delete_team(team_id)
+        events.init_scoreboard()
+        return jsonify('ok')

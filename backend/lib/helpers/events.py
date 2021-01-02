@@ -1,11 +1,11 @@
 from lib import storage
 
 
-async def init_scoreboard_async(sid=None):
-    sio = storage.utils.get_async_sio_manager()
-    scoreboard = await storage.game.construct_scoreboard()
+def init_scoreboard(sid=None):
+    sio = storage.utils.get_sio_manager()
+    scoreboard = storage.game.construct_scoreboard()
 
-    await sio.emit(
+    sio.emit(
         'init_scoreboard',
         {'data': scoreboard},
         namespace='/game_events',

@@ -8,11 +8,6 @@ on:
   pull_request:
     branches:
       - main
-  release:
-    types:
-      - published
-      - created
-      - edited
 
 jobs:
   tests:
@@ -56,8 +51,13 @@ jobs:
           export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
           ./control.py start
           python tests/wait_for_start.py
-          docker ps && env
+          ./control.py rd -c "ps"
+          env | sort
           python -m unittest discover -v -s tests
+
+      - name: Show logs
+        if: ${{ failure() }}
+        run: ./control.py rd -c "logs -f --tail 2000"
 
   linter:
     runs-on: ubuntu-20.04

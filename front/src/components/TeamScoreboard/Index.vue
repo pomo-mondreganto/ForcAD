@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import {serverUrl} from '@/config';
+import { serverUrl } from '@/config';
 
 export default {
     props: {

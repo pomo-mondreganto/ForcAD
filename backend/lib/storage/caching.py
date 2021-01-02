@@ -124,3 +124,13 @@ def cache_global_config(pipeline: Any) -> None:
     global_config = game.get_db_global_config()
     data = global_config.to_json()
     pipeline.set('global_config', data)
+
+
+def flush_teams_cache():
+    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        pipe.delete('teams').execute()
+
+
+def flush_tasks_cache():
+    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        pipe.delete('tasks').execute()

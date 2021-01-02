@@ -1,69 +1,51 @@
-from sanic import Blueprint
-from sanic.response import json as json_response, html, text
+from flask import Blueprint
+from flask import jsonify, make_response
 
-from lib import models, storage
+from lib import storage
 
-client_bp = Blueprint('client_api')
+client_bp = Blueprint('client_api', __name__)
 
 
 @client_bp.route('/teams/')
-async def get_teams(_request):
-    redis_aio = await storage.utils.get_async_redis_storage()
-    pipe = redis_aio.pipeline()
-
-    await storage.teams.teams_async_getter(redis_aio, pipe)
-    teams, = await pipe.execute()
+def get_teams():
     teams = [
-        models.Team.from_json(team).to_dict_for_participants()
-        for team in teams
+        team.to_dict_for_participants()
+        for team in storage.teams.get_teams()
     ]
-
-    return json_response(teams)
+    return jsonify(teams)
 
 
 @client_bp.route('/tasks/')
-async def get_tasks(_request):
-    redis_aio = await storage.utils.get_async_redis_storage()
-    pipe = redis_aio.pipeline()
-
-    await storage.tasks.tasks_async_getter(redis_aio, pipe)
-    tasks, = await pipe.execute()
+def get_tasks():
     tasks = [
-        models.Task.from_json(task).to_dict_for_participants()
-        for task in tasks
+        task.to_dict_for_participants()
+        for task in storage.tasks.get_tasks()
     ]
 
-    return json_response(tasks)
+    return jsonify(tasks)
 
 
 @client_bp.route('/config/')
-async def get_game_config(_request):
-    redis_aio = await storage.utils.get_async_redis_storage()
-    pipe = redis_aio.pipeline()
-
-    await storage.game.global_config_async_getter(redis_aio, pipe)
-    conf, = await pipe.execute()
-    conf = models.GlobalConfig.from_json(conf).to_dict()
-
-    return json_response(conf)
+def get_game_config():
+    cfg = storage.game.get_current_global_config().to_dict()
+    return jsonify(cfg)
 
 
 @client_bp.route('/attack_data/')
-async def serve_attack_data(_request):
-    attack_data = await storage.attacks.get_attack_data()
-    return text(attack_data, content_type='application/json')
+def serve_attack_data():
+    attack_data = storage.attacks.get_attack_data()
+    response = make_response(attack_data)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
-# noinspection PyUnresolvedReferences
-@client_bp.route('/teams/<team_id:int>/')
-async def get_team_history(_request, team_id):
-    teamtasks = await storage.tasks.get_teamtasks_of_team_async(
-        team_id=team_id,
-    )
+@client_bp.route('/teams/<int:team_id>/')
+def get_team_history(team_id):
+    teamtasks = storage.tasks.get_teamtasks_for_team(team_id)
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
-    return json_response(teamtasks)
+    return jsonify(teamtasks)
 
 
 @client_bp.route('/status/')
-async def status(_request):
-    return html("OK")
+def status():
+    return jsonify(dict(status='ok'))

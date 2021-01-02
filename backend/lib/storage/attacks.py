@@ -3,11 +3,11 @@ from lib.helpers import exceptions
 from lib.storage import utils
 
 
-async def get_attack_data() -> str:
-    """Get public flag ids for task that provide them."""
-    redis_pool = await utils.get_async_redis_storage()
-    attack_data = await redis_pool.get('attack_data')
-    return attack_data
+def get_attack_data() -> str:
+    """Get public flag ids for tasks that provide them, as json string."""
+    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+        attack_data, = pipe.get('attack_data').execute()
+    return attack_data or 'null'
 
 
 def handle_attack(attacker_id: int,
