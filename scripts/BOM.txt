@@ -1,4 +1,5 @@
 .dockerignore
+.version
 backend/config/__init__.py
 backend/config/config.yml.example
 backend/lib
