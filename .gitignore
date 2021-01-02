@@ -1,20 +1,23 @@
 .DS_Store
 .idea
-docker_volumes/*
-
 __pycache__
 
+docker_volumes/*
 !docker_volumes/**/.gitkeep
 !docker_config/**/.gitkeep
 
 backend/config/*config.yml
 backend/config/config_backup*
+
 checkers/*
 !checkers/.gitkeep
 !checkers/bin/.gitkeep
 
 *.env
-docker-compose-base.yml
+/docker-compose-base.yml
 
 node_modules/
 .mypy_cache
+
+/.version
+/release

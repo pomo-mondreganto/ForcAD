@@ -18,6 +18,9 @@ CONFIG_DIR = BASE_DIR / 'backend' / 'config'
 DOCKER_COMPOSE_FILE = 'docker-compose.yml'
 BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 
+FULL_COMPOSE_PATH = BASE_DIR / 'docker-compose.yml'
+VERSION = 'latest'
+
 CONFIG_FILENAME = 'config.yml'
 
 if os.environ.get('TEST'):
@@ -32,6 +35,21 @@ def run_command(command: List[str], cwd=None, env=None):
     if rc != 0:
         print('[-] Failed!')
         sys.exit(1)
+
+
+def run_docker(args: List[str]):
+    base = [
+        'docker-compose',
+        '-f', BASE_COMPOSE_FILE,
+        '-f', DOCKER_COMPOSE_FILE,
+    ]
+    env = os.environ.copy()
+    env['FORCAD_VERSION'] = VERSION
+    run_command(
+        base + args,
+        cwd=BASE_DIR,
+        env=env
+    )
 
 
 def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
@@ -155,8 +173,7 @@ def setup_admin_api(config):
 
 
 def prepare_docker_compose(args):
-    conf_path = BASE_DIR / 'docker-compose.yml'
-    base_conf = yaml.safe_load(conf_path.open(mode='r'))
+    base_conf = yaml.safe_load(FULL_COMPOSE_PATH.open(mode='r'))
 
     if not os.environ.get('TEST'):
         if 'redis' in args and args.redis:
@@ -213,8 +230,7 @@ def override_config(args):
 def print_tokens(_args):
     command = [
         'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
+        '-f', FULL_COMPOSE_PATH,
         'exec', '-T', 'client_api',
         'python3', '/app/scripts/print_tokens.py',
     ]
@@ -236,8 +252,7 @@ def reset_game(_args):
 
     command = [
         'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
+        '-f', FULL_COMPOSE_PATH,
         'run', 'initializer',
         'python3', '/app/scripts/reset_db.py',
     ]
@@ -249,10 +264,9 @@ def reset_game(_args):
         check=False,
     )
 
-    full_compose = BASE_DIR / 'docker-compose.yml'
     command = [
         'docker-compose',
-        '-f', full_compose,
+        '-f', FULL_COMPOSE_PATH,
         'down', '-v',
         '--remove-orphans',
     ]
@@ -263,41 +277,19 @@ def reset_game(_args):
 
 
 def build(_args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        'build',
-    ]
-    run_command(
-        command,
-        cwd=BASE_DIR,
-    )
+    run_docker(['build'])
 
 
 def start_game(args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        'up', '--build', '-d',
-        '--scale', f'celery={args.instances}',
-    ]
-    run_command(command, cwd=BASE_DIR)
+    run_docker(['up', '--build', '-d', '--scale', f'celery={args.instances}'])
 
 
 def scale_celery(args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        'up', '-d',
-        '--no-recreate',
-        '--no-build',
+    run_docker([
+        'up', '-d', '--no-recreate', '--no-build',
         '--scale', f'celery={args.instances}',
         'celery',
-    ]
-    run_command(command, cwd=BASE_DIR)
+    ])
 
 
 def run_worker(args):
@@ -305,49 +297,23 @@ def run_worker(args):
     override_config(args)
     setup_config(args)
 
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
+    run_docker([
         'up', '--build', '-d',
         '--scale', f'celery={args.instances}',
         'celery',
-    ]
-    run_command(command, cwd=BASE_DIR)
+    ])
 
 
 def pause_game(_args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        'stop',
-        'celerybeat',
-        'tcp_receiver',
-    ]
-    run_command(command, cwd=BASE_DIR)
+    run_docker(['stop', 'celerybeat', 'tcp_receiver'])
 
 
 def resume_game(_args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        'start',
-        'celerybeat',
-        'tcp_receiver',
-    ]
-    run_command(command, cwd=BASE_DIR)
+    run_docker(['start', 'celerybeat', 'tcp_receiver'])
 
 
 def run_docker_command(args):
-    command = [
-        'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
-        '-f', DOCKER_COMPOSE_FILE,
-        *shlex.split(args.command),
-    ]
-    run_command(command, cwd=BASE_DIR)
+    run_docker(shlex.split(args.command))
 
 
 def run_flake(_args):
@@ -484,6 +450,12 @@ if __name__ == '__main__':
         DOCKER_COMPOSE_FILE = 'docker-compose-fast.yml'
     elif os.environ.get('TEST'):
         DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
+
+    version_path = BASE_DIR / '.version'
+    try:
+        VERSION = version_path.read_text().strip()
+    except FileNotFoundError:
+        pass
 
     try:
         parsed.func(parsed)

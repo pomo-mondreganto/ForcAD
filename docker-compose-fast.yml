@@ -1,45 +1,47 @@
 version: '2.4'
 
-volumes:
-  front_build:
+x-celery-fast: &celery-fast
+  build:
+    context: .
+    dockerfile: ./docker_config/celery/Dockerfile.fast
+    args:
+      version: ${FORCAD_VERSION:-latest}
+
+x-service-fast: &service-fast
+  build:
+    context: .
+    dockerfile: ./docker_config/services/Dockerfile.fast
+    args:
+      version: ${FORCAD_VERSION:-latest}
 
 services:
   celery:
-    build:
-      context: .
-      dockerfile: &fast-celery-dockerfile ./docker_config/celery/Dockerfile.fast
+    <<: *celery-fast
 
   celerybeat:
-    build:
-      context: .
-      dockerfile: *fast-celery-dockerfile
+    <<: *celery-fast
 
   flower:
-    build:
-      context: .
-      dockerfile: *fast-celery-dockerfile
+    <<: *celery-fast
 
   initializer:
     build:
       context: .
       dockerfile: ./docker_config/initializer/Dockerfile.fast
+      args:
+        version: ${FORCAD_VERSION:-latest}
+
+  client_api:
+    <<: *service-fast
 
   admin_api:
-    build:
-      context: .
-      dockerfile: &fast-services-dockerfile ./docker_config/services/Dockerfile.fast
+    <<: *service-fast
 
   events:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
+    <<: *service-fast
 
   monitoring:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
+    <<: *service-fast
 
   tcp_receiver:
-    build:
-      context: .
-      dockerfile: *fast-services-dockerfile
+    <<: *service-fast
