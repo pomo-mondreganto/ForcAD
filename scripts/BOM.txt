@@ -1,6 +1,5 @@
 .dockerignore
 backend/config/__init__.py
-backend/config/config.yml
 backend/config/config.yml.example
 backend/lib
 backend/scripts
