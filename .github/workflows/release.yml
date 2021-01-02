@@ -12,14 +12,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
       - name: Setup release
         run: |
-          echo ${ GITHUB_REF#refs/*/ } > .version
+          echo ${{ steps.get_version.outputs.VERSION }} > .version
           ./scripts/prepare_release.sh
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
         with:
-          files: ForcAD_${ GITHUB_REF#refs/*/ }.zip
+          files: ForcAD_${{ steps.get_version.outputs.VERSION }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
