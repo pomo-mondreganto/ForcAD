@@ -38,3 +38,11 @@ class AttackResult(BaseModel):
 
     def get_label_values(self) -> Dict[str, Any]:
         return {k: getattr(self, k) for k in self.labels}
+
+    def get_flag_notification(self) -> Dict[str, Any]:
+        return {
+            'attacker_id': self.attacker_id,
+            'victim_id': self.victim_id,
+            'task_id': self.task_id,
+            'attacker_delta': self.attacker_delta,
+        }

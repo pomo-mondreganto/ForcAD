@@ -1,8 +1,8 @@
 from collections import defaultdict
 from logging import Logger
 
-import gevent
-from gevent.queue import Queue, Empty
+import eventlet
+from eventlet.queue import Queue, Empty
 from kombu.messaging import Producer
 
 from lib import models, storage
@@ -26,6 +26,10 @@ class SubmitMonitor:
 
     def add(self, ar: models.AttackResult) -> None:
         self._q.put_nowait(ar)
+        if ar.submit_ok:
+            self.inc_ok()
+        else:
+            self.inc_bad()
 
     def inc_ok(self) -> None:
         self._ok_submits += 1
@@ -92,5 +96,5 @@ class SubmitMonitor:
                 self._process_statistics()
                 self._process_attacks_queue()
             except Exception as e:
-                self._logger.error(f"Error in monitoring: {e}")
-            gevent.sleep(3)
+                self._logger.error("Error in monitoring: %s", str(e))
+            eventlet.sleep(3)

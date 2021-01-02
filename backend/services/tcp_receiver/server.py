@@ -1,116 +1,146 @@
-import gevent.monkey
+import eventlet
 
-gevent.monkey.patch_all()
+eventlet.monkey_patch()
 
 import logging
-import gevent.pool
-import gevent.server
+from typing import TextIO
 
 from lib import storage
-from lib.monitoring.flag_receiver import SubmitMonitor
+from lib.flags import SubmitMonitor, Notifier
 
 
 class SubmitHandler:
-    def __init__(self, logger, monitor: SubmitMonitor):
+    def __init__(self,
+                 logger: logging.Logger,
+                 monitor: SubmitMonitor,
+                 notifier: Notifier):
         self._logger = logger
         self._monitor = monitor
+        self._notifier = notifier
 
-    def _run_loop(self, address, socket, rfile):
-        token = rfile.readline()
+    def _run_loop(self, logger, conn: TextIO):
         try:
-            token = token.decode().strip()
+            token = conn.readline().strip()
         except UnicodeDecodeError:
-            self._logger.debug(f'Could not decode token from {address}')
-            socket.sendall(b'Invalid team token\n')
+            logger.debug('bad token [not decoded]')
+            conn.write('Invalid team token\n')
+            conn.flush()
             return
 
         team_id = storage.teams.get_team_id_by_token(token)
 
         if not team_id:
-            self._logger.debug(f'Bad token from {address}')
-            socket.sendall(b'Invalid team token\n')
+            logger.debug('bad token [team not found]')
+            conn.write('Invalid team token\n')
+            conn.flush()
             return
 
-        socket.sendall(b'Now enter your flags, one in a line:\n')
+        logger.debug('team %s authorized', team_id)
+
+        conn.write('Now enter your flags, one in a line:\n')
+        conn.flush()
 
         while True:
-            flag_data = rfile.readline()
-            if not flag_data:
-                self._logger.debug(f'Client {address} disconnected')
-                break
-
             try:
-                flag_str = flag_data.decode().strip()
+                flag_str = conn.readline().strip()
             except UnicodeDecodeError:
-                self._logger.debug(f'Could not decode flag from {address}')
-                socket.sendall(b'Invalid flag\n')
+                logger.debug('sent junk')
+                conn.write('Invalid flag\n')
+                conn.flush()
+                eventlet.sleep(0)
                 continue
+
+            if not flag_str:
+                logger.debug('disconnected')
+                break
 
             current_round = storage.game.get_real_round()
 
             if current_round == -1:
-                socket.sendall(b'Game is unavailable\n')
+                conn.write('Game is unavailable\n')
+                conn.flush()
+                eventlet.sleep(0)
+                continue
 
-            ar = storage.attacks.handle_attack(attacker_id=team_id,
-                                               flag_str=flag_str,
-                                               current_round=current_round)
-            self._monitor.add(ar)
+            ar = storage.attacks.handle_attack(
+                attacker_id=team_id,
+                flag_str=flag_str,
+                current_round=current_round,
+            )
+            logger.debug(
+                'processed flag, %s: %s',
+                'ok' if ar.submit_ok else 'bad', ar.message,
+            )
+
             if ar.submit_ok:
-                self._monitor.inc_ok()
-                self._logger.debug(
-                    f'Good flag from {address}: '
-                    f'{ar.attacker_delta}',
-                )
-            else:
-                self._monitor.inc_bad()
-                self._logger.debug(
-                    f'Invalid flag from {address}: {ar.message}',
-                )
+                self._notifier.add(ar)
+            self._monitor.add(ar)
 
-            socket.sendall(ar.message.encode() + b'\n')
-            gevent.sleep(0)  # handle some other flag
+            conn.write(ar.message + '\n')
+            conn.flush()
+            eventlet.sleep(0)  # handle some other flag
 
     def __call__(self, socket, address):
-        self._logger.debug(f'Accepted connection from {address}')
+        logger = logging.LoggerAdapter(self._logger, {'address': address})
+        logger.debug('accepted')
         self._monitor.inc_conns()
 
         try:
             socket.sendall(b'Welcome! Please, enter your team token:\n')
         except ConnectionResetError:
-            self._logger.warning(f'{address} might be spamming')
+            logger.warning('might be DOS')
             socket.close()
             return
 
-        rfile = socket.makefile(mode='rb')
-
+        conn = socket.makefile(mode='rw')
         try:
-            self._run_loop(address, socket, rfile)
+            self._run_loop(logger, conn)
         except ConnectionResetError:
-            self._logger.warning(f'Connection reset with {address}')
+            logger.warning('connection reset')
         finally:
-            rfile.close()
+            conn.close()
+            socket.close()
 
 
 if __name__ == '__main__':
-    receiver_logger = logging.getLogger('gevent_flag_receiver')
+    receiver_logger = logging.getLogger('tcp_receiver')
+    monitor_logger = logging.getLogger('tcp_receiver_monitor')
 
-    log_formatter = logging.Formatter(
+    simple_formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(message)s",
     )
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_formatter)
-
-    receiver_logger.addHandler(console_handler)
-    receiver_logger.setLevel(logging.INFO)
-
-    submit_monitor = SubmitMonitor(receiver_logger)
-    handler = SubmitHandler(logger=receiver_logger, monitor=submit_monitor)
-
-    pool = gevent.pool.Pool(2000)
-    pool.spawn(submit_monitor)
-    server = gevent.server.StreamServer(
-        ('0.0.0.0', 31337),
-        handler,
-        spawn=pool,
+    addr_formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] [%(address)s] %(message)s",
     )
-    server.serve_forever()
+
+    addr_handler = logging.StreamHandler()
+    addr_handler.setFormatter(addr_formatter)
+
+    monitor_handler = logging.StreamHandler()
+    monitor_handler.setFormatter(simple_formatter)
+
+    receiver_logger.addHandler(addr_handler)
+    receiver_logger.setLevel(logging.DEBUG)
+
+    monitor_logger.addHandler(monitor_handler)
+    monitor_logger.setLevel(logging.INFO)
+
+    submit_monitor = SubmitMonitor(monitor_logger)
+    attack_notifier = Notifier(monitor_logger)
+    handler = SubmitHandler(
+        logger=receiver_logger,
+        monitor=submit_monitor,
+        notifier=attack_notifier,
+    )
+
+    server = eventlet.listen(('0.0.0.0', 31337))
+    pool = eventlet.GreenPool(size=2000)
+
+    pool.spawn_n(submit_monitor)
+
+    while True:
+        try:
+            sock, addr = server.accept()
+            pool.spawn_n(handler, sock, addr)
+        except (SystemExit, KeyboardInterrupt):
+            break

@@ -54,20 +54,6 @@ def handle_attack(attacker_id: int,
         result.victim_delta = victim_delta
         result.message = f'Flag accepted! Earned {attacker_delta} flag points!'
 
-        flag_data = {
-            'attacker_id': attacker_id,
-            'victim_id': flag.team_id,
-            'task_id': flag.task_id,
-            'attacker_delta': attacker_delta,
-            'victim_delta': victim_delta,
-        }
-
-        utils.get_wro_sio_manager().emit(
-            event='flag_stolen',
-            data={'data': flag_data},
-            namespace='/live_events',
-        )
-
     except exceptions.FlagSubmitException as e:
         result.message = str(e)
 

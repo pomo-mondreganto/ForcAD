@@ -56,10 +56,6 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int,
         if not is_new:
             raise exceptions.FlagSubmitException('Flag already stolen')
 
-        pipeline.incr(f'team:{attacker}:task:{flag.task_id}:stolen')
-        pipeline.incr(f'team:{flag.team_id}:task:{flag.task_id}:lost')
-        pipeline.execute()
-
 
 def add_flag(flag: models.Flag) -> models.Flag:
     """

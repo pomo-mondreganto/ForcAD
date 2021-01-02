@@ -81,6 +81,12 @@ services:
       - TEST
       - SERVICE=monitoring
 
+  http_receiver:
+    <<: *default-ms
+    environment:
+      - TEST
+      - SERVICE=http_receiver
+
   tcp_receiver:
     <<: *default-ms
     ports:
@@ -105,6 +111,7 @@ services:
       - admin_api
       - events
       - monitoring
+      - http_receiver
 
   redis:
     image: redis:5.0.8-alpine
