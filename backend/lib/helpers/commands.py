@@ -141,11 +141,16 @@ def run_generic_command(command: List,
         except ValueError as e:
             status = TaskStatus.CHECK_FAILED
             public_message = 'Check failed'
-            private_message = f'Check failed with ValueError: {str(e)}'
+            private_message = (
+                f'Check failed with ValueError: {str(e)}\n'
+                f'Return code: {result.returncode}\n'
+                f'Stdout: {result.stdout}\n'
+                f'Stderr: {result.stderr}'
+            )
             logger.warning(
                 f'{action} for team {team_name} failed with '
-                f'exit code {result.returncode},'
-                f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
+                f'exit code {result.returncode},\n'
+                f'stderr: {result.stderr},\nstdout: {result.stdout}'
             )
 
     except subprocess.TimeoutExpired:
