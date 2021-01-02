@@ -46,6 +46,9 @@ services:
   monitoring:
     <<: *service-test
 
+  http_receiver:
+    <<: *service-test
+
   tcp_receiver:
     <<: *service-test
 

@@ -40,7 +40,11 @@ start_tcp_receiver() {
 start_web() {
   echo "[*] Starting web service $1"
   cd "services/$1"
-  gunicorn "app:app" --bind 0.0.0.0:5000 --worker-class eventlet
+  gunicorn "app:app" \
+    --bind 0.0.0.0:5000 \
+    --log-level INFO \
+    --worker-class eventlet \
+    --worker-connections 1024
 }
 
 start_api() {
@@ -57,4 +61,8 @@ start_events() {
 
 start_monitoring() {
   start_web monitoring
+}
+
+start_http_receiver() {
+  start_web http_receiver
 }

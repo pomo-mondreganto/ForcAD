@@ -43,5 +43,8 @@ services:
   monitoring:
     <<: *service-fast
 
+  http_receiver:
+    <<: *service-fast
+
   tcp_receiver:
     <<: *service-fast

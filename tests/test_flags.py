@@ -1,12 +1,12 @@
-from collections import defaultdict
-from unittest import TestCase
-
-import requests
 import socket
 import subprocess
 import sys
 import time
+from collections import defaultdict
 from pathlib import Path
+from unittest import TestCase
+
+import requests
 from psycopg2 import pool, extras
 
 PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
@@ -79,6 +79,32 @@ class FlagSubmitTestCase(TestCase):
         sock.close()
         return results
 
+    def submit_flags_to_http(self, token, flags=None, token_valid=True):
+        response = requests.put(
+            'http://127.0.0.1:8080/flags/',
+            json=flags,
+            headers={'X-Team-Token': token},
+        )
+
+        if not token_valid:
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('error', response.json())
+            self.assertIn('Invalid', response.json()['error'])
+            return
+
+        self.assertTrue(response.ok)
+
+        data = response.json()
+        self.assertTrue(isinstance(data, list))
+        self.assertEqual(len(data), len(flags))
+
+        results = []
+        for each in data:
+            self.assertIn('msg', each)
+            results.append(each['msg'])
+
+        return results
+
     def get_teams(self):
         r = requests.get('http://127.0.0.1:8080/api/client/teams/')
         self.assertTrue(r.ok)
@@ -93,19 +119,16 @@ class FlagSubmitTestCase(TestCase):
         data = r.json()
         return data
 
-    def test_flag_submission(self):
-        ok_flags = self.get_last_flags_from_db(self.working_token)
-        ok_flags = [flag['flag'] for flag in ok_flags]
-
-        self.submit_flags_to_tcp(
+    def run_submission_tests(self, submit_func, flags):
+        submit_func(
             token='invalid token',
             flags=[],
             token_valid=False,
         )
 
-        results = self.submit_flags_to_tcp(
+        results = submit_func(
             token=self.unreachable_token,
-            flags=ok_flags,
+            flags=flags,
             token_valid=True,
         )
 
@@ -113,9 +136,9 @@ class FlagSubmitTestCase(TestCase):
             res = res.lower()
             self.assertIn('accepted', res)
 
-        results = self.submit_flags_to_tcp(
+        results = submit_func(
             token=self.unreachable_token,
-            flags=ok_flags,
+            flags=flags,
             token_valid=True,
         )
 
@@ -124,9 +147,9 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('already stolen', res)
 
-        results = self.submit_flags_to_tcp(
+        results = submit_func(
             token=self.working_token,
-            flags=ok_flags,
+            flags=flags,
             token_valid=True,
         )
 
@@ -135,7 +158,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('own', res)
 
-        results = self.submit_flags_to_tcp(
+        results = submit_func(
             token=self.working_token,
             flags=['INVALID_FLAG', 'A' * 31 + '='],
             token_valid=True,
@@ -145,6 +168,18 @@ class FlagSubmitTestCase(TestCase):
             res = res.lower()
             self.assertNotIn('accepted', res)
             self.assertIn('invalid', res)
+
+    def test_flag_submission(self):
+        ok_flags = self.get_last_flags_from_db(self.working_token)
+        ok_flags = [flag['flag'] for flag in ok_flags]
+
+        self.assertTrue(len(ok_flags) > 1)
+
+        first_batch = ok_flags[:len(ok_flags) // 2]
+        second_batch = ok_flags[len(ok_flags) // 2:]
+
+        self.run_submission_tests(self.submit_flags_to_tcp, first_batch)
+        self.run_submission_tests(self.submit_flags_to_http, second_batch)
 
         wait_rounds(1.5)
 
