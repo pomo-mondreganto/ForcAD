@@ -90,7 +90,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertIn('error', response.json())
             self.assertIn('Invalid', response.json()['error'])
-            return
+            return []
 
         self.assertTrue(response.ok)
 
