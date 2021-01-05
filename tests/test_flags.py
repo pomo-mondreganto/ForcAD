@@ -1,3 +1,4 @@
+import re
 import socket
 import subprocess
 import sys
@@ -99,9 +100,20 @@ class FlagSubmitTestCase(TestCase):
         self.assertEqual(len(data), len(flags))
 
         results = []
-        for each in data:
-            self.assertIn('msg', each)
-            results.append(each['msg'])
+        for need, item in zip(flags, data):
+            self.assertIn('msg', item)
+            self.assertIn('flag', item)
+            self.assertEqual(item['flag'], need)
+
+            message = item['msg']
+
+            self.assertIn(f'[{need}] ', message)
+
+            match = re.fullmatch(
+                f'\\[{need}] \\w+.*',
+                message,
+            )
+            self.assertTrue(match is not None, msg=f'{message} is incorrect')
 
         return results
 
@@ -159,7 +171,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertIn('own', res)
 
         results = submit_func(
-            token=self.working_token,
+            token=self.unreachable_token,
             flags=['INVALID_FLAG', 'A' * 31 + '='],
             token_valid=True,
         )

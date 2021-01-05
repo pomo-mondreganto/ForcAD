@@ -3,20 +3,23 @@ from logging import Logger
 
 import eventlet
 from eventlet.queue import Queue, Empty
+from kombu import Connection
 from kombu.messaging import Producer
 
-from lib import models, storage
+import config
+from lib import models
 
 
 class SubmitMonitor:
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, interval: float = 10):
         self._logger = logger
         self._q = Queue()
-        self._running = False
 
         self._ok_submits = 0
         self._bad_submits = 0
         self._connections = 0
+
+        self._interval = interval
 
         self._was_ok = self._ok_submits
         self._was_bad = self._bad_submits
@@ -55,7 +58,7 @@ class SubmitMonitor:
         self._was_conn = new_conn
 
     def _process_attacks_queue(self) -> None:
-        conn = storage.utils.get_broker_connection()
+        conn = Connection(config.get_broker_url())
         with conn.channel() as channel:
             producer = Producer(channel)
             by_label = defaultdict(list)
@@ -84,17 +87,10 @@ class SubmitMonitor:
                 )
 
     def __call__(self) -> None:
-        if self._running:
-            self._logger.error(
-                'Only one instance of submit monitor can be running',
-            )
-            return
-
-        self._running = True
         while True:
             try:
                 self._process_statistics()
                 self._process_attacks_queue()
             except Exception as e:
                 self._logger.error("Error in monitoring: %s", str(e))
-            eventlet.sleep(3)
+            eventlet.sleep(self._interval)
