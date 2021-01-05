@@ -6,17 +6,17 @@ import logging
 from typing import TextIO
 
 from lib import storage
-from lib.flags import SubmitMonitor, Notifier
+from lib.flags import SubmitMonitor, Judge
 
 
 class SubmitHandler:
     def __init__(self,
                  logger: logging.Logger,
-                 monitor: SubmitMonitor,
-                 notifier: Notifier):
+                 judge: Judge,
+                 monitor: SubmitMonitor):
         self._logger = logger
+        self._judge = judge
         self._monitor = monitor
-        self._notifier = notifier
 
     def _run_loop(self, logger, conn: TextIO):
         try:
@@ -54,27 +54,11 @@ class SubmitHandler:
                 logger.debug('disconnected')
                 break
 
-            current_round = storage.game.get_real_round()
-
-            if current_round == -1:
-                conn.write('Game is unavailable\n')
-                conn.flush()
-                eventlet.sleep(0)
-                continue
-
-            ar = storage.attacks.handle_attack(
-                attacker_id=team_id,
-                flag_str=flag_str,
-                current_round=current_round,
-            )
+            ar = self._judge.process(team_id, flag_str)
             logger.debug(
                 'processed flag, %s: %s',
                 'ok' if ar.submit_ok else 'bad', ar.message,
             )
-
-            if ar.submit_ok:
-                self._notifier.add(ar)
-            self._monitor.add(ar)
 
             conn.write(ar.message + '\n')
             conn.flush()
@@ -104,7 +88,7 @@ class SubmitHandler:
 
 if __name__ == '__main__':
     receiver_logger = logging.getLogger('tcp_receiver')
-    monitor_logger = logging.getLogger('tcp_receiver_monitor')
+    judge_logger = logging.getLogger('tcp_receiver_monitor')
 
     simple_formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(message)s",
@@ -122,21 +106,20 @@ if __name__ == '__main__':
     receiver_logger.addHandler(addr_handler)
     receiver_logger.setLevel(logging.DEBUG)
 
-    monitor_logger.addHandler(monitor_handler)
-    monitor_logger.setLevel(logging.INFO)
+    judge_logger.addHandler(monitor_handler)
+    judge_logger.setLevel(logging.INFO)
 
-    submit_monitor = SubmitMonitor(monitor_logger)
-    attack_notifier = Notifier(monitor_logger)
+    submit_monitor = SubmitMonitor(judge_logger)
+    attack_judge = Judge(monitor=submit_monitor, logger=judge_logger)
+
     handler = SubmitHandler(
         logger=receiver_logger,
         monitor=submit_monitor,
-        notifier=attack_notifier,
+        judge=attack_judge,
     )
 
     server = eventlet.listen(('0.0.0.0', 31337))
     pool = eventlet.GreenPool(size=2000)
-
-    pool.spawn_n(submit_monitor)
 
     while True:
         try:
