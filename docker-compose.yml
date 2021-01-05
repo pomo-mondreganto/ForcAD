@@ -89,8 +89,6 @@ services:
 
   tcp_receiver:
     <<: *default-ms
-    ports:
-      - 31337:31337
     environment:
       - TEST
       - SERVICE=tcp_receiver
@@ -98,10 +96,13 @@ services:
   nginx:
     image: nginx:1.17.9-alpine
     ports:
-      - 8080:80
-      - 80:80
+      - "8080:80"
+      - "80:80"
+      - "31337:31337"
     volumes:
-      - ./docker_config/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker_config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker_config/nginx/http.conf:/etc/nginx/http.conf
+      - ./docker_config/nginx/tcp.conf:/etc/nginx/tcp.conf
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
       - ./front/dist:/var/www/front:delegated
     restart: on-failure
