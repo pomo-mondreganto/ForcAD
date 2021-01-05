@@ -55,28 +55,26 @@ def get_redis_storage() -> redis.StrictRedis:
     return _redis_storage
 
 
+def create_sio_manager(write_only=False) -> socketio.KombuManager:
+    broker_url = config.get_broker_url()
+    return socketio.KombuManager(
+        url=broker_url,
+        write_only=write_only,
+        channel='forcad-front',
+    )
+
+
 def get_wro_sio_manager() -> socketio.KombuManager:
     global _sio_wro_manager
-
     if _sio_wro_manager is None:
-        broker_url = config.get_broker_url()
-        _sio_wro_manager = socketio.KombuManager(
-            url=broker_url,
-            write_only=True,
-            channel='forcad-front',
-        )
-
+        _sio_wro_manager = create_sio_manager(write_only=True)
     return _sio_wro_manager
 
 
 def get_sio_manager() -> socketio.KombuManager:
     global _sio_manager
     if _sio_manager is None:
-        broker_url = config.get_broker_url()
-        _sio_manager = socketio.KombuManager(
-            url=broker_url,
-            channel='forcad-front',
-        )
+        _sio_manager = create_sio_manager(write_only=False)
     return _sio_manager
 
 

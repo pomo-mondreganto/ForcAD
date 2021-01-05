@@ -1,6 +1,7 @@
 from logging import Logger
 
-from eventlet.greenpool import GreenPool
+import eventlet
+from eventlet.queue import LightQueue, Empty, Full
 
 from lib import storage
 from lib.models import AttackResult
@@ -9,16 +10,30 @@ from lib.models import AttackResult
 class Notifier:
     def __init__(self, logger: Logger):
         self._logger = logger
-        self._pool = GreenPool(size=100)
+        self._q = LightQueue(maxsize=1000)
+        self._sio = storage.utils.create_sio_manager(write_only=True)
 
     def _process(self, ar: AttackResult):
         flag_data = ar.get_flag_notification()
         self._logger.debug('Sending notification with %s', flag_data)
-        storage.utils.get_wro_sio_manager().emit(
+        self._sio.emit(
             event='flag_stolen',
             data={'data': flag_data},
             namespace='/live_events',
         )
 
-    def add(self, ar: AttackResult) -> None:
-        self._pool.spawn_n(self._process, ar)
+    def add(self, ar: AttackResult) -> bool:
+        try:
+            self._q.put_nowait(ar)
+            return True
+        except Full:
+            return False
+
+    def __call__(self) -> None:
+        while True:
+            try:
+                ar = self._q.get(block=True, timeout=3)
+            except Empty:
+                eventlet.sleep(0.5)
+            else:
+                self._process(ar)

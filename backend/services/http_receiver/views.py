@@ -1,18 +1,15 @@
-import eventlet
 import logging
 from flask import Blueprint
 from flask import jsonify, make_response, request
 
 from lib import storage
-from lib.flags import SubmitMonitor, Notifier
+from lib.flags import SubmitMonitor, Judge
 
 logger = logging.getLogger('forcad_http_receiver.views')
 
 receiver_bp = Blueprint('http_receiver', __name__)
-submit_monitor = SubmitMonitor(logger=logger)
-notifier = Notifier(logger=logger)
-
-eventlet.spawn_n(submit_monitor)
+monitor = SubmitMonitor(logger=logger)
+judge = Judge(monitor=monitor, logger=logger)
 
 
 def make_error(message: str, status: int = 400):
@@ -21,7 +18,7 @@ def make_error(message: str, status: int = 400):
 
 @receiver_bp.route('/', methods=['PUT'], strict_slashes=False)
 def get_teams():
-    submit_monitor.inc_conns()
+    monitor.inc_conns()
 
     token = request.headers.get('X-Team-Token', '')
     team_id = storage.teams.get_team_id_by_token(token)
@@ -43,27 +40,25 @@ def get_teams():
             'Invalid request format. '
             'Must provide a list with no more than 100 flags.'
         )
-    results = []
-    for flag in data:
-        ar = storage.attacks.handle_attack(
-            attacker_id=team_id,
-            flag_str=flag,
-            current_round=current_round,
-        )
+
+    attack_results = judge.process_many(team_id, flags=data)
+
+    responses = []
+    for ar, flag in zip(attack_results, data):
         logger.debug(
-            '[%s] processed flag, %s: %s',
+            '[%s] processed flag %s, %s: %s',
             request.remote_addr,
+            flag,
             'ok' if ar.submit_ok else 'bad',
             ar.message,
         )
 
-        if ar.submit_ok:
-            notifier.add(ar)
-        submit_monitor.add(ar)
+        responses.append({
+            'msg': f'[{flag}] {ar.message}',
+            'flag': flag,
+        })
 
-        results.append({'msg': ar.message})
-
-    return jsonify(results)
+    return jsonify(responses)
 
 
 @receiver_bp.route('/status/')

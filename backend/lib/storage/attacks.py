@@ -29,6 +29,9 @@ def handle_attack(attacker_id: int,
     result = models.AttackResult(attacker_id=attacker_id)
 
     try:
+        if current_round == -1:
+            raise exceptions.FlagSubmitException('Game is not available')
+
         flag = storage.flags.get_flag_by_str(flag_str=flag_str,
                                              current_round=current_round)
         result.victim_id = flag.team_id
