@@ -16,9 +16,8 @@ def startup(**_kwargs: Any) -> None:
 
     logger.info(f'Received game config: {game_config}')
 
-    with storage.utils.get_redis_storage().pipeline(
-            transaction=True) as pipeline:
-        with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
+        with locking.acquire_redis_lock(pipe, locking.LockEnum.GAME_START):
             already_started = storage.game.get_game_running()
 
             if not already_started:
@@ -27,14 +26,13 @@ def startup(**_kwargs: Any) -> None:
                     eta=game_config.start_time,
                 )
 
-                game_state = storage.game.construct_game_state_from_db(
-                    current_round=0)
+                game_state = storage.game.construct_game_state_from_db(current_round=0)
                 if not game_state:
                     logger.warning('Initial game_state missing')
                 else:
                     logger.info(f"Initializing game_state with {game_state}")
-                    pipeline.set('game_state', game_state.to_json())
-                    pipeline.execute()
+                    pipe.set('game_state', game_state.to_json())
+                    pipe.execute()
 
                     storage.utils.get_wro_sio_manager().emit(
                         event='update_scoreboard',
@@ -51,9 +49,8 @@ def start_game() -> None:
     """
     logger.info('Starting game')
 
-    with storage.utils.get_redis_storage().pipeline(
-            transaction=True) as pipeline:
-        with locking.acquire_redis_lock(pipeline, 'game_starting_lock'):
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
+        with locking.acquire_redis_lock(pipe, locking.LockEnum.GAME_START):
             already_started = storage.game.get_game_running()
             if already_started:
                 logger.info('Game already started')
@@ -67,8 +64,8 @@ def start_game() -> None:
             logger.warning('Initial game_state missing')
         else:
             logger.info(f"Initializing game_state with {game_state.to_dict()}")
-            pipeline.set('game_state', game_state.to_json())
-            pipeline.execute()
+            pipe.set('game_state', game_state.to_json())
+            pipe.execute()
 
             storage.utils.get_wro_sio_manager().emit(
                 event='update_scoreboard',

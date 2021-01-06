@@ -317,15 +317,6 @@ def run_docker_command(args):
     run_docker(shlex.split(args.command))
 
 
-def run_flake(_args):
-    command = [
-        'flake8',
-        '--ignore', 'E402',
-        'control.py', 'backend',
-    ]
-    run_command(command, cwd=BASE_DIR)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Control ForcAD')
     subparsers = parser.add_subparsers()
@@ -442,12 +433,6 @@ if __name__ == '__main__':
         type=str,
         help='Docker-compose arguments (e.g. "logs -f --tail 200")',
     )
-
-    flake_parser = subparsers.add_parser(
-        'flake',
-        help='Run flake8 validation',
-    )
-    flake_parser.set_defaults(func=run_flake)
 
     parsed = parser.parse_args()
 

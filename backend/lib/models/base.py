@@ -1,7 +1,6 @@
-from typing import List, Dict, Any, Tuple, TypeVar, Type, TextIO
-
 import yaml
 from kombu.utils import json as kjson
+from typing import List, Dict, Any, Tuple, TypeVar, Type, TextIO
 
 # noinspection PyTypeChecker
 T = TypeVar('T', bound='BaseModel')
@@ -15,6 +14,10 @@ class BaseModel:
     table_name = 'undefined'
     defaults: Dict[str, Any] = {}
 
+    @property
+    def model_name(self) -> str:
+        return self.__class__.__name__
+
     def __init__(self, **kwargs: Any):
         for attr in self.__slots__:
             if attr == 'id':
@@ -23,8 +26,7 @@ class BaseModel:
             if attr not in kwargs:
                 if attr not in self.defaults:
                     raise KeyError(
-                        f'Attribute {attr} is required '
-                        f'for model {self.__class__}'
+                        f'Attribute {attr} is required for model {self.model_name}'
                     )
                 setattr(self, attr, self.defaults[attr])
             else:
@@ -80,14 +82,17 @@ class BaseModel:
     @classmethod
     def get_update_query(cls) -> str:
         column_names = cls._get_column_names()
-        update_data = ', '.join(
-            f'{column}=%({column})s' for column in column_names
-        )
+        update_data = ', '.join(f'{column}=%({column})s' for column in column_names)
         return f'UPDATE {cls.table_name} SET {update_data} WHERE id=%(id)s'
 
     @classmethod
     def get_delete_query(cls) -> str:
         return f'UPDATE {cls.table_name} SET active=FALSE WHERE id=%(id)s'
+
+    def insert(self, curs) -> None:
+        curs.execute(self.get_insert_query(), self.to_dict())
+        inserted_id, = curs.fetchone()
+        setattr(self, 'id', inserted_id)
 
     def __repr__(self) -> str:
         return str(self)

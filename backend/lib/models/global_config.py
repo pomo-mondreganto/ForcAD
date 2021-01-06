@@ -6,6 +6,7 @@ from .base import BaseModel
 
 class GlobalConfig(BaseModel):
     """Model representing global config"""
+
     id: Optional[int]
     flag_lifetime: int
     game_hardness: float

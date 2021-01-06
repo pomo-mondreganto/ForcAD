@@ -5,7 +5,8 @@ from .types import Action, TaskStatus
 
 
 class CheckerVerdict(BaseModel):
-    """Model representing checker action result"""
+    """Model representing checker action result."""
+
     private_message: str
     public_message: str
     command: str

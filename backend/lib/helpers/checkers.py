@@ -8,8 +8,9 @@ from lib.helpers.thread_actions import run_generic_action_in_thread
 from lib.models import TaskStatus, Action
 
 
-def first_error_or_first_verdict(verdicts: List[models.CheckerVerdict]
-                                 ) -> models.CheckerVerdict:
+def first_error_or_first_verdict(
+        verdicts: List[models.CheckerVerdict],
+) -> models.CheckerVerdict:
     for verdict in verdicts:
         if verdict.status != TaskStatus.UP:
             return verdict
@@ -19,15 +20,18 @@ def first_error_or_first_verdict(verdicts: List[models.CheckerVerdict]
 
 class CheckerRunner:
     """Helper class """
+
     team: models.Team
     task: models.Task
     flag: Optional[models.Flag]
 
-    def __init__(self,
-                 team: models.Team,
-                 task: models.Task,
-                 logger: Logger,
-                 flag: Optional[models.Flag] = None):
+    def __init__(
+            self,
+            team: models.Team,
+            task: models.Task,
+            logger: Logger,
+            flag: Optional[models.Flag] = None,
+    ):
         self.team = team
         self.task = task
         self.logger = logger
@@ -106,7 +110,7 @@ class CheckerRunner:
             env_path=self.task.env_path,
             timeout=self.task.checker_timeout,
             team_name=self.team.name,
-            logger=self.logger
+            logger=self.logger,
         )
 
     def _check_in_thread(self) -> models.CheckerVerdict:

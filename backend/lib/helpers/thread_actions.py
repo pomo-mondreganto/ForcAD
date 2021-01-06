@@ -9,23 +9,23 @@ from lib.helpers import exceptions
 from lib.models import TaskStatus, Action
 
 
-def set_verdict_error(verdict: models.CheckerVerdict,
-                      action: Action,
-                      message: str) -> None:
+def set_verdict_error(verdict: models.CheckerVerdict, action: Action, message: str):
     verdict.status = TaskStatus.CHECK_FAILED
     verdict.public_message = f'{action} failed'
     verdict.private_message = message
 
 
-def run_generic_action_in_thread(checker_path: str,
-                                 task_name: str,
-                                 action: Action,
-                                 host: str,
-                                 team_name: str,
-                                 timeout: int,
-                                 action_args: tuple,
-                                 action_kwargs: dict,
-                                 logger: Logger) -> models.CheckerVerdict:
+def run_generic_action_in_thread(
+        checker_path: str,
+        task_name: str,
+        action: Action,
+        host: str,
+        team_name: str,
+        timeout: int,
+        action_args: tuple,
+        action_kwargs: dict,
+        logger: Logger,
+) -> models.CheckerVerdict:
     verdict = models.CheckerVerdict(
         command=f'checker.{action}()',
         action=action,
@@ -75,10 +75,7 @@ def run_generic_action_in_thread(checker_path: str,
             verdict.private_message = checker.private
 
     except exceptions.CheckerTimeoutException:
-        logger.warning(
-            f'{action} action for team `{team_name}` task {task_name} '
-            'timed out'
-        )
+        logger.warning('%s for team %s task %s timed out', action, team_name, task_name)
 
         verdict.status = TaskStatus.DOWN
         verdict.public_message = 'Checker timed out'
@@ -92,8 +89,11 @@ def run_generic_action_in_thread(checker_path: str,
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
             log_func = logger.error
         log_func(
-            f'{action} action for team `{team_name}` task `{task_name}` '
-            f'failed with exception {exc}'
+            '%s for team %s task %s failed with %s',
+            action,
+            team_name,
+            task_name,
+            exc,
         )
 
         set_verdict_error(verdict=verdict, action=action, message=exc)

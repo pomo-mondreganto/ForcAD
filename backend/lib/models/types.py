@@ -3,6 +3,7 @@ import enum
 
 class TaskStatus(enum.Enum):
     """Task status codes Enum"""
+
     UP = 101
     CORRUPT = 102
     MUMBLE = 103
@@ -19,6 +20,7 @@ class TaskStatus(enum.Enum):
 
 class Action(enum.Enum):
     """Checker action Enum"""
+
     CHECK = 0
     PUT = 1
     GET = 2

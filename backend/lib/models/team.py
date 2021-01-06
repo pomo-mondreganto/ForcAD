@@ -6,7 +6,8 @@ from .base import BaseModel
 
 
 class Team(BaseModel):
-    """Model representing a team"""
+    """Model representing a team."""
+
     id: Optional[int]
     name: str
     ip: str

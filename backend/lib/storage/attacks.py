@@ -1,18 +1,19 @@
 from lib import models, storage
 from lib.helpers import exceptions
+from lib.helpers.exceptions import FlagExceptionEnum
 from lib.storage import utils
 
 
 def get_attack_data() -> str:
     """Get public flag ids for tasks that provide them, as json string."""
-    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with utils.redis_pipeline(transaction=False) as pipe:
         attack_data, = pipe.get('attack_data').execute()
     return attack_data or 'null'
 
 
-def handle_attack(attacker_id: int,
-                  flag_str: str,
-                  current_round: int) -> models.AttackResult:
+def handle_attack(
+        attacker_id: int, flag_str: str, current_round: int
+) -> models.AttackResult:
     """
     Main routine for attack validation & state change.
 
@@ -30,14 +31,22 @@ def handle_attack(attacker_id: int,
 
     try:
         if current_round == -1:
-            raise exceptions.FlagSubmitException('Game is not available')
+            raise FlagExceptionEnum.GAME_NOT_AVAILABLE
 
-        flag = storage.flags.get_flag_by_str(flag_str=flag_str,
-                                             current_round=current_round)
+        flag = storage.flags.get_flag_by_str(
+            flag_str=flag_str,
+            current_round=current_round,
+        )
+        if flag is None:
+            raise FlagExceptionEnum.FLAG_INVALID
+
         result.victim_id = flag.team_id
         result.task_id = flag.task_id
-        storage.flags.try_add_stolen_flag(flag=flag, attacker=attacker_id,
-                                          current_round=current_round)
+        storage.flags.try_add_stolen_flag(
+            flag=flag,
+            attacker=attacker_id,
+            current_round=current_round,
+        )
         result.submit_ok = True
 
         with utils.db_cursor() as (conn, curs):

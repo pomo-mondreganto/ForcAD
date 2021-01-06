@@ -37,8 +37,7 @@ def cache_tasks(pipeline: Any) -> None:
     """
     Put active tasks table data from database to cache.
 
-    Just adds commands to pipeline stack (to support aioredis),
-    don't forget to execute afterwards.
+    Just adds commands to pipeline stack don't forget to execute afterwards.
     """
     with utils.db_cursor(dict_cursor=True) as (_, curs):
         curs.execute(models.Task.get_select_active_query())
@@ -93,16 +92,21 @@ def cache_last_flags(current_round: int, pipeline: Any) -> None:
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with utils.db_cursor(dict_cursor=True) as (_, curs):
-        curs.execute(_SELECT_ALL_LAST_FLAGS_QUERY,
-                     (current_round - game_config.flag_lifetime,))
+        curs.execute(
+            _SELECT_ALL_LAST_FLAGS_QUERY,
+            (current_round - game_config.flag_lifetime,),
+        )
         flags = curs.fetchall()
 
     flag_models = list(models.Flag.from_dict(data) for data in flags)
 
     if flag_models:
-        pipeline.delete(*[
-            f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
-            for flag in flag_models])
+        pipeline.delete(
+            *[
+                f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
+                for flag in flag_models
+            ]
+        )
 
     pipeline.set('flags:cached', 1)
     for flag in flag_models:
@@ -112,9 +116,7 @@ def cache_last_flags(current_round: int, pipeline: Any) -> None:
         team_id = flag.team_id
         task_id = flag.task_id
         current_round = flag.round
-        round_flags_key = (
-            f'team:{team_id}:task:{task_id}:round_flags:{current_round}'
-        )
+        round_flags_key = f'team:{team_id}:task:{task_id}:round_flags:{current_round}'
         pipeline.sadd(round_flags_key, flag.id)
         pipeline.expire(round_flags_key, expires)
 
@@ -127,10 +129,10 @@ def cache_global_config(pipeline: Any) -> None:
 
 
 def flush_teams_cache():
-    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with utils.redis_pipeline(transaction=False) as pipe:
         pipe.delete('teams').execute()
 
 
 def flush_tasks_cache():
-    with utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with utils.redis_pipeline(transaction=False) as pipe:
         pipe.delete('tasks').execute()

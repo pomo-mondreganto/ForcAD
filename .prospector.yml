@@ -4,7 +4,7 @@ ignore-paths:
 
 strictness: medium
 autodetect: true
-max-line-length: 79
+max-line-length: 88
 
 pep8:
   full: true

@@ -7,7 +7,7 @@ from lib.helpers.cache import cache_helper
 
 def get_teams() -> List[models.Team]:
     """Get list of active teams."""
-    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
             cache_key='teams',
@@ -38,7 +38,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
     :param token: token string
     :return: team id
     """
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         team_id, = pipe.get(f'team:token:{token}').execute()
 
     try:
@@ -52,9 +52,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
 def create_team(team: models.Team) -> models.Team:
     """Add new team to DB, reset cache & return created instance."""
     with storage.utils.db_cursor() as (conn, curs):
-        curs.execute(team.get_insert_query(), team.to_dict())
-        result, = curs.fetchone()
-        team.id = result
+        team.insert(curs)
 
         insert_data = [
             (task.id, team.id, task.default_score, -1)

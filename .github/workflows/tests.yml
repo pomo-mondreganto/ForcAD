@@ -60,7 +60,7 @@ jobs:
         if: ${{ failure() }}
         run: ./control.py rd -c "logs --tail 2000"
 
-  linter:
+  backend_linter:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -69,9 +69,34 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.7'
-          architecture: 'x64'
+      - name: Install dependencies
+        run: pip install flake8
 
-      - name: Install requirements
-        run: pip install -r tests/requirements.txt
-      - name: Run flake
-        run: ./control.py flake
+      - name: Run linters
+        uses: wearerequired/lint-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          flake8: true
+
+  frontend_linter:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Node 13
+        uses: actions/setup-node@v2
+        with:
+          node-version: '13'
+      - name: Install dependencies
+        working-directory: front
+        run: yarn install
+
+      - name: Run linters
+        uses: wearerequired/lint-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          auto_fix: true
+          eslint: true
+          prettier: true
+          eslint_dir: front/src
+          prettier_dir: front/src
