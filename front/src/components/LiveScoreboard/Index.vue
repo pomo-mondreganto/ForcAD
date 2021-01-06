@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import {serverUrl} from '@/config';
+import { serverUrl } from '@/config';
 import io from 'socket.io-client';
 
 export default {
