@@ -138,6 +138,7 @@ class FlagSubmitTestCase(TestCase):
             token_valid=False,
         )
 
+        time.sleep(0.5)
         results = submit_func(
             token=self.unreachable_token,
             flags=flags,
@@ -148,6 +149,7 @@ class FlagSubmitTestCase(TestCase):
             res = res.lower()
             self.assertIn('accepted', res)
 
+        time.sleep(0.5)
         results = submit_func(
             token=self.unreachable_token,
             flags=flags,
@@ -159,6 +161,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('already stolen', res)
 
+        time.sleep(0.5)
         results = submit_func(
             token=self.working_token,
             flags=flags,
@@ -170,6 +173,7 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('own', res)
 
+        time.sleep(0.5)
         results = submit_func(
             token=self.unreachable_token,
             flags=['INVALID_FLAG', 'A' * 31 + '='],
