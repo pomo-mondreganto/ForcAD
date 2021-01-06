@@ -7,7 +7,7 @@ from redis.client import Pipeline
 from typing import Iterator
 
 
-class LockEnum(Enum, str):
+class LockEnum(str, Enum):
     GAME_START = 'game_start_lock'
     ROUND_UPDATE = 'round_update_lock'
 
