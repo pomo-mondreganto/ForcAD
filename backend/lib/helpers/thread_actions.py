@@ -89,7 +89,7 @@ def run_generic_action_in_thread(
         if not isinstance(e, Exception) and not isinstance(e, SystemExit):
             log_func = logger.error
         log_func(
-            f'%s for team %s task %s failed with %s',
+            '%s for team %s task %s failed with %s',
             action,
             team_name,
             task_name,

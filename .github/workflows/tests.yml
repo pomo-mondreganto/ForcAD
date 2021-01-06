@@ -69,7 +69,7 @@ jobs:
         with:
           python-version: '3.7'
       - name: Install dependencies
-        run: pip install black flake8
+        run: pip install flake8
 
       - name: Run linters
         uses: wearerequired/lint-action@v1
