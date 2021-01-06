@@ -8,10 +8,7 @@ from .submit_monitor import SubmitMonitor
 
 
 class Judge:
-    def __init__(self,
-                 monitor: SubmitMonitor,
-                 logger,
-                 concurrency=2000):
+    def __init__(self, monitor: SubmitMonitor, logger, concurrency=2000):
         self._monitor = monitor
         self._notifier = Notifier(logger=logger)
         self._p = GreenPool(size=concurrency)
@@ -36,9 +33,7 @@ class Judge:
         result = self._p.spawn(self._process_attack, team_id, flag)
         return result.wait()
 
-    def process_many(self,
-                     team_id: int,
-                     flags: List[str]) -> List[AttackResult]:
+    def process_many(self, team_id: int, flags: List[str]) -> List[AttackResult]:
         results = self._p.imap(
             lambda flag: self._process_attack(team_id, flag),
             flags,

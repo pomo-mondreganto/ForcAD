@@ -8,7 +8,13 @@ from .types import Action, TaskStatus
 from .verdict import CheckerVerdict
 
 __all__ = (
-    'AttackResult', 'Flag', 'GameState',
-    'GlobalConfig', 'Task', 'Team',
-    'Action', 'TaskStatus', 'CheckerVerdict',
+    'AttackResult',
+    'Flag',
+    'GameState',
+    'GlobalConfig',
+    'Task',
+    'Team',
+    'Action',
+    'TaskStatus',
+    'CheckerVerdict',
 )

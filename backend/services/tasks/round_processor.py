@@ -15,8 +15,9 @@ _FULL_UPDATE_ROUND_TYPES = ['full', 'puts']
 _GS_UPDATE_ROUND_TYPES = ['full', 'puts', 'check_gets']
 
 
-def get_round_processor(round_type: str,
-                        task_id: Optional[int] = None) -> 'RoundProcessor':
+def get_round_processor(
+        round_type: str, task_id: Optional[int] = None
+) -> 'RoundProcessor':
     """Get RoundProcessor instance for specified round type"""
     return RoundProcessor(round_type=round_type, task_id=task_id)
 
@@ -53,9 +54,9 @@ class RoundProcessor(Task):
             return
 
         logger.info(f'Publishing scoreboard for round {current_round}')
-        with storage.utils.get_redis_storage().pipeline() as pipeline:
-            pipeline.set('game_state', game_state.to_json())
-            pipeline.execute()
+        with storage.utils.redis_pipeline() as pipe:
+            pipe.set('game_state', game_state.to_json())
+            pipe.execute()
 
         storage.utils.get_wro_sio_manager().emit(
             event='update_scoreboard',
@@ -70,33 +71,27 @@ class RoundProcessor(Task):
         storage.game.set_round_start(r=finished_round + 1)
         storage.game.update_real_round_in_db(new_round=finished_round + 1)
 
-        # Might think there's a RC here (I thought so too)
-        # But all teamtasks with round >= real_round are
-        # updated in the attack handler
-        # So both old and new teamtasks will be updated properly
-        with storage.utils.get_redis_storage().pipeline(
-                transaction=True) as pipeline:
-            pipeline.set('real_round', finished_round + 1).execute()
+        with storage.utils.redis_pipeline(transaction=True) as pipe:
+            pipe.set('real_round', finished_round + 1).execute()
 
     @staticmethod
     def update_attack_data(current_round: int) -> None:
         logger.info(f'Updating attack data contents for round {current_round}')
 
         tasks = storage.tasks.get_tasks()
-        tasks = list(
-            filter(lambda x: x.checker_provides_public_flag_data, tasks))
+        tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
         flags = storage.flags.get_attack_data(current_round, tasks)
-        with storage.utils.get_redis_storage().pipeline(
-                transaction=True) as pipeline:
-            pipeline.set('attack_data', kjson.dumps(flags)).execute()
+        with storage.utils.redis_pipeline(transaction=True) as pipe:
+            pipe.set('attack_data', kjson.dumps(flags)).execute()
 
     def run(self, *args: Any, **kwargs: Any) -> None:
-        """Process new round
-            Updates current round variable, then processes all teams.
-            This function also caches previous state and notifies frontend of
-            a new round (for classic game mode).
-            Only one instance of process_round that updates round
-            is to be be run!
+        """
+        Process new round.
+
+        Updates current round variable, then processes all teams.
+        This function also caches previous state and notifies frontend of
+        a new round (for classic game mode).
+        Only one instance of process_round that updates round is to be be run!
         """
 
         game_running = storage.game.get_game_running()
@@ -104,8 +99,8 @@ class RoundProcessor(Task):
             logger.info('Game is not running, exiting')
             return
 
-        with storage.utils.get_redis_storage().pipeline() as pipeline:
-            with locking.acquire_redis_lock(pipeline, 'round_update:lock'):
+        with storage.utils.redis_pipeline() as pipe:
+            with locking.acquire_redis_lock(pipe, locking.LockEnum.ROUND_UPDATE):
                 current_round = storage.game.get_real_round_from_db()
                 round_to_check = current_round
 
@@ -133,14 +128,13 @@ class RoundProcessor(Task):
             modes.run_full_round.starmap(round_args).apply_async()
         elif self.round_type == 'check_gets':
             logger.info("Running check_gets round")
-            modes.run_check_gets_round.starmap(
-                round_args).apply_async()
+            modes.run_check_gets_round.starmap(round_args).apply_async()
         elif self.round_type == 'puts':
             logger.info("Running puts round")
             modes.run_puts_round.starmap(round_args).apply_async()
         else:
             logger.critical(
-                f"Invalid round type supplied: {self.round_type}, "
-                f"falling back to full"
+                'Invalid round type supplied: %s, falling back to full',
+                self.round_type,
             )
             modes.run_full_round.starmap(round_args).apply_async()

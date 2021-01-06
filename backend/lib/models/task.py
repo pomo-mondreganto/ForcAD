@@ -7,11 +7,13 @@ from .verdict import CheckerVerdict
 
 
 class Task(BaseModel):
-    """Model representing a task
-
-        It also stores checker-specific info
-        (path, env, number of gets, puts, flag places), etc...
     """
+    Model representing a task.
+
+    It also stores checker-specific info
+    (path, env, number of gets, puts, flag places), etc...
+    """
+
     id: Optional[int]
     name: str
     checker: str

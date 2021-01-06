@@ -25,7 +25,7 @@ def get_db_config() -> dict:
         'port': os.environ['POSTGRES_PORT'],
         'user': os.environ['POSTGRES_USER'],
         'password': os.environ['POSTGRES_PASSWORD'],
-        'dbname': os.environ['POSTGRES_DB']
+        'dbname': os.environ['POSTGRES_DB'],
     }
 
 

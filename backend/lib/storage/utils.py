@@ -55,6 +55,11 @@ def get_redis_storage() -> redis.StrictRedis:
     return _redis_storage
 
 
+def redis_pipeline(transaction: bool = True) -> redis.client.Pipeline:
+    storage = get_redis_storage()
+    return storage.pipeline(transaction=transaction)
+
+
 def create_sio_manager(write_only=False) -> socketio.KombuManager:
     broker_url = config.get_broker_url()
     return socketio.KombuManager(

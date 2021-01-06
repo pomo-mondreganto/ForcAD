@@ -10,10 +10,7 @@ from lib.flags import SubmitMonitor, Judge
 
 
 class SubmitHandler:
-    def __init__(self,
-                 logger: logging.Logger,
-                 judge: Judge,
-                 monitor: SubmitMonitor):
+    def __init__(self, logger: logging.Logger, judge: Judge, monitor: SubmitMonitor):
         self._logger = logger
         self._judge = judge
         self._monitor = monitor
@@ -57,7 +54,8 @@ class SubmitHandler:
             ar = self._judge.process(team_id, flag_str)
             logger.debug(
                 'processed flag, %s: %s',
-                'ok' if ar.submit_ok else 'bad', ar.message,
+                'ok' if ar.submit_ok else 'bad',
+                ar.message,
             )
 
             conn.write(ar.message + '\n')

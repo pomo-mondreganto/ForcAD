@@ -9,28 +9,28 @@ from lib import models
 from lib.models import TaskStatus, Action
 
 
-def run_command_gracefully(command: List[str],
-                           input: Optional[AnyStr] = None,
-                           capture_output: bool = False,
-                           timeout: float = 0,
-                           check: bool = False,
-                           terminate_timeout: float = 3,
-                           **kwargs: Any
-                           ) -> Tuple[subprocess.CompletedProcess, bool]:
-    """Wrapper around Popen from subprocess, shuts the process down gracefully
+def run_command_gracefully(
+        command: List[str],
+        input: Optional[AnyStr] = None,
+        capture_output: bool = False,
+        timeout: float = 0,
+        check: bool = False,
+        terminate_timeout: float = 3,
+        **kwargs: Any,
+) -> Tuple[subprocess.CompletedProcess, bool]:
+    """
+    Like subprocess.run, but with graceful shutdown.
 
-        First sends SIGTERM, waits for "terminate_timeout" seconds and if
-        the timeout occurs the second time, sends SIGKILL.
+    First sends SIGTERM, waits for "terminate_timeout" seconds and if
+    the timeout occurs the second time, sends SIGKILL.
 
-        It's similar to "run" function from subprocess module.
-
-        :param command: command to run
-        :param input: see corresponding "run" parameter
-        :param capture_output: see corresponding "run" parameter
-        :param timeout: "soft" timeout, after which the SIGTERM is sent
-        :param check: see corresponding "run" parameter
-        :param terminate_timeout: the "hard" timeout to wait after the SIGTERM
-        :return: tuple of CompletedProcess instance and "killed" boolean
+    :param command: command to run
+    :param input: see corresponding "run" parameter
+    :param capture_output: see corresponding "run" parameter
+    :param timeout: "soft" timeout, after which the SIGTERM is sent
+    :param check: see corresponding "run" parameter
+    :param terminate_timeout: the "hard" timeout to wait after the SIGTERM
+    :return: tuple of CompletedProcess instance and "killed" boolean
     """
     if input is not None:
         kwargs['stdin'] = subprocess.PIPE
@@ -75,32 +75,37 @@ def run_command_gracefully(command: List[str],
                 retcode,
                 proc.args,
                 output=stdout,
-                stderr=stderr
+                stderr=stderr,
             )
 
     res_proc: subprocess.CompletedProcess = subprocess.CompletedProcess(
-        args=proc.args, returncode=retcode,
-        stdout=stdout, stderr=stderr,
+        args=proc.args,
+        returncode=retcode,
+        stdout=stdout,
+        stderr=stderr,
     )
     return res_proc, killed
 
 
 def get_patched_environ(env_path: str) -> Dict[str, str]:
-    """Add path to the environment variable
+    """
+    Add path to the environment variable.
 
-        :param env_path: path to be inserted to environment
+    :param env_path: path to be inserted to environment
     """
     env = os.environ.copy()
     env['PATH'] = f"{env_path}:{env['PATH']}"
     return env
 
 
-def run_generic_command(command: List,
-                        action: Action,
-                        env_path: str,
-                        timeout: int,
-                        team_name: str,
-                        logger: Logger) -> models.CheckerVerdict:
+def run_generic_command(
+        command: List,
+        action: Action,
+        env_path: str,
+        timeout: int,
+        team_name: str,
+        logger: Logger,
+) -> models.CheckerVerdict:
     """Runs generic checker command, calls "run_command_gracefully"
         and handles exceptions
 
@@ -164,7 +169,7 @@ def run_generic_command(command: List,
         private_message=private_message,
         command=command_str,
         action=action,
-        status=status
+        status=status,
     )
 
     return verdict

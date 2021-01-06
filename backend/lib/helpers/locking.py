@@ -1,22 +1,28 @@
-from contextlib import contextmanager
+from enum import Enum
 
 import os
 import time
+from contextlib import contextmanager
 from redis.client import Pipeline
 from typing import Iterator
 
 
+class LockEnum(Enum, str):
+    GAME_START = 'game_start_lock'
+    ROUND_UPDATE = 'round_update_lock'
+
+
 @contextmanager
-def acquire_redis_lock(pipeline: Pipeline,
-                       name: str,
-                       timeout: int = 5000) -> Iterator:
+def acquire_redis_lock(pipeline: Pipeline, name: str, timeout: int = 5000) -> Iterator:
     lock_time = None
     try:
         while True:
             nonce = os.urandom(10)
             unlocked, = pipeline.set(
-                name, nonce,
-                nx=True, px=timeout,
+                name,
+                nonce,
+                nx=True,
+                px=timeout,
             ).execute()  # type: ignore
 
             if unlocked:

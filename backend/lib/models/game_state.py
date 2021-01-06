@@ -4,10 +4,8 @@ from .base import BaseModel
 
 
 class GameState(BaseModel):
-    """Model representing game state
+    """Model representing the game state."""
 
-        Stored round and dict of team tasks
-    """
     round_start: int
     round: int
     team_tasks: List[Dict[str, Any]]

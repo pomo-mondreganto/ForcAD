@@ -8,19 +8,13 @@ client_bp = Blueprint('client_api', __name__)
 
 @client_bp.route('/teams/')
 def get_teams():
-    teams = [
-        team.to_dict_for_participants()
-        for team in storage.teams.get_teams()
-    ]
+    teams = [team.to_dict_for_participants() for team in storage.teams.get_teams()]
     return jsonify(teams)
 
 
 @client_bp.route('/tasks/')
 def get_tasks():
-    tasks = [
-        task.to_dict_for_participants()
-        for task in storage.tasks.get_tasks()
-    ]
+    tasks = [task.to_dict_for_participants() for task in storage.tasks.get_tasks()]
 
     return jsonify(tasks)
 

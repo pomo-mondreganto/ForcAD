@@ -13,8 +13,7 @@ class ApiSet:
 
     def __init__(self, bp: Blueprint, auth: bool = False):
         if self.model is None:
-            raise AssertionError(f'{self.__class__.__name__}.model '
-                                 f'must be defined')
+            raise AssertionError(f'{self.__class__.__name__}.model must be defined')
 
         bp.add_url_rule(
             f'/{self.model}s/',
