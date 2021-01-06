@@ -94,6 +94,7 @@ jobs:
         uses: wearerequired/lint-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          auto_fix: true
           eslint: true
           prettier: true
           eslint_dir: front/src
