@@ -40,6 +40,14 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/forcad_base:latest
             ghcr.io/${{ github.repository_owner }}/forcad_base:${{ steps.get_version.outputs.VERSION }}
 
+      - name: Set up Node 13
+        uses: actions/setup-node@v2
+        with:
+          node-version: '13'
+      - name: Build frontend
+        working-directory: front
+        run: yarn install && yarn build
+
       - name: Setup release
         run: |
           echo ${{ steps.get_version.outputs.VERSION }} > .version

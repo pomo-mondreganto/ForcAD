@@ -12,7 +12,7 @@ def check_session():
         abort_with_error('No session set', 403)
 
     session = request.cookies['session']
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         data, = pipe.get(f'session:{session}').execute()
 
     creds = config.get_web_credentials()
@@ -24,7 +24,7 @@ def check_session():
 
 
 def set_session(session, username):
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         pipe.set(f'session:{session}', username).execute()
 
 

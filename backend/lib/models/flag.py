@@ -15,6 +15,7 @@ class Flag(BaseModel):
     Contains flag round, id, team, task, the value itself
     and additional data for the checker.
     """
+
     round: int
     id: Optional[int]
     team_id: int
@@ -38,18 +39,17 @@ class Flag(BaseModel):
     )
 
     @classmethod
-    def generate(cls,
-                 service: str,
-                 team_id: int,
-                 task_id: int,
-                 current_round: int) -> 'Flag':
-        """Generate a new flag
+    def generate(
+            cls, service: str, team_id: int, task_id: int, current_round: int
+    ) -> 'Flag':
+        """
+        Generate a new flag.
 
-            :param service: service of new flag (to pick the first flag letter)
-            :param team_id: team id
-            :param task_id: task id
-            :param current_round: current round
-            :return: Flag model instance
+        :param service: service of new flag (to pick the first flag letter)
+        :param team_id: team id
+        :param task_id: task id
+        :param current_round: current round
+        :return: Flag model instance
         """
         service_letter = service[0].upper()
         rnd_data = ''.join(secrets.choice(ALPHABET) for _ in range(30))

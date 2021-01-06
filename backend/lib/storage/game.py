@@ -20,8 +20,8 @@ _GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
 
 def get_round_start(r: int) -> int:
     """Get start time for round as unix timestamp."""
-    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
-        start_time, = pipeline.get(f'round:{r}:start_time').execute()
+    with utils.redis_pipeline(transaction=False) as pipe:
+        start_time, = pipe.get(f'round:{r}:start_time').execute()
     try:
         start_time = int(start_time)
     except (ValueError, TypeError):
@@ -32,8 +32,8 @@ def get_round_start(r: int) -> int:
 def set_round_start(r: int) -> None:
     """Set start time for round as str."""
     cur_time = int(time.time())
-    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
-        pipeline.set(f'round:{r}:start_time', cur_time).execute()
+    with utils.redis_pipeline(transaction=False) as pipe:
+        pipe.set(f'round:{r}:start_time', cur_time).execute()
 
 
 def get_real_round() -> int:
@@ -42,8 +42,8 @@ def get_real_round() -> int:
 
     :returns: -1 if round not in cache, else round
     """
-    with utils.get_redis_storage().pipeline(transaction=False) as pipeline:
-        r, = pipeline.get('real_round').execute()
+    with utils.redis_pipeline(transaction=False) as pipe:
+        r, = pipe.get('real_round').execute()
 
     try:
         r = int(r)
@@ -99,22 +99,21 @@ def get_db_global_config() -> models.GlobalConfig:
 
 def get_current_global_config() -> models.GlobalConfig:
     """Get global config from cache is cached, cache it otherwise."""
-    with utils.get_redis_storage().pipeline(transaction=True) as pipeline:
+    with utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
-            pipeline=pipeline,
+            pipeline=pipe,
             cache_key='global_config',
             cache_func=caching.cache_global_config,
-            cache_args=(pipeline,),
+            cache_args=(pipe,),
         )
 
-        result, = pipeline.get('global_config').execute()
+        result, = pipe.get('global_config').execute()
         global_config = models.GlobalConfig.from_json(result)
 
     return global_config
 
 
-def construct_game_state_from_db(current_round: int
-                                 ) -> Optional[models.GameState]:
+def construct_game_state_from_db(current_round: int) -> Optional[models.GameState]:
     """Get game state for specified round with teamtasks from db."""
     teamtasks = storage.tasks.get_teamtasks_from_db()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
@@ -149,17 +148,11 @@ def construct_scoreboard() -> dict:
     Fetches and constructs the full scoreboard (state, teams, tasks, config).
     """
 
-    teams = [
-        team.to_dict_for_participants()
-        for team in storage.teams.get_teams()
-    ]
-    tasks = [
-        task.to_dict_for_participants()
-        for task in storage.tasks.get_tasks()
-    ]
+    teams = [team.to_dict_for_participants() for team in storage.teams.get_teams()]
+    tasks = [task.to_dict_for_participants() for task in storage.tasks.get_tasks()]
     cfg = storage.game.get_current_global_config().to_dict()
 
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         state, = pipe.get('game_state').execute()
 
     try:

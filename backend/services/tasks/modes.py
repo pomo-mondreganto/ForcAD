@@ -9,9 +9,9 @@ from lib import models
 logger = get_task_logger(__name__)
 
 
-def get_round_setup(team: models.Team,
-                    task: models.Task,
-                    current_round: int) -> Tuple[dict, dict]:
+def get_round_setup(
+        team: models.Team, task: models.Task, current_round: int
+) -> Tuple[dict, dict]:
     params = {
         'time_limit': task.checker_timeout + 5,
         'link_error': handlers.exception_callback,
@@ -25,23 +25,19 @@ def get_round_setup(team: models.Team,
 
 
 def get_puts_group(task: models.Task, kwargs: dict, params: dict) -> group:
-    return group([
-        actions.put_action.s(**kwargs).set(**params)
-        for _ in range(task.puts)
-    ])
+    return group(
+        [actions.put_action.s(**kwargs).set(**params) for _ in range(task.puts)]
+    )
 
 
 def get_gets_chain(task: models.Task, kwargs: dict, params: dict) -> group:
-    return chain(*[
-        actions.get_action.s(**kwargs).set(**params)
-        for _ in range(task.gets)
-    ])
+    return chain(
+        *[actions.get_action.s(**kwargs).set(**params) for _ in range(task.gets)]
+    )
 
 
 @shared_task
-def run_full_round(team: models.Team,
-                   task: models.Task,
-                   current_round: int) -> bool:
+def run_full_round(team: models.Team, task: models.Task, current_round: int) -> bool:
     params, kwargs = get_round_setup(team, task, current_round)
     check = actions.check_action.s(**kwargs).set(**params)
 
@@ -61,9 +57,7 @@ def run_full_round(team: models.Team,
 
 
 @shared_task
-def run_puts_round(team: models.Team,
-                   task: models.Task,
-                   current_round: int) -> bool:
+def run_puts_round(team: models.Team, task: models.Task, current_round: int) -> bool:
     params, kwargs = get_round_setup(team, task, current_round)
 
     handler = handlers.checker_results_handler.s(**kwargs)
@@ -77,9 +71,9 @@ def run_puts_round(team: models.Team,
 
 
 @shared_task
-def run_check_gets_round(team: models.Team,
-                         task: models.Task,
-                         current_round: int) -> bool:
+def run_check_gets_round(
+        team: models.Team, task: models.Task, current_round: int
+) -> bool:
     params, kwargs = get_round_setup(team, task, current_round)
     check = actions.check_action.s(**kwargs).set(**params)
     gets = get_gets_chain(task, kwargs, params)

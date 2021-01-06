@@ -6,11 +6,13 @@ ArgsType = Optional[Iterable[Any]]
 KwargsType = Optional[Dict[str, Any]]
 
 
-def cache_helper(pipeline: redis.client.Pipeline,
-                 cache_key: str,
-                 cache_func: Callable[..., Any],
-                 cache_args: ArgsType = None,
-                 cache_kwargs: KwargsType = None):
+def cache_helper(
+        pipeline: redis.client.Pipeline,
+        cache_key: str,
+        cache_func: Callable[..., Any],
+        cache_args: ArgsType = None,
+        cache_kwargs: KwargsType = None,
+):
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:

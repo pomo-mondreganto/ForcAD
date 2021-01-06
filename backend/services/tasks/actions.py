@@ -17,10 +17,12 @@ def noop(data: Any) -> Any:
 
 
 @shared_task
-def put_action(_prev_verdict: Optional[models.CheckerVerdict],
-               team: models.Team,
-               task: models.Task,
-               current_round: int) -> models.CheckerVerdict:
+def put_action(
+        _prev_verdict: Optional[models.CheckerVerdict],
+        team: models.Team,
+        task: models.Task,
+        current_round: int,
+) -> models.CheckerVerdict:
     """
     Run "put" checker action.
 
@@ -33,7 +35,12 @@ def put_action(_prev_verdict: Optional[models.CheckerVerdict],
     If "check" action fails, put is not run.
     """
 
-    logger.info(f'Running PUT for team `{team.name}` task `{task.name}`')
+    logger.info(
+        'Running PUT for team %s task %s, round %s',
+        team.name,
+        task.name,
+        current_round,
+    )
 
     place = secrets.choice(range(1, task.places + 1))
     flag = models.Flag.generate(
@@ -62,10 +69,12 @@ def put_action(_prev_verdict: Optional[models.CheckerVerdict],
 
 
 @shared_task
-def get_action(prev_verdict: models.CheckerVerdict,
-               team: models.Team,
-               task: models.Task,
-               current_round: int) -> models.CheckerVerdict:
+def get_action(
+        prev_verdict: models.CheckerVerdict,
+        team: models.Team,
+        task: models.Task,
+        current_round: int,
+) -> models.CheckerVerdict:
     """
     Run "get" checker action.
 
@@ -87,21 +96,24 @@ def get_action(prev_verdict: models.CheckerVerdict,
             status=prev_verdict.status,
             command='',
             public_message='Skipped GET, previous action failed',
-            private_message=f'Previous returned {prev_verdict}'
+            private_message=f'Previous returned {prev_verdict}',
         )
 
         return new_verdict
 
     flag_lifetime = storage.game.get_current_global_config().flag_lifetime
 
-    rounds_to_check = list(set(
-        max(1, current_round - x) for x in range(0, flag_lifetime)
-    ))
+    rounds_to_check = list(
+        set(max(1, current_round - x) for x in range(0, flag_lifetime))
+    )
     round_to_check = random.choice(rounds_to_check)
 
     logger.info(
-        f'Running GET on round {round_to_check} for '
-        f'team {team.id} task {task.id}'
+        'Running GET on round %s for team %s task %s, current round %s',
+        round_to_check,
+        team.name,
+        task.name,
+        current_round,
     )
 
     verdict = models.CheckerVerdict(
@@ -112,10 +124,12 @@ def get_action(prev_verdict: models.CheckerVerdict,
         command="",
     )
 
-    flag = storage.flags.get_random_round_flag(team_id=team.id or 0,
-                                               task_id=task.id or 0,
-                                               from_round=round_to_check,
-                                               current_round=current_round)
+    flag = storage.flags.get_random_round_flag(
+        team_id=team.id or 0,
+        task_id=task.id or 0,
+        from_round=round_to_check,
+        current_round=current_round,
+    )
 
     if not flag:
         verdict.status = TaskStatus.UP
@@ -133,9 +147,9 @@ def get_action(prev_verdict: models.CheckerVerdict,
 
 
 @shared_task
-def check_action(team: models.Team,
-                 task: models.Task,
-                 current_round: int) -> models.CheckerVerdict:
+def check_action(
+        team: models.Team, task: models.Task, current_round: int
+) -> models.CheckerVerdict:
     """
     Run "check" checker action.
 
@@ -147,8 +161,10 @@ def check_action(team: models.Team,
     """
 
     logger.info(
-        f'Running CHECK for team `{team.name}` '
-        f'task `{task.name}`, round {current_round}'
+        'Running CHECK for team %s task %s, round %s',
+        team.name,
+        task.name,
+        current_round,
     )
     runner = checkers.CheckerRunner(team=team, task=task, logger=logger)
     verdict = runner.check()

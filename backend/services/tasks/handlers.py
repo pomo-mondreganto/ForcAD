@@ -11,9 +11,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def exception_callback(result: AsyncResult,
-                       exc: Exception,
-                       traceback: str) -> None:
+def exception_callback(result: AsyncResult, exc: Exception, traceback: str) -> None:
     action_name = result.task.split('.')[-1].split('_')[0].upper()
     action = Action[action_name]
 
@@ -39,7 +37,7 @@ def exception_callback(result: AsyncResult,
             status=TaskStatus.CHECK_FAILED,
             command='',
             public_message=f'{action} failed',
-            private_message=f'Exception on {action}: {repr(exc)}\n{traceback}'
+            private_message=f'Exception on {action}: {repr(exc)}\n{traceback}',
         )
 
     storage.tasks.update_task_status(
@@ -52,10 +50,12 @@ def exception_callback(result: AsyncResult,
 
 
 @shared_task
-def checker_results_handler(verdicts: List[models.CheckerVerdict],
-                            team: models.Team,
-                            task: models.Task,
-                            current_round: int) -> models.CheckerVerdict:
+def checker_results_handler(
+        verdicts: List[models.CheckerVerdict],
+        team: models.Team,
+        task: models.Task,
+        current_round: int,
+) -> models.CheckerVerdict:
     """
     Parse returning verdicts and return the final one.
 
@@ -73,13 +73,14 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict],
         elif verdict.action == Action.PUT:
             puts_verdicts.append(verdict)
         else:
-            logger.error(f'Got invalid verdict action: {verdict.to_dict()}')
+            logger.error('Got invalid verdict action: %s', verdict.to_dict())
 
     logger.info(
-        f"Finished testing team `{team.name}` task `{task.name}` "
-        f"round {current_round}. "
-        f"Verdicts: check: {check_verdict} puts {puts_verdicts} "
-        f"gets {gets_verdict}"
+        "Finished testing team %s task %s, round %s.\n"
+        "Verdicts: check: %s; puts %s; gets %s.",
+        check_verdict,
+        puts_verdicts,
+        gets_verdict,
     )
 
     parsed_verdicts = []
@@ -101,8 +102,10 @@ def checker_results_handler(verdicts: List[models.CheckerVerdict],
             action=Action.CHECK,
         )
 
-    storage.tasks.update_task_status(task_id=task.id or 0,
-                                     team_id=team.id or 0,
-                                     current_round=current_round,
-                                     checker_verdict=result_verdict)
+    storage.tasks.update_task_status(
+        task_id=task.id or 0,
+        team_id=team.id or 0,
+        current_round=current_round,
+        checker_verdict=result_verdict,
+    )
     return result_verdict

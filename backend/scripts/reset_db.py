@@ -30,9 +30,7 @@ def run():
     while True:
         try:
             storage.utils.get_redis_storage().flushall()
-        except (
-                redis.exceptions.ConnectionError,
-                redis.exceptions.BusyLoadingError):
+        except (redis.exceptions.ConnectionError, redis.exceptions.BusyLoadingError):
             print('[*] Redis isn\'t running, waiting...')
             time.sleep(5)
         else:

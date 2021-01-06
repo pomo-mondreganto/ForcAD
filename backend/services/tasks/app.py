@@ -44,9 +44,7 @@ if game_config.game_mode == 'blitz':
             'schedule': task.get_period,
         }
 else:
-    app.register_task(
-        get_round_processor(round_type='full')
-    )
+    app.register_task(get_round_processor(round_type='full'))
     beat_schedule = {
         'process_full_round': {
             'task': 'tasks.round_processor.RoundProcessor_full',

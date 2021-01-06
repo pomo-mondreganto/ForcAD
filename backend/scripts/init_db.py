@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import os
-from pathlib import Path
-
 import pytz
 import yaml
+from pathlib import Path
 
 from lib import models
 from lib import storage
@@ -44,8 +43,7 @@ def init_teams(config, curs):
 
         team_token = models.Team.generate_token()
         team = models.Team(id=None, **team_conf, token=team_token)
-        curs.execute(team.get_insert_query(), team.to_dict())
-        team.id, = curs.fetchone()
+        team.insert(curs)
         teams.append(team)
 
     return teams
@@ -55,8 +53,7 @@ def init_tasks(config, global_config, curs):
     task_defaults = {
         'env_path': global_config['env_path'],
         'default_score': global_config['default_score'],
-        'get_period': global_config.get('get_period',
-                                        global_config['round_time']),
+        'get_period': global_config.get('get_period', global_config['round_time']),
         'checker_type': 'hackerdom',
         'active': True,
     }
@@ -68,17 +65,13 @@ def init_tasks(config, global_config, curs):
             if k not in task_conf:
                 task_conf[k] = v
 
-        task_conf['checker'] = str(
-            Path(
-                global_config['checkers_path']
-            ).joinpath(
-                task_conf['checker'],
-            )
+        task_conf['checker'] = os.path.join(
+            global_config['checkers_path'],
+            task_conf['checker'],
         )
 
         task = models.Task(id=None, **task_conf)
-        curs.execute(task.get_insert_query(), task.to_dict())
-        task.id, = curs.fetchone()
+        task.insert(curs)
         tasks.append(task)
 
     return tasks
@@ -97,15 +90,14 @@ def init_global_config(global_config, curs):
     global_config['game_running'] = False
 
     global_config = models.GlobalConfig(id=None, **global_config)
-    curs.execute(global_config.get_insert_query(), global_config.to_dict())
+    global_config.insert(curs)
 
 
 def init_game_state():
     game_state = storage.game.construct_game_state_from_db(current_round=0)
-    with storage.utils.get_redis_storage().pipeline(
-            transaction=True) as pipeline:
-        pipeline.set('game_state', game_state.to_json())
-        pipeline.execute()
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
+        pipe.set('game_state', game_state.to_json())
+        pipe.execute()
 
     storage.utils.get_wro_sio_manager().emit(
         event='update_scoreboard',

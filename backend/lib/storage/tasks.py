@@ -31,7 +31,7 @@ ORDER BY id DESC
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database."""
-    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
             cache_key='tasks',
@@ -55,8 +55,12 @@ def get_all_tasks() -> List[models.Task]:
     return tasks
 
 
-def update_task_status(task_id: int, team_id: int, current_round: int,
-                       checker_verdict: models.CheckerVerdict) -> None:
+def update_task_status(
+        task_id: int,
+        team_id: int,
+        current_round: int,
+        checker_verdict: models.CheckerVerdict,
+) -> None:
     """
     Update task status in database.
 
@@ -84,15 +88,18 @@ def update_task_status(task_id: int, team_id: int, current_round: int,
                 public,
                 checker_verdict.private_message,
                 checker_verdict.command,
-            )
+            ),
         )
         data = curs.fetchone()
         conn.commit()
 
     data['round'] = current_round
-    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
-        pipe.xadd(f'teamtasks:{team_id}:{task_id}', dict(data), maxlen=50,
-                  approximate=False).execute()
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
+        pipe.xadd(
+            f'teamtasks:{team_id}:{task_id}', dict(data),
+            maxlen=50,
+            approximate=False,
+        ).execute()
 
 
 def get_last_teamtasks() -> List[dict]:
@@ -100,7 +107,7 @@ def get_last_teamtasks() -> List[dict]:
     teams = storage.teams.get_teams()
     tasks = storage.tasks.get_tasks()
 
-    with storage.utils.get_redis_storage().pipeline(transaction=True) as pipe:
+    with storage.utils.redis_pipeline(transaction=True) as pipe:
         for team in teams:
             for task in tasks:
                 pipe.xrevrange(f'teamtasks:{team.id}:{task.id}', count=1)
@@ -136,7 +143,7 @@ def get_teamtasks_for_team(team_id: int) -> List[dict]:
 
     tasks = storage.tasks.get_tasks()
 
-    with storage.utils.get_redis_storage().pipeline(transaction=False) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         for task in tasks:
             pipe.xrevrange(f'teamtasks:{team_id}:{task.id}')
         data = pipe.execute()
@@ -197,9 +204,7 @@ def process_teamtasks(teamtasks: List[dict]) -> List[dict]:
 def create_task(task: models.Task) -> models.Task:
     """Add new task to DB, reset cache & return created instance."""
     with storage.utils.db_cursor() as (conn, curs):
-        curs.execute(task.get_insert_query(), task.to_dict())
-        result, = curs.fetchone()
-        task.id = result
+        task.insert(curs)
 
         insert_data = [
             (task.id, team.id, task.default_score, -1)
