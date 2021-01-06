@@ -77,6 +77,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           black: true
           flake8: true
+          flake8_args: "--ignore E402 backend control.py"
 
   frontend_linter:
     runs-on: ubuntu-20.04
