@@ -75,7 +75,6 @@ jobs:
         uses: wearerequired/lint-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          black: true
           flake8: true
 
   frontend_linter:
