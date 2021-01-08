@@ -9,6 +9,8 @@ x-service: &default-ms
     - ./docker_config/redis/environment.env
     - ./docker_config/rabbitmq/environment.env
   restart: on-failure
+  expose:
+    - "5000"
 
 x-celery-service: &default-celery-ms
   build:
@@ -20,6 +22,28 @@ x-celery-service: &default-celery-ms
   restart: on-failure
 
 services:
+  traefik:
+    image: traefik:2.3.2
+    ports:
+      - "8080:80"
+      - "80:80"
+      - "31337:31337"
+      - "8081:81"
+    volumes:
+      - ./docker_config/traefik/traefik.yml:/traefik.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - monitoring
+    sysctls:
+      net.core.somaxconn: 1024
+    labels:
+      traefik.enable: true
+      traefik.http.routers.api.entryPoints: httpInternal
+      traefik.http.routers.api.rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+      traefik.http.routers.api.service: "api@internal"
+      traefik.http.routers.api.middlewares: "auth"
+      traefik.http.middlewares.auth.forwardAuth.address: "http://admin_api:5000/api/admin/status/"
+
   celery:
     <<: *default-celery-ms
     environment:
@@ -57,6 +81,10 @@ services:
     environment:
       - TEST
       - SERVICE=api
+    labels:
+      traefik.enable: true
+      traefik.http.routers.client.entryPoints: http
+      traefik.http.routers.client.rule: "PathPrefix(`/api/client`)"
 
   admin_api:
     <<: *default-ms
@@ -68,37 +96,54 @@ services:
       - ./docker_config/postgres/environment.env
       - ./docker_config/redis/environment.env
       - ./docker_config/rabbitmq/environment.env
+    labels:
+      traefik.enable: true
+      traefik.http.routers.admin.entryPoints: http
+      traefik.http.routers.admin.rule: "PathPrefix(`/api/admin`)"
 
   events:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=events
+    labels:
+      traefik.enable: true
+      traefik.http.routers.events.entryPoints: http
+      traefik.http.routers.events.rule: "PathPrefix(`/socket.io`)"
 
   monitoring:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=monitoring
+    labels:
+      traefik.enable: true
+      traefik.http.routers.monitoring.entryPoints: http
+      traefik.http.routers.monitoring.rule: "PathPrefix(`/api/metrics`)"
 
   http_receiver:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=http_receiver
+    labels:
+      traefik.enable: true
+      traefik.http.routers.flags.entryPoints: http
+      traefik.http.routers.flags.rule: "PathPrefix(`/api/flags`)"
 
   tcp_receiver:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=tcp_receiver
+    expose:
+      - "31337"
+    labels:
+      traefik.enable: true
+      traefik.tcp.routers.monitoring.entryPoints: tcp
 
   nginx:
     image: nginx:1.17.9-alpine
-    ports:
-      - "8080:80"
-      - "80:80"
-      - "31337:31337"
     volumes:
       - ./docker_config/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./docker_config/nginx/http.conf:/etc/nginx/http.conf
@@ -106,13 +151,10 @@ services:
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
       - ./front/dist:/var/www/front:delegated
     restart: on-failure
-    depends_on:
-      - flower
-      - client_api
-      - admin_api
-      - events
-      - monitoring
-      - http_receiver
+    labels:
+      traefik.enable: true
+      traefik.http.routers.static.entryPoints: http
+      traefik.http.routers.static.rule: "PathPrefix(`/`)"
 
   redis:
     image: redis:5.0.8-alpine

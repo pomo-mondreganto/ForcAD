@@ -1,0 +1,19 @@
+api:
+  dashboard: true
+
+accessLog: { }
+
+log:
+  level: DEBUG
+
+entryPoints:
+  http:
+    address: ":80"
+  httpInternal:
+    address: ":81"
+  tcp:
+    address: ":31337"
+
+providers:
+  docker:
+    exposedByDefault: false
