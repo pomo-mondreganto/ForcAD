@@ -137,7 +137,12 @@ def run():
         tasks = init_tasks(file_config['tasks'], global_config, curs)
 
         data = [
-            (task.id, team.id, task.default_score, -1)
+            {
+                'task_id': task.id,
+                'team_id': team.id,
+                'score': task.default_score,
+                'status': -1,
+            }
             for team in teams
             for task in tasks
         ]
