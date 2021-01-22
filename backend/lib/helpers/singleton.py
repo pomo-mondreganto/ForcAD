@@ -1,6 +1,6 @@
 import json
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar, Generic, Dict
+from typing import TypeVar, Generic, Dict, Any
 
 T = TypeVar('T')
 
@@ -8,6 +8,11 @@ T = TypeVar('T')
 class Singleton(Generic[T], metaclass=ABCMeta):
     """Generic singleton pattern implementation."""
     _values: Dict[str, T] = {}
+
+    @classmethod
+    def __get_key(cls, data: Dict[str, Any]):
+        rep = json.dumps(data, sort_keys=True)
+        return f'{cls.__module__}.{cls.__name__}-{rep}'
 
     @staticmethod
     @abstractmethod
@@ -17,7 +22,7 @@ class Singleton(Generic[T], metaclass=ABCMeta):
     @classmethod
     def get(cls, **kwargs) -> T:
         """This method is the getter of the instance."""
-        rep = json.dumps(kwargs, sort_keys=True)
-        if rep not in cls._values:
-            cls._values[rep] = cls.create(**kwargs)
-        return cls._values[rep]
+        key = cls.__get_key(kwargs)
+        if key not in cls._values:
+            cls._values[key] = cls.create(**kwargs)
+        return cls._values[key]
