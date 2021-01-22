@@ -7,7 +7,7 @@ T = TypeVar('T')
 
 class Singleton(Generic[T], metaclass=ABCMeta):
     """Generic singleton pattern implementation."""
-    _values: Dict[str, T] = None
+    _values: Dict[str, T] = {}
 
     @staticmethod
     @abstractmethod
