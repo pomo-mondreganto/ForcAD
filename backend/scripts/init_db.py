@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+from pathlib import Path
+
 import pytz
 import yaml
-from pathlib import Path
 
 from lib import models
 from lib import storage
@@ -99,7 +100,7 @@ def init_game_state():
         pipe.set('game_state', game_state.to_json())
         pipe.execute()
 
-    storage.utils.get_wro_sio_manager().emit(
+    storage.utils.SIOManager.write_only().emit(
         event='update_scoreboard',
         data={'data': game_state.to_dict()},
         namespace='/game_events',

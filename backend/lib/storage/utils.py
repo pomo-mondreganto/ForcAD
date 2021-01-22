@@ -1,35 +1,69 @@
+from contextlib import contextmanager
+
+import kombu
 import redis
 import socketio
-from contextlib import contextmanager
-from kombu import Connection
 from psycopg2 import pool, extras
 
 import config
-
-_redis_storage = None
-_db_pool = None
-_sio_wro_manager = None
-_sio_manager = None
-_rmq_connection = None
+from lib.helpers.singleton import Singleton, T
 
 
-def get_db_pool() -> pool.SimpleConnectionPool:
-    global _db_pool
+class DBPool(Singleton[pool.SimpleConnectionPool]):
 
-    if not _db_pool:
+    @staticmethod
+    def create() -> pool.SimpleConnectionPool:
         database_config = config.get_db_config()
-        _db_pool = pool.SimpleConnectionPool(
+        return pool.SimpleConnectionPool(
             minconn=5,
             maxconn=20,
             **database_config,
         )
 
-    return _db_pool
+
+class RedisStorage(Singleton[redis.Redis]):
+
+    @staticmethod
+    def create() -> redis.Redis:
+        redis_config = config.get_redis_config()
+        redis_config['decode_responses'] = True
+        return redis.Redis(**redis_config)
+
+
+class SIOManager(Singleton[socketio.KombuManager]):
+
+    @staticmethod
+    def create(*, write_only: bool = False) -> socketio.KombuManager:
+        broker_url = config.get_broker_url()
+        return socketio.KombuManager(
+            url=broker_url,
+            write_only=write_only,
+            channel='forcad-front',
+        )
+
+    @classmethod
+    def get(cls, *, write_only: bool) -> T:
+        return super().get(write_only=write_only)
+
+    @classmethod
+    def write_only(cls) -> socketio.KombuManager:
+        return cls.get(write_only=True)
+
+    @classmethod
+    def read_write(cls) -> socketio.KombuManager:
+        return cls.get(write_only=False)
+
+
+class BrokerConnection(Singleton[kombu.Connection]):
+
+    @staticmethod
+    def create(**kwargs) -> kombu.Connection:
+        return kombu.Connection(config.get_broker_url())
 
 
 @contextmanager
 def db_cursor(dict_cursor: bool = False):  # type: ignore
-    db_pool = get_db_pool()
+    db_pool = DBPool.get()
     conn = db_pool.getconn()
     if dict_cursor:
         curs = conn.cursor(cursor_factory=extras.RealDictCursor)
@@ -42,51 +76,6 @@ def db_cursor(dict_cursor: bool = False):  # type: ignore
         db_pool.putconn(conn)
 
 
-def get_redis_storage() -> redis.StrictRedis:
-    global _redis_storage
-
-    if not _redis_storage:
-        redis_config = config.get_redis_config()
-        redis_config['decode_responses'] = True
-        _redis_storage = redis.StrictRedis(
-            **redis_config,
-        )
-
-    return _redis_storage
-
-
 def redis_pipeline(transaction: bool = True) -> redis.client.Pipeline:
-    storage = get_redis_storage()
+    storage = RedisStorage.get()
     return storage.pipeline(transaction=transaction)
-
-
-def create_sio_manager(write_only=False) -> socketio.KombuManager:
-    broker_url = config.get_broker_url()
-    return socketio.KombuManager(
-        url=broker_url,
-        write_only=write_only,
-        channel='forcad-front',
-    )
-
-
-def get_wro_sio_manager() -> socketio.KombuManager:
-    global _sio_wro_manager
-    if _sio_wro_manager is None:
-        _sio_wro_manager = create_sio_manager(write_only=True)
-    return _sio_wro_manager
-
-
-def get_sio_manager() -> socketio.KombuManager:
-    global _sio_manager
-    if _sio_manager is None:
-        _sio_manager = create_sio_manager(write_only=False)
-    return _sio_manager
-
-
-def get_broker_connection() -> Connection:
-    global _rmq_connection
-
-    if _rmq_connection is None:
-        _rmq_connection = Connection(config.get_broker_url())
-
-    return _rmq_connection

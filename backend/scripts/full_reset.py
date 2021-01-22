@@ -10,7 +10,7 @@ def run():
     reset_db.run()
     init_db.run()
 
-    r = storage.utils.get_redis_storage()
+    r = storage.utils.RedisStorage.get()
     r.flushall()
 
     print('New team tokens:')

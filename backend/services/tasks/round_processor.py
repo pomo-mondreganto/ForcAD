@@ -1,9 +1,10 @@
 import itertools
 import random
+from typing import Optional, Any
+
 from celery import Task
 from celery.utils.log import get_task_logger
 from kombu.utils import json as kjson
-from typing import Optional, Any
 
 import modes
 from lib import storage
@@ -58,7 +59,7 @@ class RoundProcessor(Task):
             pipe.set('game_state', game_state.to_json())
             pipe.execute()
 
-        storage.utils.get_wro_sio_manager().emit(
+        storage.utils.SIOManager.write_only().emit(
             event='update_scoreboard',
             data={'data': game_state.to_dict()},
             namespace='/game_events',

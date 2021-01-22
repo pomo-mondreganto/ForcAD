@@ -54,12 +54,16 @@ def create_team(team: models.Team) -> models.Team:
     with storage.utils.db_cursor() as (conn, curs):
         team.insert(curs)
 
-        insert_data = [
-            (task.id, team.id, task.default_score, -1)
+        insert_data = (
+            {
+                'task_id': task.id,
+                'team_id': team.id,
+                'score': task.default_score,
+                'status': -1,
+            }
             for task in storage.tasks.get_all_tasks()
-        ]
-        for each in insert_data:
-            curs.execute(storage.tasks.TEAMTASK_INSERT_QUERY, each)
+        )
+        curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, insert_data)
 
         conn.commit()
 

@@ -11,7 +11,9 @@ class Notifier:
     def __init__(self, logger: Logger):
         self._logger = logger
         self._q = LightQueue(maxsize=1000)
-        self._sio = storage.utils.create_sio_manager(write_only=True)
+
+        # ensure no-one is writing to the same broker connection concurrently
+        self._sio = storage.utils.SIOManager.create(write_only=True)
 
     def _process(self, ar: AttackResult):
         flag_data = ar.get_flag_notification()

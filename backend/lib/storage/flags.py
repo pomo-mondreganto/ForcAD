@@ -1,6 +1,4 @@
-import secrets
 from collections import defaultdict
-
 from typing import Optional, List, Dict, DefaultDict, Union
 
 from lib import models
@@ -12,6 +10,13 @@ _GET_UNEXPIRED_FLAGS_QUERY = """
 SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
 INNER JOIN teams t on f.team_id = t.id
 WHERE f.round >= %s AND f.task_id IN %s
+"""
+
+_GET_RANDOM_ROUND_FLAG_QUERY = """
+SELECT id FROM flags
+WHERE round = %(round)s AND team_id = %(team_id)s AND task_id = %(task_id)s
+ORDER BY RANDOM()
+LIMIT 1
 """
 
 
@@ -68,12 +73,6 @@ def add_flag(flag: models.Flag) -> models.Flag:
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with utils.redis_pipeline(transaction=True) as pipe:
-        round_flags_key = (
-            f'team:{flag.team_id}:task:{flag.task_id}:round_flags:{flag.round}'
-        )
-        pipe.sadd(round_flags_key, flag.id)
-        pipe.expire(round_flags_key, expires)
-
         pipe.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
         pipe.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
         pipe.execute()
@@ -143,8 +142,10 @@ def get_flag_by_id(flag_id: int, current_round: int) -> Optional[models.Flag]:
 
 
 def get_random_round_flag(
-        team_id: int, task_id: int, from_round: int, current_round: int
-) -> Optional[models.Flag]:
+        team_id: int,
+        task_id: int,
+        from_round: int,
+        current_round: int) -> Optional[models.Flag]:
     """
     Get random flag for team generated for specified round and task.
 
@@ -154,23 +155,19 @@ def get_random_round_flag(
     :param current_round: current round
     :returns: Flag mode instance or None if no flag from rounds exist
     """
-
-    with utils.redis_pipeline(transaction=True) as pipe:
-        cache_helper(
-            pipeline=pipe,
-            cache_key='flags:cached',
-            cache_func=caching.cache_last_flags,
-            cache_args=(current_round, pipe),
+    with utils.db_cursor() as (_, curs):
+        result = curs.execute(
+            _GET_RANDOM_ROUND_FLAG_QUERY,
+            {
+                'round': from_round,
+                'team_id': team_id,
+                'task_id': task_id,
+            }
         )
 
-        flags, = pipe.smembers(
-            f'team:{team_id}:task:{task_id}:round_flags:{from_round}',
-        ).execute()
-        try:
-            flag_id = int(secrets.choice(list(flags)))
-        except (ValueError, IndexError, TypeError):
-            return None
-    return get_flag_by_id(flag_id, current_round)
+    if not result:
+        return None
+    return get_flag_by_id(result[0], current_round)
 
 
 def get_attack_data(

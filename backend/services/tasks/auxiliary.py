@@ -1,7 +1,8 @@
+from typing import Any
+
 from celery import shared_task
 from celery.signals import worker_ready
 from celery.utils.log import get_task_logger
-from typing import Any
 
 from lib import storage
 from lib.helpers import locking
@@ -34,7 +35,7 @@ def startup(**_kwargs: Any) -> None:
                     pipe.set('game_state', game_state.to_json())
                     pipe.execute()
 
-                    storage.utils.get_wro_sio_manager().emit(
+                    storage.utils.SIOManager.write_only().emit(
                         event='update_scoreboard',
                         data={'data': game_state.to_dict()},
                         namespace='/game_events',
@@ -67,7 +68,7 @@ def start_game() -> None:
             pipe.set('game_state', game_state.to_json())
             pipe.execute()
 
-            storage.utils.get_wro_sio_manager().emit(
+            storage.utils.SIOManager.write_only().emit(
                 event='update_scoreboard',
                 data={'data': game_state.to_dict()},
                 namespace='/game_events',

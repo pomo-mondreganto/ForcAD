@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import psycopg2
-import redis
 import time
 from pathlib import Path
+
+import psycopg2
+import redis
 
 from lib import storage
 
@@ -12,7 +13,7 @@ SCRIPTS_DIR = BASE_DIR / 'scripts'
 
 
 def run():
-    conn = storage.utils.get_db_pool().getconn()
+    conn = storage.utils.DBPool.get().getconn()
     curs = conn.cursor()
 
     create_query_path = SCRIPTS_DIR / 'drop_query.sql'
@@ -29,7 +30,7 @@ def run():
 
     while True:
         try:
-            storage.utils.get_redis_storage().flushall()
+            storage.utils.RedisStorage.get().flushall()
         except (redis.exceptions.ConnectionError, redis.exceptions.BusyLoadingError):
             print('[*] Redis isn\'t running, waiting...')
             time.sleep(5)

@@ -7,11 +7,9 @@ from lib.storage import caching, utils
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
-_UPDATE_REAL_ROUND_QUERY = 'UPDATE globalconfig SET real_round = %s WHERE id=1'
+_UPDATE_REAL_ROUND_QUERY = 'UPDATE globalconfig SET real_round = %(round)s WHERE id=1'
 
-_SET_GAME_RUNNING_QUERY = '''
-UPDATE globalconfig SET game_running = %s WHERE id=1
-'''
+_SET_GAME_RUNNING_QUERY = 'UPDATE globalconfig SET game_running = %(value)s WHERE id=1'
 
 _GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
 
@@ -22,11 +20,7 @@ def get_round_start(r: int) -> int:
     """Get start time for round as unix timestamp."""
     with utils.redis_pipeline(transaction=False) as pipe:
         start_time, = pipe.get(f'round:{r}:start_time').execute()
-    try:
-        start_time = int(start_time)
-    except (ValueError, TypeError):
-        start_time = 0
-    return start_time
+    return int(start_time or 0)
 
 
 def set_round_start(r: int) -> None:
@@ -45,19 +39,11 @@ def get_real_round() -> int:
     with utils.redis_pipeline(transaction=False) as pipe:
         r, = pipe.get('real_round').execute()
 
-    try:
-        r = int(r)
-    except (ValueError, TypeError):
-        return -1
-    return r
+    return int(r or -1)
 
 
 def get_real_round_from_db() -> int:
-    """
-    Get real round from database.
-
-    Fully persistent to use with game management
-    """
+    """Get real round from database. Fully persistent to use with game management."""
     with utils.db_cursor() as (_, curs):
         curs.execute(_CURRENT_REAL_ROUND_QUERY)
         r, = curs.fetchone()
@@ -68,14 +54,14 @@ def get_real_round_from_db() -> int:
 def update_real_round_in_db(new_round: int) -> None:
     """Update real_round of global config stored in DB."""
     with utils.db_cursor() as (conn, curs):
-        curs.execute(_UPDATE_REAL_ROUND_QUERY, (new_round,))
+        curs.execute(_UPDATE_REAL_ROUND_QUERY, {'round': new_round})
         conn.commit()
 
 
 def set_game_running(new_value: bool) -> None:
     """Update game_running value in db."""
     with utils.db_cursor() as (conn, curs):
-        curs.execute(_SET_GAME_RUNNING_QUERY, (new_value,))
+        curs.execute(_SET_GAME_RUNNING_QUERY, {'value': new_value})
         conn.commit()
 
 
@@ -144,7 +130,6 @@ def construct_latest_game_state(current_round: int) -> models.GameState:
 def construct_scoreboard() -> dict:
     """
     Get formatted scoreboard to serve to frontend.
-
     Fetches and constructs the full scoreboard (state, teams, tasks, config).
     """
 
