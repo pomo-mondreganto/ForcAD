@@ -5,7 +5,7 @@ from lib.storage import utils, game
 
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
 SELECT f.id FROM stolenflags sf
-JOIN flags f on f.id = sf.flag_id 
+JOIN flags f on f.id = sf.flag_id
 WHERE sf.attacker_id = %(attacker_id)s AND f.round >= %(round)s
 """
 
