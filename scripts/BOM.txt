@@ -6,6 +6,7 @@ backend/scripts
 backend/services
 backend/requirements.txt
 checkers/.gitkeep
+cli
 config.yml.example
 control.py
 docker-compose-fast.yml
@@ -14,4 +15,3 @@ docker_config
 front/dist
 LICENSE
 README.md
-requirements.txt

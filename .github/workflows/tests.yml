@@ -39,7 +39,7 @@ jobs:
         run: python tests/setup_forcad.py
       - name: Install requirements
         run: |
-          pip install -r requirements.txt
+          pip install -r cli/requirements.txt
           pip install -r tests/requirements.txt
           pip install -r backend/requirements.txt
       - name: Setup ForcAD
@@ -52,13 +52,13 @@ jobs:
           export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
           ./control.py start
           python tests/wait_for_start.py
-          ./control.py rd -c "ps"
+          ./control.py rd ps
           env | sort
           python -m unittest discover -v -s tests
 
       - name: Show logs
         if: ${{ failure() }}
-        run: ./control.py rd -c "logs --tail 2000"
+        run: ./control.py rd logs --tail 2000
 
   backend_linter:
     runs-on: ubuntu-20.04
