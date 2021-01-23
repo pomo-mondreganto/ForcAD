@@ -36,6 +36,8 @@ reqs_dst = CHECKERS_DIR / 'requirements.txt'
 reqs_src = TESTS_DIR / 'service' / 'checker' / 'requirements.txt'
 reqs_dst.write_text(reqs_src.read_text())
 
-backup_path = PROJECT_BASE / f'config_backup_{int(time.time())}.yml'
-shutil.copy2(CONFIG_PATH, backup_path)
+if CONFIG_PATH.exists():
+    backup_path = PROJECT_BASE / f'config_backup_{int(time.time())}.yml'
+    shutil.copy2(CONFIG_PATH, backup_path)
+
 CONFIG_PATH.write_text(TEST_CONFIG.read_text())
