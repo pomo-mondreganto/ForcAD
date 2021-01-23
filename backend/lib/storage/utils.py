@@ -57,7 +57,7 @@ class SIOManager(Singleton[socketio.KombuManager]):
 class BrokerConnection(Singleton[kombu.Connection]):
 
     @staticmethod
-    def create(**kwargs) -> kombu.Connection:
+    def create() -> kombu.Connection:
         return kombu.Connection(config.get_broker_url())
 
 
