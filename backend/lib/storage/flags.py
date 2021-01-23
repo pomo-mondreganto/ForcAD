@@ -24,8 +24,8 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) ->
     """
     Flag validation function.
 
-    Checks that flag is valid for current round, adds it to cache,
-    then adds to db
+    Checks that flag is valid for current round, adds it to cache for team,
+    atomically checking if it's already submitted by the attacker.
 
     :param flag: Flag model instance
     :param attacker: attacker team id
@@ -103,11 +103,9 @@ def get_flag_by_field(
                 cache_args=(current_round, pipe),
             )
 
-        pipe.exists(f'flag:{field_name}:{field_value}')
-        pipe.get(f'flag:{field_name}:{field_value}')
-        flag_exists, flag_json = pipe.execute()
+        flag_json, = pipe.get(f'flag:{field_name}:{field_value}').execute()
 
-    if not flag_exists:
+    if not flag_json:
         return None
 
     flag = models.Flag.from_json(flag_json)
@@ -124,7 +122,7 @@ def get_flag_by_str(flag_str: str, current_round: int) -> Optional[models.Flag]:
     :returns: Flag model instance or None
     """
     return get_flag_by_field(
-        field_name='str', field_value=flag_str, current_round=current_round
+        field_name='str', field_value=flag_str, current_round=current_round,
     )
 
 
@@ -137,7 +135,7 @@ def get_flag_by_id(flag_id: int, current_round: int) -> Optional[models.Flag]:
     :return: Flag model instance or None
     """
     return get_flag_by_field(
-        field_name='id', field_value=flag_id, current_round=current_round
+        field_name='id', field_value=flag_id, current_round=current_round,
     )
 
 
@@ -156,7 +154,7 @@ def get_random_round_flag(
     :returns: Flag mode instance or None if no flag from rounds exist
     """
     with utils.db_cursor() as (_, curs):
-        result = curs.execute(
+        curs.execute(
             _GET_RANDOM_ROUND_FLAG_QUERY,
             {
                 'round': from_round,
@@ -164,6 +162,7 @@ def get_random_round_flag(
                 'task_id': task_id,
             }
         )
+        result = curs.fetchone()
 
     if not result:
         return None

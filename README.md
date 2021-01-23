@@ -12,12 +12,12 @@ The name is pronounced as "forkád".
 
 5 easy steps to start a game (assuming current working directory to be the project root): 
 
-1.  Open `backend/config/config.yml` file 
-(or copy `backend/config/config.yml.example` to `backend/config/config.yml`, if the latter is missing).
+1. Open `config.yml` file
+   (or copy `config.yml.example` to `config.yml`, if the latter is missing).
 
-2.  Add teams and tasks to corresponding config sections following the example's format, 
-set `start_time`, `timezone` (e.g. `Europe/Moscow`) and `round_time` (in seconds) (for recommendations see 
-[checker_timeout](#checkers) variable).
+2. Add teams and tasks to corresponding config sections following the example's format, set `start_time`, `timezone` (
+   e.g. `Europe/Moscow`) and `round_time` (in seconds) (for recommendations see
+   [checker_timeout](#checkers) variable).
 
 3.  **Change default passwords** (that includes `storages.db.password`, `storages.redis.password`, 
 `storages.rabbitmq.password` for database and cache, 
@@ -103,7 +103,7 @@ Each flag is valid (and can be checked by checker) for `flag_lifetime` rounds (g
 
 ### Configuration file
 
-Config file (`backend/config/config.yml`) is split into five main parts: 
+Config file (`config.yml`) is split into five main parts:
 
 -   **global** describes global settings:
 

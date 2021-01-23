@@ -16,7 +16,7 @@ TESTS_DIR = PROJECT_DIR / 'tests'
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(TESTS_DIR))
 
-import config
+from lib import config
 from helpers import wait_rounds
 
 

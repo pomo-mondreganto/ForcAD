@@ -1,6 +1,4 @@
-#!/bin/sh
+#!/bin/bash -e
 
-set -e
 cd /app
-
 python3 app.py

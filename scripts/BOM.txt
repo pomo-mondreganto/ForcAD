@@ -1,12 +1,12 @@
 .dockerignore
 .version
 backend/config/__init__.py
-backend/config/config.yml.example
 backend/lib
 backend/scripts
 backend/services
 backend/requirements.txt
 checkers/.gitkeep
+config.yml.example
 control.py
 docker-compose-fast.yml
 docker-compose.yml

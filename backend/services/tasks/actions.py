@@ -1,8 +1,8 @@
-import secrets
-
 import random
-from celery import shared_task
+import secrets
 from typing import Optional, Any
+
+from celery import shared_task
 
 from auxiliary import logger
 from lib import models, storage
@@ -37,8 +37,8 @@ def put_action(
 
     logger.info(
         'Running PUT for team %s task %s, round %s',
-        team.name,
-        task.name,
+        team.id,
+        task.id,
         current_round,
     )
 
@@ -111,8 +111,8 @@ def get_action(
     logger.info(
         'Running GET on round %s for team %s task %s, current round %s',
         round_to_check,
-        team.name,
-        task.name,
+        team.id,
+        task.id,
         current_round,
     )
 
@@ -162,8 +162,8 @@ def check_action(
 
     logger.info(
         'Running CHECK for team %s task %s, round %s',
-        team.name,
-        task.name,
+        team.id,
+        task.id,
         current_round,
     )
     runner = checkers.CheckerRunner(team=team, task=task, logger=logger)

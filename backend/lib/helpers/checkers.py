@@ -1,5 +1,4 @@
 from logging import Logger
-
 from typing import Optional, List
 
 from lib import models
@@ -63,9 +62,8 @@ class CheckerRunner:
         return run_generic_command(
             command=check_command,
             action=Action.CHECK,
-            env_path=self.task.env_path,
-            timeout=self.task.checker_timeout,
-            team_name=self.team.name,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
         )
 
@@ -85,9 +83,8 @@ class CheckerRunner:
         return run_generic_command(
             command=put_command,
             action=Action.PUT,
-            env_path=self.task.env_path,
-            timeout=self.task.checker_timeout,
-            team_name=self.team.name,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
         )
 
@@ -107,9 +104,8 @@ class CheckerRunner:
         return run_generic_command(
             command=get_command,
             action=Action.GET,
-            env_path=self.task.env_path,
-            timeout=self.task.checker_timeout,
-            team_name=self.team.name,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
         )
 
@@ -117,12 +113,9 @@ class CheckerRunner:
         """Check implementation, gevent-compatible"""
 
         return run_generic_action_in_thread(
-            checker_path=self.task.checker,
-            task_name=self.task.name,
             action=Action.CHECK,
-            host=self.team.ip,
-            team_name=self.team.name,
-            timeout=self.task.checker_timeout,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
             action_args=(),
             action_kwargs={},
@@ -139,12 +132,9 @@ class CheckerRunner:
         }
 
         return run_generic_action_in_thread(
-            checker_path=self.task.checker,
-            task_name=self.task.name,
             action=Action.PUT,
-            host=self.team.ip,
-            team_name=self.team.name,
-            timeout=self.task.checker_timeout,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
             action_args=(),
             action_kwargs=kwargs,
@@ -161,12 +151,9 @@ class CheckerRunner:
         }
 
         return run_generic_action_in_thread(
-            checker_path=self.task.checker,
-            task_name=self.task.name,
             action=Action.GET,
-            host=self.team.ip,
-            team_name=self.team.name,
-            timeout=self.task.checker_timeout,
+            task=self.task,
+            team=self.team,
             logger=self.logger,
             action_args=(),
             action_kwargs=kwargs,

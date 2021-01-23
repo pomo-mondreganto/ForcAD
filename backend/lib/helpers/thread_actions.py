@@ -1,8 +1,8 @@
+import importlib.util
 from logging import Logger
 from traceback import format_exc
 
 import gevent
-import importlib.util
 
 from lib import models
 from lib.helpers import exceptions
@@ -16,12 +16,9 @@ def set_verdict_error(verdict: models.CheckerVerdict, action: Action, message: s
 
 
 def run_generic_action_in_thread(
-        checker_path: str,
-        task_name: str,
         action: Action,
-        host: str,
-        team_name: str,
-        timeout: int,
+        task: models.Task,
+        team: models.Team,
         action_args: tuple,
         action_kwargs: dict,
         logger: Logger,
@@ -35,10 +32,10 @@ def run_generic_action_in_thread(
     )
 
     try:
-        spec = importlib.util.spec_from_file_location(task_name, checker_path)
+        spec = importlib.util.spec_from_file_location(task.name, task.checker)
         checker_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(checker_module)  # type: ignore
-        checker = checker_module.Checker(host)  # type: ignore
+        checker = checker_module.Checker(team.ip)  # type: ignore
         finished_exception = checker.get_check_finished_exception()
     except BaseException as e:
         tb = format_exc()
@@ -56,7 +53,7 @@ def run_generic_action_in_thread(
         return verdict
 
     try:
-        with gevent.Timeout(timeout, exceptions.CheckerTimeoutException):
+        with gevent.Timeout(task.checker_timeout, exceptions.CheckerTimeoutException):
             checker.action(action.name.lower(), *action_args, **action_kwargs)
 
     except finished_exception:
@@ -65,7 +62,7 @@ def run_generic_action_in_thread(
         except ValueError:
             mess = (
                 f'Invalid TaskStatus: {checker.status} for '
-                f'team `{team_name}` task `{task_name}`'
+                f'team `{team.id}` task `{task.id}`'
             )
             logger.error(mess)
 
@@ -75,7 +72,7 @@ def run_generic_action_in_thread(
             verdict.private_message = checker.private
 
     except exceptions.CheckerTimeoutException:
-        logger.warning('%s for team %s task %s timed out', action, team_name, task_name)
+        logger.warning('%s for team %s task %s timed out', action, team.id, task.id)
 
         verdict.status = TaskStatus.DOWN
         verdict.public_message = 'Checker timed out'
@@ -85,14 +82,11 @@ def run_generic_action_in_thread(
         tb = format_exc()
         exc = f'{type(e)}: {e}\n{tb}'
 
-        log_func = logger.warning
-        if not isinstance(e, Exception) and not isinstance(e, SystemExit):
-            log_func = logger.error
-        log_func(
+        logger.error(
             '%s for team %s task %s failed with %s',
             action,
-            team_name,
-            task_name,
+            team.id,
+            task.id,
             exc,
         )
 

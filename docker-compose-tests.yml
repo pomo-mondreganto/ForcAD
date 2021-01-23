@@ -66,8 +66,7 @@ services:
 
   test_service:
     build:
-      context: .
-      dockerfile: ./docker_config/test_service/Dockerfile
+      context: ./tests/service
     ports:
       - 10000:10000
     restart: "no"

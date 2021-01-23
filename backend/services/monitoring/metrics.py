@@ -1,4 +1,5 @@
 import socket
+
 from flask import Flask, make_response
 from kombu import Message, Queue, Consumer
 from prometheus_client import (
@@ -61,7 +62,7 @@ class MetricsServer:
     def connect_consumer(self):
         queue = Queue('forcad-monitoring')
         while True:
-            with storage.utils.get_broker_connection() as conn:
+            with storage.utils.BrokerConnection.create() as conn:
                 try:
                     self.consume(conn, queue)
                 except conn.connection_errors:

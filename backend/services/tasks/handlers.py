@@ -1,7 +1,8 @@
+from typing import List
+
 from celery import shared_task
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
-from typing import List
 
 from lib import storage, models
 from lib.helpers import checkers
@@ -78,6 +79,9 @@ def checker_results_handler(
     logger.info(
         "Finished testing team %s task %s, round %s.\n"
         "Verdicts: check: %s; puts %s; gets %s.",
+        team.id,
+        task.id,
+        current_round,
         check_verdict,
         puts_verdicts,
         gets_verdict,

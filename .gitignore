@@ -4,12 +4,11 @@ __pycache__
 
 docker_volumes
 
-backend/config/*config.yml
-backend/config/config_backup*
+*config.yml
+config_backup*.yml
 
 checkers/*
-!checkers/.gitkeep
-!checkers/bin/.gitkeep
+!checkers/requirements.txt
 
 *.env
 /docker-compose-base.yml
