@@ -7,7 +7,7 @@ pushd "${BASE_DIR}" >/dev/null
 
 VERSION="${FORCAD_VERSION}"
 
-if [[ -z "${VERSION}" ]]; then
+if [[ -z "${VERSION}" && -f .version ]]; then
   echo "[*] Trying to use version from .version"
   VERSION=$(tr -d '\n' <.version)
 fi

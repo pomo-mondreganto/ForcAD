@@ -1,8 +1,7 @@
-import shlex
-from logging import Logger
-
 import os
+import shlex
 import subprocess
+from logging import Logger
 from typing import List, Any, AnyStr, Optional, Tuple, Dict
 
 from lib import models
@@ -98,12 +97,26 @@ def get_patched_environ(env_path: str) -> Dict[str, str]:
     return env
 
 
+def log_error(
+        action: Action,
+        team: models.Team,
+        result: subprocess.CompletedProcess,
+        logger: Logger):
+    logger.warning(
+        '%s for team %s failed with code %s.\nstdout: %s\nstderr: %s',
+        action,
+        team.id,
+        result.returncode,
+        result.stdout,
+        result.stderr,
+    )
+
+
 def run_generic_command(
         command: List,
         action: Action,
-        env_path: str,
-        timeout: int,
-        team_name: str,
+        task: models.Task,
+        team: models.Team,
         logger: Logger,
 ) -> models.CheckerVerdict:
     """Runs generic checker command, calls "run_command_gracefully"
@@ -111,26 +124,27 @@ def run_generic_command(
 
     :param command: command to run
     :param action: type of command (for logging)
-    :param env_path: path to insert into environment
-    :param timeout: "soft" command timeout
-    :param team_name: team name for logging
+    :param task: `models.Task` instance for env & timeout
+    :param team: `models.Team` instance (for logging)
     :param logger: logger instance
     :return: models.CheckerVerdict instance
     """
-    env = get_patched_environ(env_path=env_path)
+    env = get_patched_environ(env_path=task.env_path)
 
     try:
         result, killed = run_command_gracefully(
             command,
             capture_output=True,
-            timeout=timeout,
+            timeout=task.checker_timeout,
             env=env,
         )
 
         if killed:
             logger.warning(
-                f'Process was forcefully killed during {action} '
-                f'for team {team_name} task '
+                'Process was forcefully killed during %s for team %s task %s',
+                action,
+                team.id,
+                task.id,
             )
 
         try:
@@ -138,11 +152,7 @@ def run_generic_command(
             public_message = result.stdout[:1024].decode().strip()
             private_message = result.stderr[:1024].decode().strip()
             if status == TaskStatus.CHECK_FAILED:
-                logger.warning(
-                    f'{action} for team {team_name} failed with '
-                    f'exit code {result.returncode},'
-                    f'\nstderr: {result.stderr},\nstdout: {result.stdout}'
-                )
+                log_error(action, team, result, logger)
         except ValueError as e:
             status = TaskStatus.CHECK_FAILED
             public_message = 'Check failed'
@@ -152,16 +162,12 @@ def run_generic_command(
                 f'Stdout: {result.stdout}\n'
                 f'Stderr: {result.stderr}'
             )
-            logger.warning(
-                f'{action} for team {team_name} failed with '
-                f'exit code {result.returncode},\n'
-                f'stderr: {result.stderr},\nstdout: {result.stdout}'
-            )
+            log_error(action, team, result, logger)
 
     except subprocess.TimeoutExpired:
         status = TaskStatus.DOWN
         private_message = f'{action} timeout (killed by ForcAD)'
-        public_message = 'Timeout'
+        public_message = 'Checker timed out'
 
     command_str = ' '.join(shlex.quote(x) for x in command)
     verdict = models.CheckerVerdict(
