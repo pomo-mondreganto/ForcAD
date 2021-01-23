@@ -1,19 +1,13 @@
 import click
 
+from .options import with_fast_option, with_workers_option
 from .scale import scale
 from .setup import setup
-from .utils import with_fast_option
 
 
 @click.command(help='Start the workers only')
 @with_fast_option
-@click.option(
-    '-w', '--workers',
-    type=int,
-    metavar='N',
-    default=1,
-    help='Number of celery worker instances',
-)
+@with_workers_option
 @click.option(
     '--redis',
     metavar='ADDR',

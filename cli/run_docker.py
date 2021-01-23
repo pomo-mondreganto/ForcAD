@@ -1,6 +1,7 @@
 import click
 
-from .utils import run_docker, with_fast_option
+from .options import with_fast_option
+from .utils import run_docker
 
 
 @click.command(

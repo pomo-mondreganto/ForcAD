@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-from functools import wraps
 from typing import List, Tuple
 
 import click
@@ -58,16 +57,3 @@ def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
 
 def print_file_exception_info(_func, path, _exc_info):
     print(f'File {path} not found')
-
-
-def with_fast_option(func):
-    @click.option(
-        '--fast',
-        is_flag=True,
-        help='Use faster build with prebuilt images',
-    )
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
