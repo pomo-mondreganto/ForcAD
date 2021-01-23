@@ -8,8 +8,7 @@ backend/config/*config.yml
 backend/config/config_backup*
 
 checkers/*
-!checkers/.gitkeep
-!checkers/bin/.gitkeep
+!checkers/requirements.txt
 
 *.env
 /docker-compose-base.yml
