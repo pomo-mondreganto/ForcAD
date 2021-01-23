@@ -8,6 +8,8 @@ Pure-python distributable Attack-Defence CTF platform, created to be easily set 
 
 The name is pronounced as "forkád".
 
+#### This documentation is for the latest (development) version of ForcAD. It might not be stable or even working. The latest stable version can be found [here](https://github.com/pomo-mondreganto/ForcAD/releases/latest), see the README.md there. 
+
 ## Running
 
 5 easy steps to start a game (assuming current working directory to be the project root): 
