@@ -12,6 +12,8 @@ rm -rf "${RELEASE_DIR}" "${RELEASE_DIR}.zip"
 # to create clean releases locally
 find . -name "__pycache__" -prune -exec rm -rf {} \;
 
+sed -i '/^This documentation is for the latest/d' "${BASE_DIR}/README.md"
+
 while read -r file; do
   echo "$file"
   mkdir -p "${RELEASE_DIR}/$(dirname "${file}")"
