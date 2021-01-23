@@ -2,10 +2,8 @@ from lib import storage
 
 
 def init_scoreboard(sid=None):
-    sio = storage.utils.get_wro_sio_manager()
     scoreboard = storage.game.construct_scoreboard()
-
-    sio.emit(
+    storage.utils.SIOManager.write_only().emit(
         'init_scoreboard',
         {'data': scoreboard},
         namespace='/game_events',

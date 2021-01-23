@@ -10,9 +10,10 @@ _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 TEAMTASK_INSERT_QUERY = '''
 INSERT INTO TeamTasks
 (task_id, team_id, score, status)
-VALUES (%s, %s, %s, %s)
+VALUES (%(task_id)s, %(team_id)s, %(score)s, %(status)s)
 '''
 
+# noinspection SqlInsertValues
 _SELECT_TEAMTASK_LOG_QUERY = '''
 WITH logged_teamtasks AS (
     SELECT * FROM teamtaskslog
@@ -206,13 +207,16 @@ def create_task(task: models.Task) -> models.Task:
     with storage.utils.db_cursor() as (conn, curs):
         task.insert(curs)
 
-        insert_data = [
-            (task.id, team.id, task.default_score, -1)
+        insert_data = (
+            {
+                'task_id': task.id,
+                'team_id': team.id,
+                'score': task.default_score,
+                'status': -1,
+            }
             for team in storage.teams.get_all_teams()
-        ]
-        # todo: execute_many
-        for each in insert_data:
-            curs.execute(TEAMTASK_INSERT_QUERY, each)
+        )
+        curs.executemany(TEAMTASK_INSERT_QUERY, insert_data)
 
         conn.commit()
 

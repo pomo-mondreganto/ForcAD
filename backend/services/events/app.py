@@ -1,4 +1,5 @@
 import logging
+
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -12,7 +13,7 @@ CORS(
     automatic_options=True,
 )
 
-sio_manager = storage.utils.get_sio_manager()
+sio_manager = storage.utils.SIOManager.read_write()
 sio = SocketIO(
     app=app,
     async_mode='eventlet',
