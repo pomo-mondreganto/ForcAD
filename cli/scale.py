@@ -13,7 +13,7 @@ from .utils import run_docker
     required=True,
 )
 def scale(service):
-    command = ['up', '-d', '--no-recreate', '--no-build']
+    command = ['up', '-d', '--no-recreate']
     services = []
     for name, instances in service:
         command.append('--scale')
