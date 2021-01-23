@@ -63,13 +63,20 @@ Config file (`config.yml`) is split into five main parts:
 
 -   **global** describes global settings:
 
-  -   `timezone`: the timezone in which `start_time` is specified. Example: `Europe/Moscow`.  
+  -   `timezone`: the timezone in which `start_time` is specified. Example: `Europe/Moscow`.
+  
   -   `start_time`: the datetime of game start (timezone will be taken from the `timezone` option). Example: `2019-11-30 15:30:00`.
-  -   `default_score`: default score for tasks (float). Example: `2000`
-  -   `env_path`: string (see [checkers](#checkers) section). Example: `/checkers/bin/`
-  -   `flag_lifetime`: flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`
-  -   `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`
-  -   `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`
+  
+  -   `default_score`: default score for tasks (float). Example: `2000`.
+  
+  -   `env_path`: string (see [checkers](#checkers) section). Example: `/checkers/bin/`.
+  
+  -   `flag_lifetime`: flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`.
+  
+  -   `game_hardness`: game hardness parameter (see [rating system](#rating-system) section). Example: `3000.0`.
+  
+  -   `inflation`: inflation (see [rating system](#rating-system) section). Example: `true`.
+  
   -   `checkers_path`: path to checkers inside Docker container. `/checkers/` if not changed specifically.
 
 -   **storages** describes settings used to connect to PostgreSQL and Redis (examples provided):
