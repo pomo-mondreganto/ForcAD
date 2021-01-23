@@ -9,14 +9,9 @@ import yaml
 from lib import models
 from lib import storage
 
-BASE_DIR = Path(__file__).resolve().absolute().parents[1]
-CONFIG_DIR = BASE_DIR / 'config'
-CONFIG_FILENAME = 'config.yml'
-
-if os.environ.get('TEST'):
-    CONFIG_FILENAME = 'test_config.yml'
-
-SCRIPTS_DIR = BASE_DIR / 'scripts'
+BACKEND_BASE = Path(__file__).resolve().absolute().parents[1]
+SCRIPTS_DIR = BACKEND_BASE / 'scripts'
+CONFIG_PATH = os.getenv('CONFIG_PATH')
 
 
 def init_schema(curs):
@@ -32,16 +27,7 @@ def init_schema(curs):
 def init_teams(config, curs):
     teams = []
 
-    team_defaults = {
-        'highlighted': False,
-        'active': True,
-    }
-
     for team_conf in config:
-        for k, v in team_defaults.items():
-            if k not in team_conf:
-                team_conf[k] = v
-
         team_token = models.Team.generate_token()
         team = models.Team(id=None, **team_conf, token=team_token)
         team.insert(curs)
@@ -56,7 +42,6 @@ def init_tasks(config, global_config, curs):
         'default_score': global_config['default_score'],
         'get_period': global_config.get('get_period', global_config['round_time']),
         'checker_type': 'hackerdom',
-        'active': True,
     }
 
     tasks = []
@@ -108,8 +93,7 @@ def init_game_state():
 
 
 def run():
-    conf_path = CONFIG_DIR / CONFIG_FILENAME
-    with conf_path.open(mode='r') as f:
+    with open(CONFIG_PATH, 'r') as f:
         file_config = yaml.safe_load(f)
 
     with storage.utils.db_cursor() as (conn, curs):

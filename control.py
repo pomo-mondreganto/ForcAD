@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 
-import shlex
-import traceback
-
 import argparse
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 import time
-import yaml
+import traceback
 from pathlib import Path
 from typing import Tuple, List
 
+import yaml
+
 BASE_DIR = Path(__file__).absolute().resolve().parent
-CONFIG_DIR = BASE_DIR / 'backend' / 'config'
 DOCKER_COMPOSE_FILE = 'docker-compose.yml'
 BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 
 FULL_COMPOSE_PATH = BASE_DIR / 'docker-compose.yml'
 VERSION = 'latest'
 
-CONFIG_FILENAME = 'config.yml'
+CONFIG_PATH = BASE_DIR / 'config.yml'
 
-if os.environ.get('TEST'):
-    CONFIG_FILENAME = 'test_config.yml'
-elif os.environ.get('LOCAL'):
-    CONFIG_FILENAME = 'local_config.yml'
+
+def load_config():
+    with CONFIG_PATH.open(mode='r') as f:
+        config = yaml.safe_load(f)
+    return config
 
 
 def run_command(command: List[str], cwd=None, env=None):
@@ -63,8 +63,7 @@ def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
 def setup_db(config):
     postgres_env_path = BASE_DIR.joinpath(
         'docker_config',
-        'postgres',
-        'environment.env',
+        'postgres_environment.env',
     )
 
     db_config = config['storages']['db']
@@ -89,8 +88,7 @@ def setup_db(config):
 def setup_redis(config):
     redis_env_path = BASE_DIR.joinpath(
         'docker_config',
-        'redis',
-        'environment.env',
+        'redis_environment.env',
     )
 
     redis_config = config['storages']['redis']
@@ -129,8 +127,7 @@ def setup_flower(config):
 def setup_rabbitmq(config):
     rabbitmq_env_path = BASE_DIR.joinpath(
         'docker_config',
-        'rabbitmq',
-        'environment.env',
+        'rabbitmq_environment.env',
     )
 
     rabbitmq_config = config['storages']['rabbitmq']
@@ -189,8 +186,7 @@ def prepare_docker_compose(args):
 
 def setup_config(args):
     override_config(args)
-    conf_path = CONFIG_DIR / CONFIG_FILENAME
-    config = yaml.safe_load(conf_path.open(mode='r'))
+    config = load_config()
     setup_db(config)
     setup_redis(config)
     setup_flower(config)
@@ -200,12 +196,11 @@ def setup_config(args):
 
 
 def override_config(args):
-    conf_path = CONFIG_DIR / CONFIG_FILENAME
-    config = yaml.safe_load(conf_path.open(mode='r'))
+    config = load_config()
 
     # create config backup
-    backup_path = CONFIG_DIR / f'config_backup_{int(time.time())}.yml'
-    shutil.copy2(conf_path, backup_path)
+    backup_path = BASE_DIR / f'config_backup_{int(time.time())}.yml'
+    shutil.copy2(CONFIG_PATH, backup_path)
 
     # patch config host variables to connect to the right place
     if 'redis' in args and args.redis:
@@ -223,7 +218,7 @@ def override_config(args):
         config['storages']['rabbitmq']['host'] = host
         config['storages']['rabbitmq']['port'] = port
 
-    with conf_path.open(mode='w') as f:
+    with CONFIG_PATH.open(mode='w') as f:
         yaml.safe_dump(config, f)
 
 
@@ -238,7 +233,6 @@ def print_tokens(_args):
         command,
         cwd=BASE_DIR,
     )
-
     print(res.decode().strip())
 
 
@@ -306,11 +300,11 @@ def run_worker(args):
 
 
 def pause_game(_args):
-    run_docker(['stop', 'celerybeat', 'tcp_receiver'])
+    run_docker(['stop', 'celerybeat', 'tcp_receiver', 'http_receiver'])
 
 
 def resume_game(_args):
-    run_docker(['start', 'celerybeat', 'tcp_receiver'])
+    run_docker(['start', 'celerybeat', 'tcp_receiver', 'http_receiver'])
 
 
 def run_docker_command(args):
