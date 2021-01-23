@@ -2,8 +2,7 @@ import secrets
 
 from flask import request, jsonify
 
-import config
-from lib import storage
+from lib import storage, config
 from .utils import abort_with_error
 
 

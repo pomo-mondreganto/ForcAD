@@ -6,8 +6,7 @@ from eventlet.queue import Queue, Empty
 from kombu import Connection
 from kombu.messaging import Producer
 
-import config
-from lib import models
+from lib import models, config
 
 
 class SubmitMonitor:

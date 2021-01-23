@@ -5,7 +5,7 @@ import redis
 import socketio
 from psycopg2 import pool, extras
 
-import config
+from lib import config
 from lib.helpers.singleton import Singleton, T
 
 
