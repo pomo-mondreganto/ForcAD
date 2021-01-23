@@ -1,15 +1,11 @@
 import click
 
 from .constants import VERSION
-from .utils import run_docker
+from .utils import run_docker, with_fast_option
 
 
 @click.command(help='Start ForcAD, building if necessary')
-@click.option(
-    '-f', '--fast',
-    is_flag=True,
-    help='Use faster build with prebuilt images',
-)
+@with_fast_option
 @click.option(
     '-w', '--workers',
     type=int,

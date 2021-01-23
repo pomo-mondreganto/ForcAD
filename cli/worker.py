@@ -2,14 +2,11 @@ import click
 
 from .scale import scale
 from .setup import setup
+from .utils import with_fast_option
 
 
 @click.command(help='Start the workers only')
-@click.option(
-    '-f', '--fast',
-    is_flag=True,
-    help='Use faster build with prebuilt images',
-)
+@with_fast_option
 @click.option(
     '-w', '--workers',
     type=int,

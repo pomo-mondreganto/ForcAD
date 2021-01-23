@@ -62,7 +62,7 @@ def print_file_exception_info(_func, path, _exc_info):
 
 def with_fast_option(func):
     @click.option(
-        '-f', '--fast',
+        '--fast',
         is_flag=True,
         help='Use faster build with prebuilt images',
     )

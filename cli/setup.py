@@ -183,5 +183,6 @@ def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = Non
     if rabbitmq:
         del base_conf['services']['rabbitmq']
 
-    with BASE_COMPOSE_FILE.open(mode='w') as f:
+    res_path = BASE_DIR / BASE_COMPOSE_FILE
+    with res_path.open(mode='w') as f:
         yaml.dump(base_conf, f)
