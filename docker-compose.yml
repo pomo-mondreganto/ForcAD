@@ -104,6 +104,7 @@ services:
       - ./docker_config/nginx/http.conf:/etc/nginx/http.conf
       - ./docker_config/nginx/tcp.conf:/etc/nginx/tcp.conf
       - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
+      - ./docker_config/nginx/proxy_params_ws:/etc/nginx/proxy_params_ws
       - ./front/dist:/var/www/front:delegated
     restart: on-failure
     depends_on:
@@ -113,6 +114,7 @@ services:
       - events
       - monitoring
       - http_receiver
+      - tcp_receiver
 
   redis:
     image: redis:5.0.8-alpine
