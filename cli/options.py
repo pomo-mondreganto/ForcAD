@@ -2,7 +2,7 @@ import click
 
 
 def with_fast_option(func):
-    click.option(
+    return click.option(
         '--fast',
         is_flag=True,
         help='Use faster build with prebuilt images',
