@@ -100,3 +100,17 @@ jobs:
           prettier: true
           eslint_dir: front/src
           prettier_dir: front/src
+
+  test_kube:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Kustomize build
+        uses: karancode/kustomize-github-action@master
+        with:
+          kustomize_version: '3.9.2'
+          kustomize_build_dir: 'deploy'
+          kustomize_comment: true
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
