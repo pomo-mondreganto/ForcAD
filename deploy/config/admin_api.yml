@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-api
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: admin-api
+  template:
+    metadata:
+      labels:
+        app: admin-api
+    spec:
+      containers:
+        - name: server
+          image: admin-api
+          env:
+            - name: SERVICE
+              value: "admin"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-api
+spec:
+  type: ClusterIP
+  selector:
+    app: admin-api
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

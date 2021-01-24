@@ -18,3 +18,5 @@ node_modules/
 
 /.version
 /release
+deploy/secrets/*
+!deploy/secrets/.keep

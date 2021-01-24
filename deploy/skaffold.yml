@@ -1,0 +1,31 @@
+apiVersion: skaffold/v1beta2
+kind: Config
+build:
+  artifacts:
+    - image: admin-api
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile.fast
+    - image: client-api
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile.fast
+    - image: events
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile.fast
+    - image: http-receiver
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile.fast
+    - image: monitoring
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile.fast
+  tagPolicy:
+    gitCommit: { }
+  local:
+    useBuildkit: true
+deploy:
+  kustomize:
+    path: deploy

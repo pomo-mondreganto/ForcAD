@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: not-important
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: forcad-db-secrets
+          env:
+            - name: PORT
+              value: "5000"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 100Mi
+            limits:
+              cpu: 300m
+              memory: 300Mi
+          readinessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            exec:
+              command: [ "curl", "127.0.0.1:5000" ]
+          livenessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            exec:
+              command: [ "curl", "127.0.0.1:5000" ]
