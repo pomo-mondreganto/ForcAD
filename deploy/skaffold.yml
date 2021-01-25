@@ -1,36 +1,43 @@
-apiVersion: skaffold/v1beta2
+apiVersion: skaffold/v2beta10
 kind: Config
 build:
   artifacts:
-    - image: admin-api
+    - image: forcad-admin-api
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
-    - image: client-api
+    - image: forcad-client-api
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
-    - image: events
+    - image: forcad-events
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
-    - image: http-receiver
+    - image: forcad-http-receiver
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
-    - image: monitoring
+    - image: forcad-tcp-receiver
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
-    - image: initializer
+    - image: forcad-monitoring
+      context: .
+      docker:
+        dockerfile: ./docker_config/services/Dockerfile
+    - image: forcad-initializer
       context: .
       docker:
         dockerfile: ./docker_config/initializer/Dockerfile
+    - image: forcad-nginx
+      context: .
+      docker:
+        dockerfile: ./docker_config/nginx/Dockerfile
   tagPolicy:
     gitCommit: { }
   local:
     useBuildkit: true
-    useDockerCLI: true
 deploy:
   kustomize:
-    path: deploy
+    paths: [ "deploy" ]

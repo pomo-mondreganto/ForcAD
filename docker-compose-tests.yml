@@ -34,10 +34,10 @@ services:
         version: ${FORCAD_VERSION:-latest}
     restart: "no"
 
-  client_api:
+  client-api:
     <<: *service-test
 
-  admin_api:
+  admin-api:
     <<: *service-test
 
   events:
@@ -46,10 +46,10 @@ services:
   monitoring:
     <<: *service-test
 
-  http_receiver:
+  http-receiver:
     <<: *service-test
 
-  tcp_receiver:
+  tcp-receiver:
     <<: *service-test
 
   nginx:
@@ -64,7 +64,7 @@ services:
   rabbitmq:
     restart: "no"
 
-  test_service:
+  test-service:
     build:
       context: ./tests/service
     ports:

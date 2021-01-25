@@ -10,7 +10,7 @@ def print_tokens():
     command = [
         'docker-compose',
         '-f', FULL_COMPOSE_PATH,
-        'exec', '-T', 'client_api',
+        'exec', '-T', 'client-api',
         'python3', '/app/scripts/print_tokens.py',
     ]
     res = subprocess.check_output(

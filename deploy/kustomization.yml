@@ -5,6 +5,7 @@ resources:
   - config/client_api.yml
   - config/events.yml
   - config/http_receiver.yml
+  - config/tcp_receiver.yml
   - config/monitoring.yml
   - config/initializer.yml
 
@@ -12,9 +13,16 @@ resources:
   - config/rabbitmq.yml
   - config/redis.yml
 
+  - config/nginx.yml
+
   - secrets/db.yml
 patches:
   - path: patches/web_deployment.yml
     target:
       kind: Deployment
       labelSelector: appType=web
+
+  - path: patches/tcp_deployment.yml
+    target:
+      kind: Deployment
+      labelSelector: appType=tcp

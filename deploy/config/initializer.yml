@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
         - name: initializer
-          image: initializer
+          image: forcad-initializer
           envFrom:
             - secretRef:
                 name: forcad-db-secrets

@@ -52,13 +52,13 @@ services:
       - TEST
     restart: on-failure
 
-  client_api:
+  client-api:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=api
 
-  admin_api:
+  admin-api:
     <<: *default-ms
     environment:
       - TEST
@@ -81,13 +81,13 @@ services:
       - TEST
       - SERVICE=monitoring
 
-  http_receiver:
+  http-receiver:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=http_receiver
 
-  tcp_receiver:
+  tcp-receiver:
     <<: *default-ms
     environment:
       - TEST
@@ -109,12 +109,12 @@ services:
     restart: on-failure
     depends_on:
       - flower
-      - client_api
-      - admin_api
+      - client-api
+      - admin-api
       - events
       - monitoring
-      - http_receiver
-      - tcp_receiver
+      - http-receiver
+      - tcp-receiver
 
   redis:
     image: redis:5.0.8-alpine
