@@ -1,4 +1,5 @@
 import logging
+
 from flask import Blueprint
 from flask import jsonify, make_response, request
 
@@ -63,7 +64,6 @@ def get_teams():
     return jsonify(responses)
 
 
-@receiver_bp.route('/status/')
+@receiver_bp.route('/health/')
 def health_check():
-    logger.debug('status called')
     return jsonify({'status': 'ok'})

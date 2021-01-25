@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: initializer
+spec:
+  template:
+    spec:
+      containers:
+        - name: initializer
+          image: initializer
+          envFrom:
+            - secretRef:
+                name: forcad-db-secrets
+      restartPolicy: OnFailure

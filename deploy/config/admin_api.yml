@@ -19,6 +19,12 @@ spec:
           env:
             - name: SERVICE
               value: "admin"
+          readinessProbe:
+            httpGet:
+              path: /api/admin/health/
+          livenessProbe:
+            httpGet:
+              path: /api/admin/health/
 
 ---
 apiVersion: v1

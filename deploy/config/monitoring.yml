@@ -19,6 +19,12 @@ spec:
           env:
             - name: SERVICE
               value: "monitoring"
+          readinessProbe:
+            httpGet:
+              path: /api/metrics/health/
+          livenessProbe:
+            httpGet:
+              path: /api/metrics/health/
 
 ---
 apiVersion: v1

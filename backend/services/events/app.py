@@ -1,6 +1,6 @@
 import logging
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
@@ -31,6 +31,11 @@ def handle_connect():
         {'data': scoreboard},
         namespace='/game_events',
     )
+
+
+@app.route('/api/events/health/')
+def health_check():
+    return jsonify({'status': 'ok'})
 
 
 if __name__ == '__main__':

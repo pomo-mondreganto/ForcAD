@@ -19,6 +19,12 @@ spec:
           env:
             - name: SERVICE
               value: "http_receiver"
+          readinessProbe:
+            httpGet:
+              path: /flags/health/
+          livenessProbe:
+            httpGet:
+              path: /flags/health/
 
 ---
 apiVersion: v1

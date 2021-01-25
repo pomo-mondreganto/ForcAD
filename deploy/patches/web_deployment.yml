@@ -26,10 +26,10 @@ spec:
           readinessProbe:
             initialDelaySeconds: 20
             periodSeconds: 15
-            exec:
-              command: [ "curl", "127.0.0.1:5000" ]
+            httpGet:
+              port: 5000
           livenessProbe:
             initialDelaySeconds: 20
             periodSeconds: 15
-            exec:
-              command: [ "curl", "127.0.0.1:5000" ]
+            httpGet:
+              port: 5000

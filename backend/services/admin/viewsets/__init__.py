@@ -4,7 +4,7 @@ from .authentication import login, status
 from .tasks import TaskApi
 from .teams import TeamApi
 from .teamtasks import TeamTaskApi
-from .utils import admin_bp
+from .views import admin_bp
 
 TeamApi(admin_bp, auth=True)
 TaskApi(admin_bp, auth=True)

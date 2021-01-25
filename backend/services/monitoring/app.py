@@ -1,6 +1,7 @@
-import eventlet
 import logging
-from flask import Flask
+
+import eventlet
+from flask import Flask, jsonify
 from flask_cors import CORS
 
 from metrics import MetricsServer
@@ -15,6 +16,12 @@ CORS(
 metrics = MetricsServer(app)
 metrics.add_endpoint('/api/metrics')
 eventlet.spawn(metrics.connect_consumer)
+
+
+@app.route('/api/metrics/health/')
+def health():
+    return jsonify({'status': 'ok'})
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

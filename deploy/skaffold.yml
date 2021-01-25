@@ -5,27 +5,32 @@ build:
     - image: admin-api
       context: .
       docker:
-        dockerfile: ./docker_config/services/Dockerfile.fast
+        dockerfile: ./docker_config/services/Dockerfile
     - image: client-api
       context: .
       docker:
-        dockerfile: ./docker_config/services/Dockerfile.fast
+        dockerfile: ./docker_config/services/Dockerfile
     - image: events
       context: .
       docker:
-        dockerfile: ./docker_config/services/Dockerfile.fast
+        dockerfile: ./docker_config/services/Dockerfile
     - image: http-receiver
       context: .
       docker:
-        dockerfile: ./docker_config/services/Dockerfile.fast
+        dockerfile: ./docker_config/services/Dockerfile
     - image: monitoring
       context: .
       docker:
-        dockerfile: ./docker_config/services/Dockerfile.fast
+        dockerfile: ./docker_config/services/Dockerfile
+    - image: initializer
+      context: .
+      docker:
+        dockerfile: ./docker_config/initializer/Dockerfile
   tagPolicy:
     gitCommit: { }
   local:
     useBuildkit: true
+    useDockerCLI: true
 deploy:
   kustomize:
     path: deploy

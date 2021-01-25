@@ -6,6 +6,11 @@ resources:
   - config/events.yml
   - config/http_receiver.yml
   - config/monitoring.yml
+  - config/initializer.yml
+
+  - config/postgres.yml
+  - config/rabbitmq.yml
+  - config/redis.yml
 
   - secrets/db.yml
 patches:

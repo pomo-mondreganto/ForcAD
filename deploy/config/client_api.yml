@@ -18,7 +18,13 @@ spec:
           image: client-api
           env:
             - name: SERVICE
-              value: "admin"
+              value: "api"
+          readinessProbe:
+            httpGet:
+              path: /api/client/health/
+          livenessProbe:
+            httpGet:
+              path: /api/client/health/
 
 ---
 apiVersion: v1

@@ -19,7 +19,12 @@ spec:
           env:
             - name: SERVICE
               value: "events"
-
+          readinessProbe:
+            httpGet:
+              path: /api/events/health/
+          livenessProbe:
+            httpGet:
+              path: /api/events/health/
 ---
 apiVersion: v1
 kind: Service
