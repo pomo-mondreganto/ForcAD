@@ -38,7 +38,7 @@ services:
       - TEST
       - SERVICE=flower
     env_file:
-      - ./docker_config/celery/flower.env
+      - ./docker_config/services/admin.env
       - ./docker_config/postgres_environment.env
       - ./docker_config/redis_environment.env
       - ./docker_config/rabbitmq_environment.env

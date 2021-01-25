@@ -20,7 +20,7 @@ spec:
             - containerPort: 5432
           envFrom:
             - secretRef:
-                name: forcad-db-secrets
+                name: forcad-postgres-secret
 
 ---
 apiVersion: v1

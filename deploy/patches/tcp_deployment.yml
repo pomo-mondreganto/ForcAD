@@ -12,7 +12,11 @@ spec:
             - containerPort: 31337
           envFrom:
             - secretRef:
-                name: forcad-db-secrets
+                name: forcad-postgres-secret
+            - secretRef:
+                name: forcad-rabbitmq-secret
+            - secretRef:
+                name: forcad-redis-secret
           env:
             - name: PORT
               value: "31337"

@@ -2,7 +2,7 @@ import subprocess
 
 import click
 
-from .constants import FULL_COMPOSE_PATH, BASE_DIR
+from cli.constants import FULL_COMPOSE_PATH, BASE_DIR
 
 
 @click.command('print_tokens', help='Print team tokens')

@@ -21,7 +21,7 @@ spec:
             - containerPort: 6379
           envFrom:
             - secretRef:
-                name: forcad-db-secrets
+                name: forcad-redis-secret
 
 ---
 apiVersion: v1

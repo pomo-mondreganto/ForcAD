@@ -4,8 +4,8 @@ import time
 import click
 import yaml
 
-from . import utils
-from .constants import BASE_DIR, CONFIG_PATH, FULL_COMPOSE_PATH, BASE_COMPOSE_FILE
+from cli import utils
+from cli.constants import BASE_DIR, CONFIG_PATH, FULL_COMPOSE_PATH, BASE_COMPOSE_FILE
 
 
 @click.command(help='Initialize ForcAD configuration')
@@ -29,7 +29,6 @@ def setup(redis, database, rabbitmq, **_kwargs):
     config = utils.load_config()
     setup_db(config)
     setup_redis(config)
-    setup_flower(config)
     setup_rabbitmq(config)
     setup_admin_api(config)
     prepare_compose(redis=redis, database=database, rabbitmq=rabbitmq)
@@ -108,24 +107,6 @@ def setup_redis(config):
     redis_env_path.write_text('\n'.join(redis_config))
 
 
-def setup_flower(config):
-    flower_env_path = BASE_DIR.joinpath(
-        'docker_config',
-        'celery',
-        'flower.env',
-    )
-
-    admin_config = config['admin']
-    flower_username = admin_config['username']
-    flower_password = admin_config['password']
-    flower_config = [
-        "# THIS FILE IS MANAGED BY 'control.py'",
-        f'FLOWER_BASIC_AUTH={flower_username}:{flower_password}',
-    ]
-
-    flower_env_path.write_text('\n'.join(flower_config))
-
-
 def setup_rabbitmq(config):
     rabbitmq_env_path = BASE_DIR.joinpath(
         'docker_config',
@@ -172,7 +153,8 @@ def setup_admin_api(config):
 
 
 def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = None):
-    base_conf = yaml.safe_load(FULL_COMPOSE_PATH.open(mode='r'))
+    with FULL_COMPOSE_PATH.open(mode='r') as f:
+        base_conf = yaml.safe_load(f)
 
     if redis:
         del base_conf['services']['redis']

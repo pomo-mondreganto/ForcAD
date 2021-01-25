@@ -1,6 +1,6 @@
 import click
 
-from .utils import run_docker
+from cli.utils import run_docker
 
 
 @click.command(help='Stop updating rounds & receiving flags')

@@ -19,6 +19,9 @@ spec:
           env:
             - name: SERVICE
               value: "admin"
+          envFrom:
+            - secretRef:
+                name: forcad-admin-secret
           readinessProbe:
             httpGet:
               path: /api/admin/health/

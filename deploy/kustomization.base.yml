@@ -15,7 +15,10 @@ resources:
 
   - config/nginx.yml
 
-  - secrets/db.yml
+  - secrets/postgres.yml
+  - secrets/redis.yml
+  - secrets/rabbitmq.yml
+  - secrets/admin.yml
 patches:
   - path: patches/web_deployment.yml
     target:

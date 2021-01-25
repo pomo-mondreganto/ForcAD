@@ -1,6 +1,6 @@
 import click
 
-from .options import with_fast_option, with_workers_option
+from cli.options import with_fast_option, with_workers_option
 from .scale import scale
 from .setup import setup
 

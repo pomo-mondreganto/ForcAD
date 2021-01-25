@@ -20,3 +20,5 @@ node_modules/
 /release
 deploy/secrets/*
 !deploy/secrets/.keep
+
+deploy/kustomization.yml

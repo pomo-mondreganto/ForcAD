@@ -5,10 +5,15 @@ metadata:
 spec:
   template:
     spec:
+      terminationGracePeriodSeconds: 5
       containers:
         - name: initializer
           image: forcad-initializer
           envFrom:
             - secretRef:
-                name: forcad-db-secrets
+                name: forcad-postgres-secret
+            - secretRef:
+                name: forcad-rabbitmq-secret
+            - secretRef:
+                name: forcad-redis-secret
       restartPolicy: OnFailure
