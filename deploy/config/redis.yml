@@ -14,7 +14,7 @@ spec:
         app: redis
     spec:
       containers:
-        - name: server
+        - name: redis
           image: redis:5.0.8-alpine
           command: [ "sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD" ]
           ports:

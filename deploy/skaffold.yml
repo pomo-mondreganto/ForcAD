@@ -2,27 +2,7 @@ apiVersion: skaffold/v2beta10
 kind: Config
 build:
   artifacts:
-    - image: forcad-admin-api
-      context: .
-      docker:
-        dockerfile: ./docker_config/services/Dockerfile
-    - image: forcad-client-api
-      context: .
-      docker:
-        dockerfile: ./docker_config/services/Dockerfile
-    - image: forcad-events
-      context: .
-      docker:
-        dockerfile: ./docker_config/services/Dockerfile
-    - image: forcad-http-receiver
-      context: .
-      docker:
-        dockerfile: ./docker_config/services/Dockerfile
-    - image: forcad-tcp-receiver
-      context: .
-      docker:
-        dockerfile: ./docker_config/services/Dockerfile
-    - image: forcad-monitoring
+    - image: forcad-service
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
@@ -30,6 +10,10 @@ build:
       context: .
       docker:
         dockerfile: ./docker_config/initializer/Dockerfile
+    - image: forcad-celery
+      context: .
+      docker:
+        dockerfile: ./docker_config/celery/Dockerfile
     - image: forcad-nginx
       context: .
       docker:

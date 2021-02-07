@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celerybeat
+  labels:
+    appType: beat
+spec:
+  selector:
+    matchLabels:
+      app: celerybeat
+  template:
+    metadata:
+      labels:
+        app: celerybeat
+    spec:
+      containers:
+        - name: beat
+          image: forcad-celery
+          env:
+            - name: SERVICE
+              value: "beat"
+          envFrom:
+            - secretRef:
+                name: forcad-postgres-secret
+            - secretRef:
+                name: forcad-rabbitmq-secret
+            - secretRef:
+                name: forcad-redis-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi

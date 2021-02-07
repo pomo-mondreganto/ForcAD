@@ -1,39 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: events
+  name: flower
   labels:
     appType: web
 spec:
   selector:
     matchLabels:
-      app: events
+      app: flower
   template:
     metadata:
       labels:
-        app: events
+        app: flower
     spec:
       containers:
         - name: server
-          image: forcad-service
+          image: forcad-celery
           env:
             - name: SERVICE
-              value: "events"
+              value: "flower"
+          envFrom:
+            - secretRef:
+                name: forcad-admin-secret
           readinessProbe:
             httpGet:
-              path: /api/events/health/
+              path: /flower/healthcheck
           livenessProbe:
             httpGet:
-              path: /api/events/health/
+              path: /flower/healthcheck
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: events
+  name: flower
 spec:
   type: ClusterIP
   selector:
-    app: events
+    app: flower
   ports:
     - name: http
       port: 5000

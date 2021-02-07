@@ -15,7 +15,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 5
       containers:
-        - name: proxy
+        - name: nginx
           image: forcad-nginx
           resources:
             requests:
@@ -33,6 +33,13 @@ spec:
             - --append-search-domains
             - --hostsfile=/etc/hosts
             - --verbose
+          resources:
+            requests:
+              cpu: 50m
+              memory: 20Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
 
 ---
 apiVersion: v1

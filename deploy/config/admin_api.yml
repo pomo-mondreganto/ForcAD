@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: forcad-admin-api
+          image: forcad-service
           env:
             - name: SERVICE
               value: "admin"

@@ -9,6 +9,10 @@ resources:
   - config/monitoring.yml
   - config/initializer.yml
 
+  - config/celerybeat.yml
+  - config/flower.yml
+  - config/celery.yml
+
   - config/postgres.yml
   - config/rabbitmq.yml
   - config/redis.yml

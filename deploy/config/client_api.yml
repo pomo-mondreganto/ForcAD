@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: forcad-client-api
+          image: forcad-service
           env:
             - name: SERVICE
               value: "api"

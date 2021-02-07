@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: forcad-tcp-receiver
+          image: forcad-service
           env:
             - name: SERVICE
               value: "tcp_receiver"
