@@ -16,6 +16,7 @@ INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
 
 
 def wait_for_container(name):
+    print(f'Waiting for container {name}')
     command = ['docker', 'wait', name]
     result = int(subprocess.check_output(command).decode().strip())
     if result != 0:
@@ -32,3 +33,4 @@ def wait_all():
 
 if __name__ == '__main__':
     wait_all()
+    print('ForcAD started!')
