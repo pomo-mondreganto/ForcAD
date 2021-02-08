@@ -6,9 +6,9 @@ from pathlib import Path
 import pytz
 import yaml
 
-import services
 from lib import models
 from lib import storage
+from services import tasks
 
 BACKEND_BASE = Path(__file__).resolve().absolute().parents[1]
 SCRIPTS_DIR = BACKEND_BASE / 'scripts'
@@ -95,7 +95,7 @@ def init_game_state():
 
 def schedule_game_start():
     game_config = storage.game.get_current_global_config()
-    services.tasks.start_game.apply_async(
+    tasks.start_game.apply_async(
         eta=game_config.start_time,
     )
 
