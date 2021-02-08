@@ -23,6 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
+      PYTHONUNBUFFERED: 1
       TEST: 1
       TEST_TYPE: ${{ matrix.test_type }}
 
@@ -53,6 +54,7 @@ jobs:
           ./control.py start
           docker ps
           docker-compose ps
+          docker-compose logs -f initializer
           python tests/wait_for_start.py
           ./control.py rd ps
           env | sort
