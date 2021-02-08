@@ -51,6 +51,8 @@ jobs:
         run: |
           export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
           ./control.py start
+          docker ps
+          docker-compose ps
           python tests/wait_for_start.py
           ./control.py rd ps
           env | sort
