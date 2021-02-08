@@ -1,7 +1,7 @@
 from celery import Celery
 
 from lib import storage, config
-from round_processor import get_round_processor
+from .round_processor import get_round_processor
 
 celery_config = config.get_celery_config()
 

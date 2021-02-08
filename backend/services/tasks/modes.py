@@ -1,10 +1,10 @@
-from celery import chain, group, shared_task
-from celery.utils.log import get_task_logger
 from typing import Tuple
 
-import actions
-import handlers
+from celery import chain, group, shared_task
+from celery.utils.log import get_task_logger
+
 from lib import models
+from . import actions, handlers
 
 logger = get_task_logger(__name__)
 

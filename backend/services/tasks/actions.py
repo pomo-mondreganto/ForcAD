@@ -4,10 +4,10 @@ from typing import Optional, Any
 
 from celery import shared_task
 
-from auxiliary import logger
 from lib import models, storage
 from lib.helpers import checkers
 from lib.models import TaskStatus, Action
+from .auxiliary import logger
 
 
 @shared_task

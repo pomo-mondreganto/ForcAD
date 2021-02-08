@@ -6,9 +6,9 @@ from celery import Task
 from celery.utils.log import get_task_logger
 from kombu.utils import json as kjson
 
-import modes
 from lib import storage
 from lib.helpers import locking
+from . import modes
 
 logger = get_task_logger(__name__)
 
