@@ -19,12 +19,16 @@ def cache_helper(
     if cache_kwargs is None:
         cache_kwargs = dict()
 
+    # FIXME: there's a possible race condition in caching
+    # if cache is reset at the moment the round is updated,
+    # we could override the correct cache state with the state
+    # of the previous round if caching is started earlier
+
     was_changed = False
     while True:
         try:
             pipeline.watch(cache_key)
             cached = pipeline.exists(cache_key)
-            current_round = pipeline.get('round')
 
             pipeline.multi()
 

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytz
 import yaml
 
+import services
 from lib import models
 from lib import storage
 
@@ -92,6 +93,13 @@ def init_game_state():
     )
 
 
+def schedule_game_start():
+    game_config = storage.game.get_current_global_config()
+    services.tasks.start_game.apply_async(
+        eta=game_config.start_time,
+    )
+
+
 def run():
     with open(CONFIG_PATH, 'r') as f:
         file_config = yaml.safe_load(f)
@@ -137,6 +145,7 @@ def run():
         conn.commit()
 
     init_game_state()
+    schedule_game_start()
 
 
 if __name__ == '__main__':
