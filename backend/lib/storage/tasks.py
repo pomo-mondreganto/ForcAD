@@ -4,6 +4,7 @@ from lib import models, storage
 from lib.helpers.cache import cache_helper
 from lib.models import TaskStatus, Action
 from lib.storage import caching
+from lib.storage.keys import CacheKeys
 
 _SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
 
@@ -32,15 +33,16 @@ ORDER BY id DESC
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database."""
+    key = CacheKeys.tasks()
     with storage.utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
-            cache_key='tasks',
+            cache_key=key,
             cache_func=caching.cache_tasks,
             cache_args=(pipe,),
         )
 
-        tasks, = pipe.smembers('tasks').execute()
+        tasks, = pipe.smembers(key).execute()
         tasks = list(models.Task.from_json(task) for task in tasks)
 
     return tasks
@@ -97,7 +99,8 @@ def update_task_status(
     data['round'] = current_round
     with storage.utils.redis_pipeline(transaction=True) as pipe:
         pipe.xadd(
-            f'teamtasks:{team_id}:{task_id}', dict(data),
+            CacheKeys.teamtasks(team_id, task_id),
+            dict(data),
             maxlen=50,
             approximate=False,
         ).execute()
@@ -111,7 +114,7 @@ def get_last_teamtasks() -> List[dict]:
     with storage.utils.redis_pipeline(transaction=True) as pipe:
         for team in teams:
             for task in tasks:
-                pipe.xrevrange(f'teamtasks:{team.id}:{task.id}', count=1)
+                pipe.xrevrange(CacheKeys.teamtasks(team.id, task.id), count=1)
         data = pipe.execute()
 
     data = sum(data, [])
@@ -146,7 +149,7 @@ def get_teamtasks_for_team(team_id: int) -> List[dict]:
 
     with storage.utils.redis_pipeline(transaction=False) as pipe:
         for task in tasks:
-            pipe.xrevrange(f'teamtasks:{team_id}:{task.id}')
+            pipe.xrevrange(CacheKeys.teamtasks(team_id, task.id))
         data = pipe.execute()
 
     data = sum(data, [])

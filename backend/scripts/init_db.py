@@ -82,7 +82,7 @@ def init_global_config(global_config, curs):
 def init_game_state():
     game_state = storage.game.construct_game_state_from_db(current_round=0)
     with storage.utils.redis_pipeline(transaction=True) as pipe:
-        pipe.set('game_state', game_state.to_json())
+        pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
         pipe.execute()
 
     storage.utils.SIOManager.write_only().emit(

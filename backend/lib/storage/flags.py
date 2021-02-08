@@ -5,6 +5,7 @@ from lib import models
 from lib.helpers.cache import cache_helper
 from lib.helpers.exceptions import FlagExceptionEnum
 from lib.storage import caching, game, utils
+from lib.storage.keys import CacheKeys
 
 _GET_UNEXPIRED_FLAGS_QUERY = """
 SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
@@ -39,19 +40,20 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) ->
     if flag.team_id == attacker:
         raise FlagExceptionEnum.FLAG_YOUR_OWN
 
+    stolen_key = CacheKeys.team_stolen_flags(attacker)
     with utils.redis_pipeline(transaction=True) as pipe:
         # optimization of redis request count
-        cached_stolen = pipe.exists(f'team:{attacker}:stolen_flags').execute()
+        cached_stolen = pipe.exists(stolen_key).execute()
 
         if not cached_stolen:
             cache_helper(
                 pipeline=pipe,
-                cache_key=f'team:{attacker}:stolen_flags',
+                cache_key=stolen_key,
                 cache_func=caching.cache_last_stolen,
                 cache_args=(attacker, current_round, pipe),
             )
 
-        is_new, = pipe.sadd(f'team:{attacker}:stolen_flags', flag.id).execute()
+        is_new, = pipe.sadd(stolen_key, flag.id).execute()
 
         if not is_new:
             raise FlagExceptionEnum.FLAG_ALREADY_STOLEN
@@ -73,37 +75,38 @@ def add_flag(flag: models.Flag) -> models.Flag:
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with utils.redis_pipeline(transaction=True) as pipe:
-        pipe.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
-        pipe.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
+        pipe.set(CacheKeys.flag_by_id(flag.id), flag.to_json(), ex=expires)
+        pipe.set(CacheKeys.flag_by_str(flag.flag), flag.to_json(), ex=expires)
         pipe.execute()
 
     return flag
 
 
 def get_flag_by_field(
-        field_name: str,
-        field_value: Union[str, int],
+        name: str,
+        value: Union[str, int],
         current_round: int,
 ) -> Optional[models.Flag]:
     """
     Get flag by generic field.
 
-    :param field_name: field name to ask cache for
-    :param field_value: value of the field "field_name" to filter on
+    :param name: field name to ask cache for
+    :param value: value of the field "field_name" to filter on
     :param current_round: current round
     :returns: Flag model instance with flag.field_name == field_value or None
     """
+    cached_key = CacheKeys.flags_cached()
     with utils.redis_pipeline(transaction=True) as pipe:
-        cached, = pipe.exists('flags:cached').execute()
+        cached, = pipe.exists(cached_key).execute()
         if not cached:
             cache_helper(
                 pipeline=pipe,
-                cache_key='flags:cached',
+                cache_key=cached_key,
                 cache_func=caching.cache_last_flags,
                 cache_args=(current_round, pipe),
             )
 
-        flag_json, = pipe.get(f'flag:{field_name}:{field_value}').execute()
+        flag_json, = pipe.get(CacheKeys.flag_by_field(name, value)).execute()
 
     if not flag_json:
         return None
@@ -122,7 +125,7 @@ def get_flag_by_str(flag_str: str, current_round: int) -> Optional[models.Flag]:
     :returns: Flag model instance or None
     """
     return get_flag_by_field(
-        field_name='str', field_value=flag_str, current_round=current_round,
+        name='str', value=flag_str, current_round=current_round,
     )
 
 
@@ -135,7 +138,7 @@ def get_flag_by_id(flag_id: int, current_round: int) -> Optional[models.Flag]:
     :return: Flag model instance or None
     """
     return get_flag_by_field(
-        field_name='id', field_value=flag_id, current_round=current_round,
+        name='id', value=flag_id, current_round=current_round,
     )
 
 

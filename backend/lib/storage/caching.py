@@ -2,6 +2,7 @@ from redis.client import Pipeline
 
 from lib import models
 from lib.storage import utils, game
+from lib.storage.keys import CacheKeys
 
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
 SELECT f.id FROM stolenflags sf
@@ -24,11 +25,12 @@ def cache_teams(pipe: Pipeline) -> None:
 
     teams = list(models.Team.from_dict(team) for team in teams)
 
-    pipe.delete('teams')
+    key = CacheKeys.teams()
+    pipe.delete(key)
     if teams:
-        pipe.sadd('teams', *[team.to_json() for team in teams])
+        pipe.sadd(key, *[team.to_json() for team in teams])
     for team in teams:
-        pipe.set(f'team:token:{team.token}', team.id)
+        pipe.set(CacheKeys.team_by_token(team.token), team.id)
 
 
 def cache_tasks(pipe: Pipeline) -> None:
@@ -42,9 +44,10 @@ def cache_tasks(pipe: Pipeline) -> None:
         tasks = curs.fetchall()
 
     tasks = list(models.Task.from_dict(task) for task in tasks)
-    pipe.delete('tasks')
+    key = CacheKeys.tasks()
+    pipe.delete(key)
     if tasks:
-        pipe.sadd('tasks', *[task.to_json() for task in tasks])
+        pipe.sadd(key, *(task.to_json() for task in tasks))
 
 
 def cache_last_stolen(team_id: int, current_round: int, pipe: Pipeline) -> None:
@@ -69,12 +72,10 @@ def cache_last_stolen(team_id: int, current_round: int, pipe: Pipeline) -> None:
         )
         flags = curs.fetchall()
 
-    pipe.delete(f'team:{team_id}:stolen_flags')
+    key = CacheKeys.team_stolen_flags(team_id)
+    pipe.delete(key)
     if flags:
-        pipe.sadd(
-            f'team:{team_id}:stolen_flags',
-            *(flag[0] for flag in flags),
-        )
+        pipe.sadd(key, *(flag[0] for flag in flags))
 
 
 def cache_last_flags(current_round: int, pipe: Pipeline) -> None:
@@ -98,24 +99,24 @@ def cache_last_flags(current_round: int, pipe: Pipeline) -> None:
 
     flag_models = list(models.Flag.from_dict(data) for data in flags)
 
-    pipe.set('flags:cached', 1)
+    pipe.set(CacheKeys.flags_cached(), 1)
     for flag in flag_models:
-        pipe.set(f'flag:id:{flag.id}', flag.to_json(), ex=expires)
-        pipe.set(f'flag:str:{flag.flag}', flag.to_json(), ex=expires)
+        pipe.set(CacheKeys.flag_by_id(flag.id), flag.to_json(), ex=expires)
+        pipe.set(CacheKeys.flag_by_str(flag.flag), flag.to_json(), ex=expires)
 
 
 def cache_global_config(pipe: Pipeline) -> None:
     """Put global config to cache (without round or game_running)."""
     global_config = game.get_db_global_config()
     data = global_config.to_json()
-    pipe.set('global_config', data)
+    pipe.set(CacheKeys.global_config(), data)
 
 
 def flush_teams_cache():
     with utils.redis_pipeline(transaction=False) as pipe:
-        pipe.delete('teams').execute()
+        pipe.delete(CacheKeys.teams()).execute()
 
 
 def flush_tasks_cache():
     with utils.redis_pipeline(transaction=False) as pipe:
-        pipe.delete('tasks').execute()
+        pipe.delete(CacheKeys.tasks()).execute()

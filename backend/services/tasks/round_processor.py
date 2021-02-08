@@ -56,7 +56,7 @@ class RoundProcessor(Task):
 
         logger.info(f'Publishing scoreboard for round {current_round}')
         with storage.utils.redis_pipeline() as pipe:
-            pipe.set('game_state', game_state.to_json())
+            pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
             pipe.execute()
 
         storage.utils.SIOManager.write_only().emit(
@@ -67,13 +67,15 @@ class RoundProcessor(Task):
 
     @staticmethod
     def update_round(finished_round: int) -> None:
-        logger.info(f'Updating round to {finished_round + 1}')
+        new_round = finished_round + 1
+        logger.info(f'Updating round to {new_round}')
 
-        storage.game.set_round_start(r=finished_round + 1)
-        storage.game.update_real_round_in_db(new_round=finished_round + 1)
+        storage.game.set_round_start(r=new_round)
+        storage.game.update_real_round_in_db(new_round=new_round)
 
         with storage.utils.redis_pipeline(transaction=True) as pipe:
-            pipe.set('real_round', finished_round + 1).execute()
+            pipe.set(storage.keys.CacheKeys.current_round(), new_round)
+            pipe.execute()
 
     @staticmethod
     def update_attack_data(current_round: int) -> None:
@@ -83,7 +85,8 @@ class RoundProcessor(Task):
         tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
         flags = storage.flags.get_attack_data(current_round, tasks)
         with storage.utils.redis_pipeline(transaction=True) as pipe:
-            pipe.set('attack_data', kjson.dumps(flags)).execute()
+            pipe.set(storage.keys.CacheKeys.attack_data(), kjson.dumps(flags))
+            pipe.execute()
 
     def run(self, *args: Any, **kwargs: Any) -> None:
         """

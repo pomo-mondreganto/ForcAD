@@ -32,7 +32,7 @@ def startup(**_kwargs: Any) -> None:
                     logger.warning('Initial game_state missing')
                 else:
                     logger.info(f"Initializing game_state with {game_state}")
-                    pipe.set('game_state', game_state.to_json())
+                    pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
                     pipe.execute()
 
                     storage.utils.SIOManager.write_only().emit(
@@ -65,7 +65,7 @@ def start_game() -> None:
             logger.warning('Initial game_state missing')
         else:
             logger.info(f"Initializing game_state with {game_state.to_dict()}")
-            pipe.set('game_state', game_state.to_json())
+            pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
             pipe.execute()
 
             storage.utils.SIOManager.write_only().emit(

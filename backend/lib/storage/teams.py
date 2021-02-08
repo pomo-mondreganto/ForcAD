@@ -3,19 +3,21 @@ from typing import List, Optional
 from lib import models
 from lib import storage
 from lib.helpers.cache import cache_helper
+from lib.storage.keys import CacheKeys
 
 
 def get_teams() -> List[models.Team]:
     """Get list of active teams."""
+    key = CacheKeys.teams()
     with storage.utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
-            cache_key='teams',
+            cache_key=key,
             cache_func=storage.caching.cache_teams,
             cache_args=(pipe,),
         )
 
-        teams, = pipe.smembers('teams').execute()
+        teams, = pipe.smembers(key).execute()
         teams = list(models.Team.from_json(team) for team in teams)
 
     return teams
@@ -39,7 +41,7 @@ def get_team_id_by_token(token: str) -> Optional[int]:
     :return: team id
     """
     with storage.utils.redis_pipeline(transaction=False) as pipe:
-        team_id, = pipe.get(f'team:token:{token}').execute()
+        team_id, = pipe.get(CacheKeys.team_by_token(token)).execute()
 
     try:
         team_id = int(team_id)

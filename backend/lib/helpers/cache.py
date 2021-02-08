@@ -1,6 +1,7 @@
-import redis
 import time
 from typing import Callable, Optional, Iterable, Any, Dict
+
+import redis
 
 ArgsType = Optional[Iterable[Any]]
 KwargsType = Optional[Dict[str, Any]]
@@ -23,6 +24,7 @@ def cache_helper(
         try:
             pipeline.watch(cache_key)
             cached = pipeline.exists(cache_key)
+            current_round = pipeline.get('round')
 
             pipeline.multi()
 

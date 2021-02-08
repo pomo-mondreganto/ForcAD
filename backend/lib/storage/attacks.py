@@ -2,12 +2,13 @@ from lib import models, storage
 from lib.helpers import exceptions
 from lib.helpers.exceptions import FlagExceptionEnum
 from lib.storage import utils
+from lib.storage.keys import CacheKeys
 
 
 def get_attack_data() -> str:
     """Get public flag ids for tasks that provide them, as json string."""
     with utils.redis_pipeline(transaction=False) as pipe:
-        attack_data, = pipe.get('attack_data').execute()
+        attack_data, = pipe.get(CacheKeys.attack_data()).execute()
     return attack_data or 'null'
 
 
