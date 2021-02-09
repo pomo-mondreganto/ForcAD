@@ -125,5 +125,9 @@ jobs:
           minikube version: 'v1.17.1'
           kubernetes version: 'v1.19.3'
           github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install skaffold
+        uses: daisaru11/setup-cd-tools@v1
+        with:
+          skaffold: '1.19.0'
       - name: Deploy ForcAD
         run: ./control.py kube start
