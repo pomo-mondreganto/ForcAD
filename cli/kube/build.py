@@ -7,7 +7,7 @@ from cli.utils import run_command
 @click.command(help='Build images with Skaffold')
 def build(**_kwargs):
     cmd = [
-        'skaffold', 'build',
+        'skaffold', 'render',
         '-f', 'deploy/skaffold.yml'
     ]
     run_command(cmd, cwd=BASE_DIR)
