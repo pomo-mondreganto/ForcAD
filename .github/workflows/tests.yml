@@ -117,6 +117,7 @@ jobs:
           minikube version: 'v1.17.1'
           kubernetes version: 'v1.19.3'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: --cpus 2 --memory 4096
       - name: Install cli requirements
         run: pip install -r cli/requirements.txt
       - name: Copy test config
