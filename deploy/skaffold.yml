@@ -6,6 +6,8 @@ build:
       context: .
       docker:
         dockerfile: ./docker_config/services/Dockerfile
+        buildArgs:
+          DNS_RESOLVER: 127.0.0.1
     - image: forcad-initializer
       context: .
       docker:

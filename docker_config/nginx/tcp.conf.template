@@ -1,6 +1,6 @@
 limit_conn_zone $binary_remote_addr zone=tcp_ip_conn:16m;
 
-resolver 127.0.0.11 127.0.0.1 valid=10s ipv6=off;
+resolver ${DNS_RESOLVER} valid=10s ipv6=off;
 resolver_timeout 5s;
 
 server {

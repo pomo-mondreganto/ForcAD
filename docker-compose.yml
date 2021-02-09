@@ -94,18 +94,15 @@ services:
       - SERVICE=tcp_receiver
 
   nginx:
-    image: nginx:1.17.9-alpine
+    build:
+      context: .
+      dockerfile: ./docker_config/nginx/Dockerfile
+      args:
+        DNS_RESOLVER: 127.0.0.11
     ports:
       - "8080:80"
       - "80:80"
       - "31337:31337"
-    volumes:
-      - ./docker_config/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker_config/nginx/http.conf:/etc/nginx/http.conf
-      - ./docker_config/nginx/tcp.conf:/etc/nginx/tcp.conf
-      - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
-      - ./docker_config/nginx/proxy_params_ws:/etc/nginx/proxy_params_ws
-      - ./front/dist:/var/www/front:delegated
     restart: on-failure
     depends_on:
       - flower
