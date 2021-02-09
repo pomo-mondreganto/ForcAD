@@ -31,10 +31,10 @@ services:
       args:
         version: ${FORCAD_VERSION:-latest}
 
-  client_api:
+  client-api:
     <<: *service-fast
 
-  admin_api:
+  admin-api:
     <<: *service-fast
 
   events:
@@ -43,8 +43,8 @@ services:
   monitoring:
     <<: *service-fast
 
-  http_receiver:
+  http-receiver:
     <<: *service-fast
 
-  tcp_receiver:
+  tcp-receiver:
     <<: *service-fast

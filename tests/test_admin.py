@@ -59,6 +59,10 @@ class BaseAdminTestCase(TestCase, AdminAuthMixin):
         r = self.s2.get('http://127.0.0.1:8080/api/admin/tasks/')
         self.assertTrue(r.ok)
 
+    def test_health_page(self):
+        r = requests.get('http://127.0.0.1:8080/api/admin/health/')
+        self.assertTrue(r.ok)
+
     def tearDown(self):
         if hasattr(self, 's1'):
             self.s1.close()

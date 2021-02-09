@@ -185,6 +185,10 @@ class FlagSubmitTestCase(TestCase):
             self.assertNotIn('accepted', res)
             self.assertIn('invalid', res)
 
+    def test_health_page(self):
+        r = requests.get('http://127.0.0.1:8080/api/flags/health/')
+        self.assertTrue(r.ok)
+
     def test_flag_submission(self):
         ok_flags = self.get_last_flags_from_db(self.working_token)
         ok_flags = [flag['flag'] for flag in ok_flags]

@@ -61,13 +61,13 @@ tasks:
     puts: 2
 
 teams:
-  - ip: test_service
+  - ip: test-service
     name: "Test working team 1"
 
-  - ip: test_service
+  - ip: test-service
     name: "Test working team 2"
 
-  - ip: test_service
+  - ip: test-service
     name: "Test working team 3"
 
   - ip: 127.0.0.1

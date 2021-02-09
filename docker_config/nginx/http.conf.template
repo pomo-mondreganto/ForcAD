@@ -1,8 +1,8 @@
 limit_conn_zone $binary_remote_addr zone=http_ip_conn:16m;
 limit_req_zone $http_x_team_token zone=token_limit:64m rate=2r/s;
 
-resolver 127.0.0.11 valid=10s ipv6=off;
-resolver_timeout 10s;
+resolver ${DNS_RESOLVER} valid=10s ipv6=off;
+resolver_timeout 5s;
 
 server {
     listen 80;
@@ -16,13 +16,13 @@ server {
     }
 
     location /api/client {
-        set $backend client_api:5000;
+        set $backend client-api:5000;
         proxy_pass http://$backend;
         include proxy_params;
     }
 
     location /api/admin {
-        set $backend admin_api:5000;
+        set $backend admin-api:5000;
         proxy_pass http://$backend;
         include proxy_params;
     }
@@ -34,7 +34,7 @@ server {
     }
 
     location /flags {
-        set $backend http_receiver:5000;
+        set $backend http-receiver:5000;
         proxy_pass http://$backend;
         include proxy_params;
 
@@ -47,6 +47,12 @@ server {
         limit_req zone=token_limit;
         limit_req_log_level info;
         limit_req_status 429;
+    }
+
+    location /api/events {
+        set $backend events:5000;
+        proxy_pass http://$backend;
+        include proxy_params_ws;
     }
 
     location /socket.io {

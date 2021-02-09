@@ -25,11 +25,11 @@ case ${SERVICE} in
   ;;
 "flower")
   echo "[*] Starting celery flower"
-  celery -A app \
+  FLOWER_PORT=${PORT:-5555} \
+    celery -A app \
     flower \
-    --basic_auth="$FLOWER_BASIC_AUTH" \
-    --url-prefix=flower \
-    --host=0.0.0.0 \
-    --port=5555
+    --basic_auth="${ADMIN_USERNAME}:${ADMIN_PASSWORD}" \
+    --url_prefix=flower \
+    --address=0.0.0.0
   ;;
 esac

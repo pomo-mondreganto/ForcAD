@@ -1,8 +1,8 @@
 import click
 
-from .constants import VERSION
-from .options import with_fast_option, with_workers_option
-from .utils import run_docker
+from cli.constants import VERSION
+from cli.options import with_fast_option, with_workers_option
+from cli.utils import run_docker
 
 
 @click.command(help='Start ForcAD, building if necessary')

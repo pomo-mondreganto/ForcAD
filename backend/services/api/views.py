@@ -40,6 +40,6 @@ def get_team_history(team_id):
     return jsonify(teamtasks)
 
 
-@client_bp.route('/status/')
-def status():
-    return jsonify(dict(status='ok'))
+@client_bp.route('/health/')
+def health_check():
+    return jsonify({'status': 'ok'})

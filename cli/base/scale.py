@@ -1,6 +1,6 @@
 import click
 
-from .utils import run_docker
+from cli.utils import run_docker
 
 
 @click.command(help='Scale any service (e.g. "celery 3" to set number of workers to 5)')

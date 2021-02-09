@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-receiver
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: http-receiver
+  template:
+    metadata:
+      labels:
+        app: http-receiver
+    spec:
+      containers:
+        - name: server
+          image: forcad-service
+          env:
+            - name: SERVICE
+              value: "http_receiver"
+          readinessProbe:
+            httpGet:
+              path: /flags/health/
+          livenessProbe:
+            httpGet:
+              path: /flags/health/
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-receiver
+spec:
+  type: ClusterIP
+  selector:
+    app: http-receiver
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

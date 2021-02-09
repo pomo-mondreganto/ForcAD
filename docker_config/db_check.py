@@ -5,10 +5,11 @@ connect to the database with the credentials provided in the environment
 variables.
 """
 
-import kombu
 import os
-import psycopg2
 import sys
+
+import kombu
+import psycopg2
 
 
 def database_check():
@@ -18,7 +19,7 @@ def database_check():
     host = os.environ['POSTGRES_HOST']
     port = os.environ['POSTGRES_PORT']
 
-    print(f"HOST: {host}:{port}, DB: {dbname}, USER: {user}")
+    print(f'DB: {host}:{port}/{dbname}, USER: {user}')
 
     # noinspection PyBroadException
     try:
@@ -29,7 +30,10 @@ def database_check():
             host=host,
             port=port)
     except:
+        print('Failed')
         sys.exit(1)
+    else:
+        print('Success')
 
 
 def broker_check():
@@ -39,6 +43,8 @@ def broker_check():
     password = os.environ['RABBITMQ_DEFAULT_PASS']
     vhost = os.environ['RABBITMQ_DEFAULT_VHOST']
 
+    print(f'Broker: {host}:{port}/{vhost}, USER: {user}')
+
     broker_url = f'amqp://{user}:{password}@{host}:{port}/{vhost}'
     c = kombu.Connection(broker_url)
 
@@ -46,7 +52,10 @@ def broker_check():
     try:
         c.connect()
     except:
+        print('Failed')
         sys.exit(1)
+    else:
+        print('Success')
 
 
 if __name__ == "__main__":

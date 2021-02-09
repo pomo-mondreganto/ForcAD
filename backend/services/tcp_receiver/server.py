@@ -8,6 +8,8 @@ from typing import TextIO
 from lib import storage
 from lib.flags import SubmitMonitor, Judge
 
+from utils import ignore_exc_wrapper
+
 
 class SubmitHandler:
     def __init__(self, logger: logging.Logger, judge: Judge, monitor: SubmitMonitor):
@@ -62,6 +64,7 @@ class SubmitHandler:
             conn.flush()
             eventlet.sleep(0)  # handle some other flag
 
+    @ignore_exc_wrapper(BrokenPipeError)
     def __call__(self, socket, address):
         logger = logging.LoggerAdapter(self._logger, {'address': address})
         logger.debug('accepted')

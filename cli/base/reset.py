@@ -3,8 +3,8 @@ import subprocess
 
 import click
 
-from .constants import BASE_DIR, FULL_COMPOSE_PATH
-from .utils import print_file_exception_info, run_command
+from cli.constants import BASE_DIR, FULL_COMPOSE_PATH
+from cli.utils import print_file_exception_info, run_command
 
 
 @click.command(help='Reset the game & clean up')

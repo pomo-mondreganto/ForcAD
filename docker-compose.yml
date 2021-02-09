@@ -38,7 +38,7 @@ services:
       - TEST
       - SERVICE=flower
     env_file:
-      - ./docker_config/celery/flower.env
+      - ./docker_config/services/admin.env
       - ./docker_config/postgres_environment.env
       - ./docker_config/redis_environment.env
       - ./docker_config/rabbitmq_environment.env
@@ -52,13 +52,13 @@ services:
       - TEST
     restart: on-failure
 
-  client_api:
+  client-api:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=api
 
-  admin_api:
+  admin-api:
     <<: *default-ms
     environment:
       - TEST
@@ -81,40 +81,37 @@ services:
       - TEST
       - SERVICE=monitoring
 
-  http_receiver:
+  http-receiver:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=http_receiver
 
-  tcp_receiver:
+  tcp-receiver:
     <<: *default-ms
     environment:
       - TEST
       - SERVICE=tcp_receiver
 
   nginx:
-    image: nginx:1.17.9-alpine
+    build:
+      context: .
+      dockerfile: ./docker_config/nginx/Dockerfile
+      args:
+        DNS_RESOLVER: 127.0.0.11
     ports:
       - "8080:80"
       - "80:80"
       - "31337:31337"
-    volumes:
-      - ./docker_config/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker_config/nginx/http.conf:/etc/nginx/http.conf
-      - ./docker_config/nginx/tcp.conf:/etc/nginx/tcp.conf
-      - ./docker_config/nginx/proxy_params:/etc/nginx/proxy_params
-      - ./docker_config/nginx/proxy_params_ws:/etc/nginx/proxy_params_ws
-      - ./front/dist:/var/www/front:delegated
     restart: on-failure
     depends_on:
       - flower
-      - client_api
-      - admin_api
+      - client-api
+      - admin-api
       - events
       - monitoring
-      - http_receiver
-      - tcp_receiver
+      - http-receiver
+      - tcp-receiver
 
   redis:
     image: redis:5.0.8-alpine
