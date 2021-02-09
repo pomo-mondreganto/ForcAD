@@ -106,6 +106,17 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.7'
+      - name: Install skaffold
+        run: |
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.19.0/skaffold-linux-amd64
+          chmod +x skaffold
+          mv skaffold /usr/local/bin
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.3.0
+        with:
+          minikube version: 'v1.17.1'
+          kubernetes version: 'v1.19.3'
+          github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install cli requirements
         run: pip install -r cli/requirements.txt
       - name: Copy test config
@@ -119,15 +130,5 @@ jobs:
           kustomize_build_dir: 'deploy'
         env:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.3.0
-        with:
-          minikube version: 'v1.17.1'
-          kubernetes version: 'v1.19.3'
-          github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install skaffold
-        uses: daisaru11/setup-cd-tools@v1
-        with:
-          skaffold: '1.19.0'
       - name: Deploy ForcAD
         run: ./control.py kube start
