@@ -6,24 +6,11 @@ import yaml
 
 from cli import utils
 from cli.constants import BASE_DIR, CONFIG_PATH, FULL_COMPOSE_PATH, BASE_COMPOSE_FILE
+from cli.options import with_external_services_option
 
 
 @click.command(help='Initialize ForcAD configuration')
-@click.option(
-    '--redis',
-    metavar='ADDR',
-    help='External redis address (disables built-in redis container)',
-)
-@click.option(
-    '--database',
-    metavar='ADDR',
-    help='External Postgres address (disables built-in postgres container)',
-)
-@click.option(
-    '--rabbitmq',
-    metavar='ADDR',
-    help='External RabbitMQ address (disables built-in rabbitmq container)',
-)
+@with_external_services_option
 def setup(redis, database, rabbitmq, **_kwargs):
     override_config(redis=redis, database=database, rabbitmq=rabbitmq)
     config = utils.load_config()
