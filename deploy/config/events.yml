@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: events
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: events
+  template:
+    metadata:
+      labels:
+        app: events
+    spec:
+      containers:
+        - name: server
+          image: forcad-service
+          env:
+            - name: SERVICE
+              value: "events"
+          readinessProbe:
+            httpGet:
+              path: /api/events/health/
+          livenessProbe:
+            httpGet:
+              path: /api/events/health/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: events
+spec:
+  type: ClusterIP
+  selector:
+    app: events
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

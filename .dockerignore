@@ -1,11 +1,10 @@
 .DS_Store
 .idea
 
-front/node_modules
+/front/node_modules
 
 /control.py
-/requirements.txt
 /README.md
 .mypy_cache
-
-docker_volumes
+/cli
+/docker_volumes

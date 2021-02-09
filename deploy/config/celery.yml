@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  labels:
+    appType: worker
+spec:
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      containers:
+        - name: beat
+          image: forcad-celery
+          env:
+            - name: SERVICE
+              value: "worker"
+          envFrom:
+            - secretRef:
+                name: forcad-postgres-secret
+            - secretRef:
+                name: forcad-rabbitmq-secret
+            - secretRef:
+                name: forcad-redis-secret
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 500Mi

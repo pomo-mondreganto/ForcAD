@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: flower
+  template:
+    metadata:
+      labels:
+        app: flower
+    spec:
+      containers:
+        - name: server
+          image: forcad-celery
+          env:
+            - name: SERVICE
+              value: "flower"
+          envFrom:
+            - secretRef:
+                name: forcad-admin-secret
+          readinessProbe:
+            httpGet:
+              path: /flower/healthcheck
+          livenessProbe:
+            httpGet:
+              path: /flower/healthcheck
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+spec:
+  type: ClusterIP
+  selector:
+    app: flower
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

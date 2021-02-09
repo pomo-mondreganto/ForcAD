@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-api
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: client-api
+  template:
+    metadata:
+      labels:
+        app: client-api
+    spec:
+      containers:
+        - name: server
+          image: forcad-service
+          env:
+            - name: SERVICE
+              value: "api"
+          readinessProbe:
+            httpGet:
+              path: /api/client/health/
+          livenessProbe:
+            httpGet:
+              path: /api/client/health/
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-api
+spec:
+  type: ClusterIP
+  selector:
+    app: client-api
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

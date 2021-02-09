@@ -3,17 +3,20 @@
 cd /app
 
 set +e
-echo "[*] Checking is postgres container started"
+
+echo "[*] Checking if postgres & rabbitmq are available"
 python3 /db_check.py
+# shellcheck disable=SC2181
 while [[ $? != 0 ]]; do
-  sleep 3
-  echo "[*] Waiting for postgres container..."
+  echo "[*] Waiting for postgres & rabbitmq..."
+  sleep 5
   python3 /db_check.py
 done
 
 python3 /check_initialized.py
+# shellcheck disable=SC2181
 if [[ $? == 0 ]]; then
-  echo "[+] Already initialized, starting"
+  echo "[+] Already initialized"
 else
   echo "[*] Initializing game"
   set -e

@@ -28,8 +28,8 @@ class ClientApiTestCase(TestCase):
 
         return data
 
-    def test_status_page(self):
-        r = requests.get(f'{self.url}/api/client/status/')
+    def test_health_page(self):
+        r = requests.get(f'{self.url}/api/client/health/')
         self.assertTrue(r.ok)
 
     def test_attack_data_api(self):

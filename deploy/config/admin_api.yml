@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-api
+  labels:
+    appType: web
+spec:
+  selector:
+    matchLabels:
+      app: admin-api
+  template:
+    metadata:
+      labels:
+        app: admin-api
+    spec:
+      containers:
+        - name: server
+          image: forcad-service
+          env:
+            - name: SERVICE
+              value: "admin"
+          envFrom:
+            - secretRef:
+                name: forcad-admin-secret
+          readinessProbe:
+            httpGet:
+              path: /api/admin/health/
+          livenessProbe:
+            httpGet:
+              path: /api/admin/health/
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-api
+spec:
+  type: ClusterIP
+  selector:
+    app: admin-api
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

@@ -1,6 +1,4 @@
-from flask import Blueprint, jsonify, make_response, abort
-
-admin_bp = Blueprint('admin_api', __name__)
+from flask import jsonify, make_response, abort
 
 
 def make_err_response(err, status=400):
