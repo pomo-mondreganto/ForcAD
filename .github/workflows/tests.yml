@@ -117,6 +117,13 @@ jobs:
         with:
           kustomize_version: '3.9.2'
           kustomize_build_dir: 'deploy'
-          kustomize_comment: true
         env:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.3.0
+        with:
+          minikube version: 'v1.17.1'
+          kubernetes version: 'v1.19.3'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy ForcAD
+        run: ./control.py kube start
