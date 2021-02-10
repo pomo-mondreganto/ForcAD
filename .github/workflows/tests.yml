@@ -26,6 +26,7 @@ jobs:
       PYTHONUNBUFFERED: 1
       TEST: 1
       TEST_TYPE: ${{ matrix.test_type }}
+      PYTHONUNBUFFERED: 1
 
     steps:
       - name: Checkout

@@ -1,11 +1,10 @@
 .dockerignore
 .version
-backend/config/__init__.py
 backend/lib
+backend/requirements.txt
 backend/scripts
 backend/services
-backend/requirements.txt
-checkers/.gitkeep
+checkers/requirements.txt
 cli
 config.yml.example
 control.py
