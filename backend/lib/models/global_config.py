@@ -1,6 +1,8 @@
 import datetime
 from typing import Optional
 
+from dateutil.parser import parse
+
 from .base import BaseModel
 
 
@@ -33,6 +35,11 @@ class GlobalConfig(BaseModel):
         'real_round',
         'game_running',
     )
+
+    def __init__(self, **kwargs):
+        super(GlobalConfig, self).__init__(**kwargs)
+        if isinstance(self.start_time, str):
+            self.start_time = parse(self.start_time)
 
     def __str__(self) -> str:
         return str(self.to_dict())

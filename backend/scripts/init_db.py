@@ -76,6 +76,9 @@ def init_global_config(global_config, curs):
     global_config['real_round'] = 0
     global_config['game_running'] = False
 
+    # noinspection PyArgumentList
+    global_config['game_mode'] = models.GameMode(global_config['game_mode'])
+
     global_config = models.GlobalConfig(id=None, **global_config)
     global_config.insert(curs)
 

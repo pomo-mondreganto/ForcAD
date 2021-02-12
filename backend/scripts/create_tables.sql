@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     CONSTRAINT sla_valid CHECK ( checks >= 0 AND checks_passed >= 0 AND checks_passed <= checks )
 );
 
-CREATE UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
+CREATE
+UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
 (
     id              SERIAL PRIMARY KEY,
     round           INTEGER,
@@ -91,6 +92,12 @@ CREATE UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
     private_message TEXT NOT NULL            DEFAULT '',
     command         TEXT NOT NULL            DEFAULT '',
     ts              TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ScheduleHistory
+(
+    id       VARCHAR(32) PRIMARY KEY,
+    last_run TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_flags_round_team

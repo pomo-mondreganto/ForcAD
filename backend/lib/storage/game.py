@@ -1,6 +1,8 @@
 import time
 from typing import Optional
 
+from kombu.utils import json as kjson
+
 from lib import models, storage
 from lib.helpers.cache import cache_helper
 from lib.storage import caching, utils
@@ -154,3 +156,23 @@ def construct_scoreboard() -> dict:
     }
 
     return data
+
+
+def update_round(finished_round: int) -> None:
+    new_round = finished_round + 1
+
+    set_round_start(r=new_round)
+    update_real_round_in_db(new_round=new_round)
+
+    with utils.redis_pipeline(transaction=False) as pipe:
+        pipe.set(CacheKeys.current_round(), new_round)
+        pipe.execute()
+
+
+def update_attack_data(current_round: int) -> None:
+    tasks = storage.tasks.get_tasks()
+    tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
+    attack_data = storage.flags.get_attack_data(current_round, tasks)
+    with utils.redis_pipeline(transaction=False) as pipe:
+        pipe.set(CacheKeys.attack_data(), kjson.dumps(attack_data))
+        pipe.execute()

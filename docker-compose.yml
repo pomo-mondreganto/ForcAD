@@ -26,12 +26,6 @@ services:
       - TEST
       - SERVICE=worker
 
-  celerybeat:
-    <<: *default-celery-ms
-    environment:
-      - TEST
-      - SERVICE=beat
-
   flower:
     <<: *default-celery-ms
     environment:
@@ -51,6 +45,12 @@ services:
     environment:
       - TEST
     restart: on-failure
+
+  ticker:
+    <<: *default-ms
+    environment:
+      - TEST
+      - SERVICE=ticker
 
   client-api:
     <<: *default-ms

@@ -4,24 +4,16 @@
 
 set -e
 
-cd /app/services/tasks
+cd /app/services
 
 case ${SERVICE} in
 "worker")
   echo "[*] Starting celery worker"
-  celery -A app \
+  celery -A tasks.app \
     worker \
     -E -l info \
     --pool=gevent \
     --concurrency=20
-  ;;
-"beat")
-  echo "[*] Starting celery beat"
-  celery -A app \
-    beat \
-    -l info \
-    --pidfile=/tmp/celerybeat.pid \
-    --schedule=/tmp/celerybeat-schedule
   ;;
 "flower")
   echo "[*] Starting celery flower"
