@@ -12,7 +12,7 @@ def check_session():
 
     session = request.cookies['session']
     with storage.utils.redis_pipeline(transaction=False) as pipe:
-        data, = pipe.get(f'session:{session}').execute()
+        data, = pipe.get(storage.keys.CacheKeys.session(session)).execute()
 
     creds = config.get_web_credentials()
 
@@ -22,9 +22,9 @@ def check_session():
     return True
 
 
-def set_session(session, username):
+def set_session(session: str, username: str):
     with storage.utils.redis_pipeline(transaction=False) as pipe:
-        pipe.set(f'session:{session}', username).execute()
+        pipe.set(storage.keys.CacheKeys.session(session), username).execute()
 
 
 def login():

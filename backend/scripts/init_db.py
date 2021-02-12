@@ -75,6 +75,9 @@ def init_global_config(global_config, curs):
     global_config['real_round'] = 0
     global_config['game_running'] = False
 
+    # noinspection PyArgumentList
+    global_config['game_mode'] = models.GameMode(global_config['game_mode'])
+
     global_config = models.GlobalConfig(id=None, **global_config)
     global_config.insert(curs)
 
@@ -82,7 +85,7 @@ def init_global_config(global_config, curs):
 def init_game_state():
     game_state = storage.game.construct_game_state_from_db(current_round=0)
     with storage.utils.redis_pipeline(transaction=True) as pipe:
-        pipe.set('game_state', game_state.to_json())
+        pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
         pipe.execute()
 
     storage.utils.SIOManager.write_only().emit(
@@ -97,8 +100,10 @@ def run():
         file_config = yaml.safe_load(f)
 
     with storage.utils.db_cursor() as (conn, curs):
+        print('Initializing schema')
         init_schema(curs)
 
+        print('Initializing teams')
         teams = init_teams(file_config['teams'], curs)
 
         global_defaults = {
@@ -118,6 +123,7 @@ def run():
             if k not in global_config:
                 global_defaults[k] = v
 
+        print('Initializing tasks')
         tasks = init_tasks(file_config['tasks'], global_config, curs)
 
         data = [
@@ -132,10 +138,12 @@ def run():
         ]
         curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, data)
 
+        print('Initializing global config')
         init_global_config(global_config, curs)
 
         conn.commit()
 
+    print('Initializing game state')
     init_game_state()
 
 

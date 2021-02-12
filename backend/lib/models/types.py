@@ -31,3 +31,8 @@ class Action(enum.Enum):
     @property
     def counter(self):  # type: ignore
         return self.value
+
+
+class GameMode(str, enum.Enum):
+    CLASSIC = 'classic'
+    BLITZ = 'blitz'

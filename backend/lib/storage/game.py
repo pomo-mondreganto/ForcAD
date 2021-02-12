@@ -1,9 +1,12 @@
 import time
 from typing import Optional
 
+from kombu.utils import json as kjson
+
 from lib import models, storage
 from lib.helpers.cache import cache_helper
 from lib.storage import caching, utils
+from lib.storage.keys import CacheKeys
 
 _CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
 
@@ -19,7 +22,7 @@ _GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
 def get_round_start(r: int) -> int:
     """Get start time for round as unix timestamp."""
     with utils.redis_pipeline(transaction=False) as pipe:
-        start_time, = pipe.get(f'round:{r}:start_time').execute()
+        start_time, = pipe.get(CacheKeys.round_start(r)).execute()
     return int(start_time or 0)
 
 
@@ -27,7 +30,7 @@ def set_round_start(r: int) -> None:
     """Set start time for round as str."""
     cur_time = int(time.time())
     with utils.redis_pipeline(transaction=False) as pipe:
-        pipe.set(f'round:{r}:start_time', cur_time).execute()
+        pipe.set(CacheKeys.round_start(r), cur_time).execute()
 
 
 def get_real_round() -> int:
@@ -37,7 +40,7 @@ def get_real_round() -> int:
     :returns: -1 if round not in cache, else round
     """
     with utils.redis_pipeline(transaction=False) as pipe:
-        r, = pipe.get('real_round').execute()
+        r, = pipe.get(CacheKeys.current_round()).execute()
 
     return int(r or -1)
 
@@ -88,12 +91,12 @@ def get_current_global_config() -> models.GlobalConfig:
     with utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
-            cache_key='global_config',
+            cache_key=CacheKeys.global_config(),
             cache_func=caching.cache_global_config,
             cache_args=(pipe,),
         )
 
-        result, = pipe.get('global_config').execute()
+        result, = pipe.get(CacheKeys.global_config()).execute()
         global_config = models.GlobalConfig.from_json(result)
 
     return global_config
@@ -138,7 +141,7 @@ def construct_scoreboard() -> dict:
     cfg = storage.game.get_current_global_config().to_dict()
 
     with storage.utils.redis_pipeline(transaction=False) as pipe:
-        state, = pipe.get('game_state').execute()
+        state, = pipe.get(CacheKeys.game_state()).execute()
 
     try:
         state = models.GameState.from_json(state).to_dict()
@@ -153,3 +156,23 @@ def construct_scoreboard() -> dict:
     }
 
     return data
+
+
+def update_round(finished_round: int) -> None:
+    new_round = finished_round + 1
+
+    set_round_start(r=new_round)
+    update_real_round_in_db(new_round=new_round)
+
+    with utils.redis_pipeline(transaction=False) as pipe:
+        pipe.set(CacheKeys.current_round(), new_round)
+        pipe.execute()
+
+
+def update_attack_data(current_round: int) -> None:
+    tasks = storage.tasks.get_tasks()
+    tasks = list(filter(lambda x: x.checker_provides_public_flag_data, tasks))
+    attack_data = storage.flags.get_attack_data(current_round, tasks)
+    with utils.redis_pipeline(transaction=False) as pipe:
+        pipe.set(CacheKeys.attack_data(), kjson.dumps(attack_data))
+        pipe.execute()

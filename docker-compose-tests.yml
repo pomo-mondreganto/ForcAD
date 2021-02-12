@@ -20,9 +20,6 @@ services:
   celery:
     <<: *celery-test
 
-  celerybeat:
-    <<: *celery-test
-
   flower:
     <<: *celery-test
 
@@ -33,6 +30,9 @@ services:
       args:
         version: ${FORCAD_VERSION:-latest}
     restart: "no"
+
+  ticker:
+    <<: *service-test
 
   client-api:
     <<: *service-test

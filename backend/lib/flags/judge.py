@@ -1,5 +1,6 @@
-from eventlet.greenpool import GreenPool
 from typing import List
+
+import eventlet
 
 from lib import storage
 from lib.models import AttackResult
@@ -8,12 +9,11 @@ from .submit_monitor import SubmitMonitor
 
 
 class Judge:
-    def __init__(self, monitor: SubmitMonitor, logger, concurrency=2000):
+    def __init__(self, monitor: SubmitMonitor, logger):
         self._monitor = monitor
         self._notifier = Notifier(logger=logger)
-        self._p = GreenPool(size=concurrency)
-        self._p.spawn_n(self._monitor)
-        self._p.spawn_n(self._notifier)
+        eventlet.spawn_n(self._monitor)
+        eventlet.spawn_n(self._notifier)
 
     def _process_attack(self, team_id: int, flag: str) -> AttackResult:
         current_round = storage.game.get_real_round()
@@ -30,12 +30,7 @@ class Judge:
         return ar
 
     def process(self, team_id: int, flag: str) -> AttackResult:
-        result = self._p.spawn(self._process_attack, team_id, flag)
-        return result.wait()
+        return self._process_attack(team_id, flag)
 
     def process_many(self, team_id: int, flags: List[str]) -> List[AttackResult]:
-        results = self._p.imap(
-            lambda flag: self._process_attack(team_id, flag),
-            flags,
-        )
-        return list(results)
+        return [self._process_attack(team_id, flag) for flag in flags]

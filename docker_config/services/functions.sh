@@ -35,3 +35,9 @@ start_monitoring() {
 start_http_receiver() {
   start_web http_receiver
 }
+
+start_ticker() {
+  echo "[*] Starting ticker"
+  cd services
+  python3 -m ticker
+}

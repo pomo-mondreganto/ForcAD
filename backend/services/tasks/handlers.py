@@ -6,12 +6,13 @@ from celery.utils.log import get_task_logger
 
 from lib import storage, models
 from lib.helpers import checkers
+from lib.helpers.jobs import JobNames
 from lib.models import TaskStatus, Action
 
 logger = get_task_logger(__name__)
 
 
-@shared_task
+@shared_task(name=JobNames.error_handler)
 def exception_callback(result: AsyncResult, exc: Exception, traceback: str) -> None:
     action_name = result.task.split('.')[-1].split('_')[0].upper()
     action = Action[action_name]
@@ -50,7 +51,7 @@ def exception_callback(result: AsyncResult, exc: Exception, traceback: str) -> N
     return verdict
 
 
-@shared_task
+@shared_task(name=JobNames.result_handler)
 def checker_results_handler(
         verdicts: List[models.CheckerVerdict],
         team: models.Team,
@@ -78,7 +79,7 @@ def checker_results_handler(
 
     logger.info(
         "Finished testing team %s task %s, round %s.\n"
-        "Verdicts: check: %s; puts %s; gets %s.",
+        "Verdicts: check: %s; puts: %s; gets: %s.",
         team.id,
         task.id,
         current_round,

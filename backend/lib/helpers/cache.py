@@ -1,6 +1,7 @@
-import redis
 import time
 from typing import Callable, Optional, Iterable, Any, Dict
+
+import redis
 
 ArgsType = Optional[Iterable[Any]]
 KwargsType = Optional[Dict[str, Any]]
@@ -17,6 +18,11 @@ def cache_helper(
         cache_args = tuple()
     if cache_kwargs is None:
         cache_kwargs = dict()
+
+    # FIXME: there's a possible race condition in caching
+    # if cache is reset at the moment the round is updated,
+    # we could override the correct cache state with the state
+    # of the previous round if caching is started earlier
 
     was_changed = False
     while True:
