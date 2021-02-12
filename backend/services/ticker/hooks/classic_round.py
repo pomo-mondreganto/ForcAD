@@ -1,42 +1,38 @@
-import itertools
 import logging
-import random
 
-from lib import storage
+from celery import Celery
+from celery.canvas import chain, group
+
+from lib import models
+from . import utils
 
 logger = logging.getLogger(__name__)
 
 
-def update_round(finished_round: int) -> None:
-    new_round = finished_round + 1
+def submit_full_round_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
+    kwargs, params = utils.get_round_setup(team, task, r)
 
-    storage.game.set_round_start(r=new_round)
-    storage.game.update_real_round_in_db(new_round=new_round)
+    check = utils.get_check_signature(app, kwargs, params)
+    noop = utils.get_noop_signature(app)
+    puts = utils.get_puts_group(app, task, kwargs, params)
+    gets = utils.get_gets_chain(app, task, kwargs, params)
 
-    with storage.utils.redis_pipeline(transaction=True) as pipe:
-        pipe.set(storage.keys.CacheKeys.current_round(), new_round)
-        pipe.execute()
+    handler = utils.get_result_handler_signature(app, kwargs)
+
+    scheme = chain(
+        check,
+        group([noop, puts, gets]),  # noop task is required to pass check result forward
+        handler,
+    )
+    scheme.apply_async()
 
 
 def run_classic_round(state):
-    current_round = storage.game.get_real_round_from_db()
-    logger.info('Ending round %s', current_round)
-    storage.game.update_round(current_round)
-
-    round_to_check = current_round + 1
-
-    if not round_to_check:
-        logger.info('Not processing, round is 0')
+    new_round = utils.update_round()
+    if not new_round:
         return
 
-    logger.info('Updating attack data contents for round %s', round_to_check)
-    storage.game.update_attack_data(round_to_check)
+    args_list = utils.get_round_processor_args(new_round)
 
-    teams = storage.teams.get_teams()
-    tasks = storage.tasks.get_tasks()
-
-    round_args = list(itertools.product(teams, tasks, [round_to_check]))
-    random.shuffle(round_args)
-
-    for each in round_args:
-        state.celery_app.send_task('tasks.modes.run_full_round', args=each)
+    for args in args_list:
+        submit_full_round_jobs(state.celery_app, *args)

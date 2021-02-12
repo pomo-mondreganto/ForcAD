@@ -27,16 +27,17 @@ def bootstrap_state() -> TickerState:
 
 def bootstrap_schedules(state: TickerState):
     game_config = storage.game.get_current_global_config()
-    if game_config.game_mode == models.GameMode.CLASSIC:
-        start_schedule = Schedule(
-            schedule_id='start_game',
-            start=game_config.start_time,
-            func=hooks.start_game,
-        )
-        start_schedule.load_last_run()
-        state.register_schedule(start_schedule)
+    start_schedule = Schedule(
+        schedule_id='start_game',
+        start=game_config.start_time,
+        func=hooks.start_game,
+    )
+    start_schedule.load_last_run()
+    state.register_schedule(start_schedule)
 
-        round_interval = timedelta(seconds=game_config.round_time)
+    round_interval = timedelta(seconds=game_config.round_time)
+
+    if game_config.game_mode == models.GameMode.CLASSIC:
         rounds_schedule = Schedule(
             schedule_id='classic_rounds',
             start=game_config.start_time,
@@ -47,8 +48,30 @@ def bootstrap_schedules(state: TickerState):
         state.register_schedule(rounds_schedule)
 
     elif game_config.game_mode == models.GameMode.BLITZ:
-        # TODO: add blitz schedule
-        pass
+        rounds_schedule = Schedule(
+            'blitz_rounds',
+            start=game_config.start_time,
+            func=hooks.run_blitz_puts_round,
+            interval=round_interval,
+        )
+        rounds_schedule.load_last_run()
+        state.register_schedule(rounds_schedule)
+
+        tasks = storage.tasks.get_tasks()
+        for task in tasks:
+            interval = timedelta(seconds=task.get_period)
+            check_gets_schedule = Schedule(
+                f'blitz_check_gets_task_{task.id}',
+                start=game_config.start_time,
+                func=hooks.blitz_check_gets_round_factory(task.id),
+                interval=interval,
+            )
+            check_gets_schedule.load_last_run()
+            state.register_schedule(check_gets_schedule)
+
+    else:
+        logger.critical('Game mode %s unsupported', game_config.game_mode)
+        exit(1)
 
 
 def main(state: TickerState):

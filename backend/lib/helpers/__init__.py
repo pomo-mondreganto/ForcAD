@@ -1,6 +1,8 @@
-from . import cache, checkers, commands
-from . import events, exceptions, locking
-from . import thread_actions, singleton
+from . import (
+    cache, checkers, commands, events,
+    exceptions, jobs, locking,
+    thread_actions, singleton,
+)
 
 __all__ = (
     'cache',
@@ -8,6 +10,7 @@ __all__ = (
     'commands',
     'events',
     'exceptions',
+    'jobs',
     'locking',
     'thread_actions',
     'singleton',

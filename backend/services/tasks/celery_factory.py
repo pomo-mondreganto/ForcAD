@@ -8,10 +8,8 @@ def get_celery_app():
     app = Celery(
         __name__,
         include=[
-            'tasks.auxiliary',
             'tasks.actions',
             'tasks.handlers',
-            'tasks.modes',
         ],
     )
 

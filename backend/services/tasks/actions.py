@@ -3,20 +3,23 @@ import secrets
 from typing import Optional, Any
 
 from celery import shared_task
+from celery.utils.log import get_task_logger
 
 from lib import models, storage
 from lib.helpers import checkers
+from lib.helpers.jobs import JobNames
 from lib.models import TaskStatus, Action
-from .auxiliary import logger
+
+logger = get_task_logger(__name__)
 
 
-@shared_task
+@shared_task(name=JobNames.noop_action)
 def noop(data: Any) -> Any:
     """Helper task to return checker verdict"""
     return data
 
 
-@shared_task
+@shared_task(name=JobNames.put_action)
 def put_action(
         _prev_verdict: Optional[models.CheckerVerdict],
         team: models.Team,
@@ -68,7 +71,7 @@ def put_action(
     return verdict
 
 
-@shared_task
+@shared_task(name=JobNames.get_action)
 def get_action(
         prev_verdict: models.CheckerVerdict,
         team: models.Team,
@@ -146,7 +149,7 @@ def get_action(
     return verdict
 
 
-@shared_task
+@shared_task(name=JobNames.check_action)
 def check_action(
         team: models.Team, task: models.Task, current_round: int
 ) -> models.CheckerVerdict:

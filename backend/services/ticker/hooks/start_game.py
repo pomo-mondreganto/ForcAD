@@ -20,8 +20,7 @@ def start_game(**_kwargs) -> None:
 
     Sets `game_running` in DB
     """
-    logger.info('Starting game')
-
+    logger.info('Trying to start game')
     if not set_started_if_not():
         logger.info('Game already started')
         return
@@ -33,7 +32,7 @@ def start_game(**_kwargs) -> None:
 
     logger.info('Initializing game state with %s', game_state.to_dict())
 
-    with storage.utils.redis_pipeline(transaction=True) as pipe:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
         pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
         pipe.execute()
 

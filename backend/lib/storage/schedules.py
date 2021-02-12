@@ -8,8 +8,8 @@ SELECT_LAST_RUN = 'SELECT last_run FROM ScheduleHistory WHERE id=%(id)s'
 UPDATE_LAST_RUN = '''
 INSERT INTO ScheduleHistory (id, last_run)
 VALUES (%(id)s, %(last_run)s)
-ON CONFLICT (id) DO 
-UPDATE SET last_run = EXCLUDED.last_run 
+ON CONFLICT (id) DO
+UPDATE SET last_run = EXCLUDED.last_run
 '''
 
 
