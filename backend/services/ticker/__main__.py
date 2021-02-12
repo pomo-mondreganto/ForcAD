@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 from datetime import timedelta, datetime
 
@@ -16,9 +17,8 @@ logger.addHandler(handler)
 
 
 def bootstrap_state() -> TickerState:
-    with storage.utils.db_cursor() as (_, curs):
-        already_started = storage.game.get_game_running()
     celery_app = get_celery_app()
+    already_started = storage.game.get_game_running()
     return TickerState(
         game_started=already_started,
         celery_app=celery_app,
@@ -71,7 +71,7 @@ def bootstrap_schedules(state: TickerState):
 
     else:
         logger.critical('Game mode %s unsupported', game_config.game_mode)
-        exit(1)
+        sys.exit(1)
 
 
 def main(state: TickerState):
