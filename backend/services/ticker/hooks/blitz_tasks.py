@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Callable
 
 from celery import Celery
@@ -15,8 +16,9 @@ def submit_puts_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
 
     handler = utils.get_result_handler_signature(app, kwargs)
 
-    kwargs['_prev_verdict'] = None
-    puts = utils.get_puts_group(app, task, kwargs, params)
+    put_kwargs = deepcopy(kwargs)
+    put_kwargs['_prev_verdict'] = None
+    puts = utils.get_puts_group(app, task, put_kwargs, params)
     scheme = chain(puts, handler)
     scheme.apply_async()
 
