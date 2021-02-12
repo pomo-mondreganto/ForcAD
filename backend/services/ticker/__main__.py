@@ -63,7 +63,7 @@ def bootstrap_schedules(state: TickerState):
             check_gets_schedule = Schedule(
                 f'blitz_check_gets_task_{task.id}',
                 start=game_config.start_time,
-                func=hooks.blitz_check_gets_round_factory(task.id),
+                func=hooks.blitz_check_gets_runner_factory(task.id),
                 interval=interval,
             )
             check_gets_schedule.load_last_run()

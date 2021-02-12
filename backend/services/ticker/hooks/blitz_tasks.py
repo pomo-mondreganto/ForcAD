@@ -43,7 +43,7 @@ def run_blitz_puts_round(state):
         submit_puts_jobs(state.celery_app, *args)
 
 
-def blitz_check_gets_round_factory(task_id: int) -> Callable:
+def blitz_check_gets_runner_factory(task_id: int) -> Callable:
     def run_blitz_check_gets_round(state):
         current_round = storage.game.get_real_round()
         if current_round < 1:
