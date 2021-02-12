@@ -7,7 +7,10 @@ from scripts import reset_db, init_db
 
 
 def run():
+    print('Resetting the database')
     reset_db.run()
+
+    print('Initializing the database')
     init_db.run()
 
     r = storage.utils.RedisStorage.get()

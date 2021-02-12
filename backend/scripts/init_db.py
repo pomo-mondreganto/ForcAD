@@ -8,7 +8,6 @@ import yaml
 
 from lib import models
 from lib import storage
-from services import tasks
 
 BACKEND_BASE = Path(__file__).resolve().absolute().parents[1]
 SCRIPTS_DIR = BACKEND_BASE / 'scripts'
@@ -96,20 +95,15 @@ def init_game_state():
     )
 
 
-def schedule_game_start():
-    game_config = storage.game.get_current_global_config()
-    tasks.start_game.apply_async(
-        eta=game_config.start_time,
-    )
-
-
 def run():
     with open(CONFIG_PATH, 'r') as f:
         file_config = yaml.safe_load(f)
 
     with storage.utils.db_cursor() as (conn, curs):
+        print('Initializing schema')
         init_schema(curs)
 
+        print('Initializing teams')
         teams = init_teams(file_config['teams'], curs)
 
         global_defaults = {
@@ -129,6 +123,7 @@ def run():
             if k not in global_config:
                 global_defaults[k] = v
 
+        print('Initializing tasks')
         tasks = init_tasks(file_config['tasks'], global_config, curs)
 
         data = [
@@ -143,12 +138,13 @@ def run():
         ]
         curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, data)
 
+        print('Initializing global config')
         init_global_config(global_config, curs)
 
         conn.commit()
 
+    print('Initializing game state')
     init_game_state()
-    schedule_game_start()
 
 
 if __name__ == '__main__':
