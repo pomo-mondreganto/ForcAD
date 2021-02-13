@@ -145,7 +145,10 @@ jobs:
     steps:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
-      - name: Format check
+      - name: Terraform fmt
         run: terraform fmt -check
-      - name: Validation
+        continue-on-error: true
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Validate
         run: terraform validate
