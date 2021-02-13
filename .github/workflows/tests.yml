@@ -143,6 +143,8 @@ jobs:
       run:
         working-directory: deploy/terraform
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
       - name: Terraform fmt
