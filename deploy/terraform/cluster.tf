@@ -1,15 +1,15 @@
 resource "yandex_kubernetes_cluster" "forcad" {
-  name = "forcad"
+  name        = "forcad"
   description = "cluster for running ForcAD services"
 
-  folder_id = var.yandex_folder_id
+  folder_id  = var.yandex_folder_id
   network_id = yandex_vpc_network.forcad.id
 
   master {
     version = "1.19"
 
     zonal {
-      zone = yandex_vpc_subnet.forcad.zone
+      zone      = yandex_vpc_subnet.forcad.zone
       subnet_id = yandex_vpc_subnet.forcad.id
     }
 
@@ -20,10 +20,10 @@ resource "yandex_kubernetes_cluster" "forcad" {
     }
   }
 
-  service_account_id = yandex_iam_service_account.forcad.id
+  service_account_id      = yandex_iam_service_account.forcad.id
   node_service_account_id = yandex_iam_service_account.forcad.id
 
-  release_channel = "RAPID"
+  release_channel         = "RAPID"
   network_policy_provider = "CALICO"
 
   kms_provider {
@@ -36,18 +36,18 @@ resource "yandex_kubernetes_cluster" "forcad" {
 }
 
 resource "yandex_kubernetes_node_group" "forcad" {
-  cluster_id = yandex_kubernetes_cluster.forcad.id
-  name = "forcad"
+  cluster_id  = yandex_kubernetes_cluster.forcad.id
+  name        = "forcad"
   description = "Node group for running ForcAD services"
-  version = yandex_kubernetes_cluster.forcad.master[0].version
+  version     = yandex_kubernetes_cluster.forcad.master[0].version
 
   instance_template {
     platform_id = "standard-v2"
-    nat = true
+    nat         = true
 
     resources {
       memory = 4
-      cores = 4
+      cores  = 4
     }
 
     boot_disk {
@@ -59,8 +59,8 @@ resource "yandex_kubernetes_node_group" "forcad" {
   scale_policy {
     auto_scale {
       initial = 2
-      max = 8
-      min = 1
+      max     = 8
+      min     = 1
     }
   }
 
@@ -72,6 +72,6 @@ resource "yandex_kubernetes_node_group" "forcad" {
 
   maintenance_policy {
     auto_upgrade = false
-    auto_repair = true
+    auto_repair  = true
   }
 }
