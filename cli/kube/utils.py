@@ -1,6 +1,10 @@
+import json
 from pathlib import Path
+from typing import Dict
 
 import yaml
+
+from cli import constants, utils
 
 
 def write_secret(name: str, data: dict, path: Path):
@@ -19,3 +23,11 @@ def write_secret(name: str, data: dict, path: Path):
 
     with path.open(mode='w') as f:
         yaml.safe_dump(content, f)
+
+
+def get_terraform_outputs() -> Dict[str, Dict[str, str]]:
+    output = utils.get_output(
+        ['terraform', 'output', '-json'],
+        cwd=constants.TERRAFORM_DIR,
+    )
+    return json.loads(output)

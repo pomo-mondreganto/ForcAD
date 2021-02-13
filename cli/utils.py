@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import click
 import yaml
@@ -24,6 +24,10 @@ def run_command(command: List[str], cwd=None, env=None):
     if rc != 0:
         print('[-] Failed!')
         sys.exit(1)
+
+
+def get_output(command: List[str], cwd=None, env=None) -> str:
+    return subprocess.check_output(command, cwd=cwd, env=env).decode()
 
 
 def run_docker(args: List[str]):
@@ -57,3 +61,7 @@ def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
 
 def print_file_exception_info(_func, path, _exc_info):
     print(f'File {path} not found')
+
+
+def dump_tf_config(data: Dict[str, str]) -> str:
+    return '\n'.join(f'{name} = "{value}"' for name, value in data.items())

@@ -18,7 +18,7 @@ case ${SERVICE} in
 "flower")
   echo "[*] Starting celery flower"
   FLOWER_PORT=${PORT:-5555} \
-    celery -A app \
+    celery -A tasks.app \
     flower \
     --basic_auth="${ADMIN_USERNAME}:${ADMIN_PASSWORD}" \
     --url_prefix=flower \

@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from dateutil.parser import parse
 
@@ -43,3 +43,8 @@ class GlobalConfig(BaseModel):
 
     def __str__(self) -> str:
         return str(self.to_dict())
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = super(GlobalConfig, self).to_dict()
+        data['start_time'] = str(data['start_time'])
+        return data

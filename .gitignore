@@ -22,3 +22,8 @@ deploy/secrets/*
 !deploy/secrets/.keep
 
 deploy/kustomization.yml
+
+.terraform
+.terraform.*
+terraform.tfstate*
+/deploy/terraform/credentials.auto.tfvars

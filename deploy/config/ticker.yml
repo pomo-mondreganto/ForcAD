@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celerybeat
+  name: ticker
   labels:
-    appType: beat
+    appType: single
 spec:
   selector:
     matchLabels:
-      app: celerybeat
+      app: ticker
   template:
     metadata:
       labels:
-        app: celerybeat
+        app: ticker
     spec:
       containers:
-        - name: beat
-          image: forcad-celery
+        - name: ticker
+          image: forcad-service
           env:
             - name: SERVICE
-              value: "beat"
+              value: "ticker"
           envFrom:
             - secretRef:
                 name: forcad-postgres-secret
@@ -31,5 +31,5 @@ spec:
               cpu: 50m
               memory: 50Mi
             limits:
-              cpu: 100m
+              cpu: 200m
               memory: 100Mi

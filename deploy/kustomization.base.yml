@@ -8,8 +8,8 @@ resources:
   - config/tcp_receiver.yml
   - config/monitoring.yml
   - config/initializer.yml
+  - config/ticker.yml
 
-  - config/celerybeat.yml
   - config/flower.yml
   - config/celery.yml
 
