@@ -136,3 +136,16 @@ jobs:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Skaffold build
         run: ./control.py kube build
+
+  terraform_checks:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        working-directory: deploy/terraform
+    steps:
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+      - name: Format check
+        run: terraform fmt -check
+      - name: Validation
+        run: terraform validate
