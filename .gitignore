@@ -25,6 +25,8 @@ deploy/kustomization.yml
 
 .terraform
 .terraform.*
+!/deploy/terraform/.terraform.lock.hcl
+
 terraform.tfstate*
 /deploy/terraform/credentials.auto.tfvars
 /deploy/terraform/credentials.auto.tfvars.json
