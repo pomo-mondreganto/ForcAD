@@ -1,55 +1,30 @@
-import shutil
-import time
-
 import click
 import yaml
 
-from cli import utils
-from cli.constants import BASE_DIR, CONFIG_PATH, FULL_COMPOSE_PATH, BASE_COMPOSE_FILE
+from cli import utils, constants
 from cli.options import with_external_services_option
 
 
 @click.command(help='Initialize ForcAD configuration')
 @with_external_services_option
 def setup(redis, database, rabbitmq, **_kwargs):
-    override_config(redis=redis, database=database, rabbitmq=rabbitmq)
+    utils.backup_config()
+
     config = utils.load_config()
+    utils.setup_auxiliary_structure(config)
+    utils.override_config(config, redis=redis, database=database, rabbitmq=rabbitmq)
+    utils.dump_config(config)
+
     setup_db(config)
     setup_redis(config)
     setup_rabbitmq(config)
     setup_admin_api(config)
+
     prepare_compose(redis=redis, database=database, rabbitmq=rabbitmq)
 
 
-def override_config(redis: str = None, database: str = None, rabbitmq: str = None):
-    config = utils.load_config()
-
-    # create config backup
-    backup_path = BASE_DIR / f'config_backup_{int(time.time())}.yml'
-    shutil.copy2(CONFIG_PATH, backup_path)
-
-    # patch config host variables to connect to the right place
-    if redis:
-        host, port = utils.parse_host_data(redis, 6379)
-        config['storages']['redis']['host'] = host
-        config['storages']['redis']['port'] = port
-
-    if database:
-        host, port = utils.parse_host_data(database, 5432)
-        config['storages']['db']['host'] = host
-        config['storages']['db']['port'] = port
-
-    if rabbitmq:
-        host, port = utils.parse_host_data(rabbitmq, 5672)
-        config['storages']['rabbitmq']['host'] = host
-        config['storages']['rabbitmq']['port'] = port
-
-    with CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config, f)
-
-
 def setup_db(config):
-    postgres_env_path = BASE_DIR.joinpath(
+    postgres_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'postgres_environment.env',
     )
@@ -74,7 +49,7 @@ def setup_db(config):
 
 
 def setup_redis(config):
-    redis_env_path = BASE_DIR.joinpath(
+    redis_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'redis_environment.env',
     )
@@ -95,7 +70,7 @@ def setup_redis(config):
 
 
 def setup_rabbitmq(config):
-    rabbitmq_env_path = BASE_DIR.joinpath(
+    rabbitmq_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'rabbitmq_environment.env',
     )
@@ -120,7 +95,7 @@ def setup_rabbitmq(config):
 
 
 def setup_admin_api(config):
-    admin_api_env_path = BASE_DIR.joinpath(
+    admin_api_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'services',
         'admin.env',
@@ -140,7 +115,7 @@ def setup_admin_api(config):
 
 
 def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = None):
-    with FULL_COMPOSE_PATH.open(mode='r') as f:
+    with constants.FULL_COMPOSE_PATH.open(mode='r') as f:
         base_conf = yaml.safe_load(f)
 
     if redis:
@@ -152,6 +127,6 @@ def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = Non
     if rabbitmq:
         del base_conf['services']['rabbitmq']
 
-    res_path = BASE_DIR / BASE_COMPOSE_FILE
+    res_path = constants.BASE_DIR / constants.BASE_COMPOSE_FILE
     with res_path.open(mode='w') as f:
         yaml.dump(base_conf, f)

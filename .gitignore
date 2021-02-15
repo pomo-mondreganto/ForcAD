@@ -27,3 +27,4 @@ deploy/kustomization.yml
 .terraform.*
 terraform.tfstate*
 /deploy/terraform/credentials.auto.tfvars
+/deploy/terraform/credentials.auto.tfvars.json

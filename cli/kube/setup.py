@@ -2,7 +2,6 @@ import click
 import yaml
 
 from cli import utils
-from cli.base.setup import override_config
 from cli.constants import SECRETS_DIR, KUSTOMIZATION_BASE_PATH, KUSTOMIZATION_PATH
 from cli.options import with_external_services_option
 from .utils import write_secret
@@ -11,12 +10,19 @@ from .utils import write_secret
 @click.command(help='Initialize ForcAD configuration')
 @with_external_services_option
 def setup(redis, database, rabbitmq, **_kwargs):
-    override_config(redis=redis, database=database, rabbitmq=rabbitmq)
+    utils.backup_config()
+
     config = utils.load_config()
+    utils.setup_auxiliary_structure(config)
+
+    utils.override_config(config, redis=redis, database=database, rabbitmq=rabbitmq)
+    utils.dump_config(config)
+
     setup_postgres_secret(config)
     setup_rabbitmq_secret(config)
     setup_redis_secret(config)
     setup_admin_secret(config)
+
     prepare_kustomize(redis=redis, database=database, rabbitmq=rabbitmq)
 
 

@@ -9,8 +9,8 @@ resource "yandex_kubernetes_cluster" "forcad" {
     version = "1.19"
 
     zonal {
-      zone      = yandex_vpc_subnet.forcad.zone
-      subnet_id = yandex_vpc_subnet.forcad.id
+      zone      = yandex_vpc_subnet.forcad-cluster.zone
+      subnet_id = yandex_vpc_subnet.forcad-cluster.id
     }
 
     public_ip = true
@@ -66,7 +66,8 @@ resource "yandex_kubernetes_node_group" "forcad" {
 
   allocation_policy {
     location {
-      zone = yandex_kubernetes_cluster.forcad.master[0].zonal[0].zone
+      zone      = yandex_vpc_subnet.forcad-cluster.zone
+      subnet_id = yandex_vpc_subnet.forcad-cluster.id
     }
   }
 
