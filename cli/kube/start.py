@@ -4,7 +4,7 @@ from cli.constants import BASE_DIR
 from cli.utils import run_command
 
 
-@click.command(help='Start using Skaffold')
+@click.command(help='Deploy to the the cluster using Skaffold')
 @click.option(
     '--dev',
     is_flag=True,

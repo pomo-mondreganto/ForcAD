@@ -7,7 +7,7 @@ from cli.options import with_external_services_option
 from .utils import write_secret
 
 
-@click.command(help='Initialize ForcAD configuration')
+@click.command(help='Initialize ForcAD configuration for custom cluster deploy')
 @with_external_services_option
 def setup(redis, database, rabbitmq, **_kwargs):
     utils.backup_config()

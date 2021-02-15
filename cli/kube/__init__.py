@@ -7,7 +7,7 @@ from .setup import setup
 from .start import start
 
 
-@click.group('kube')
+@click.group('kube', help='Kubernetes-related commands (run kube --help for more)')
 def cli():
     pass
 
