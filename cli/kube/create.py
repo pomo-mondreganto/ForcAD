@@ -9,13 +9,13 @@ from .utils import get_terraform_outputs
 
 
 @click.command(help='Create Yandex.Cloud Kubernetes cluster for ForcAD')
-@click.option('--no-setup', is_flag=True, help='Disable running kube setup command')
-def create(no_setup: bool):
+@click.pass_context
+def create(ctx: click.Context):
     utils.backup_config()
-    config = utils.load_config()
-    utils.setup_auxiliary_structure(config)
+    basic_config = utils.load_basic_config()
+    config = utils.setup_auxiliary_structure(basic_config)
 
-    if config['admin']['username'] == 'admin':
+    if config.admin.username == 'admin':
         click.echo(
             '"admin" username is not allowed for YC Postgres cluster. '
             'Please, change admin.username in config and try again.',
@@ -43,9 +43,9 @@ def create(no_setup: bool):
     else:
         data = json.loads(constants.TF_CREDENTIALS_PATH.read_text())
 
-    data['db_password'] = config['storages']['db']['password']
-    data['db_user'] = config['storages']['db']['user']
-    data['db_name'] = config['storages']['db']['dbname']
+    data['db_password'] = config.storages.db.password
+    data['db_user'] = config.storages.db.user
+    data['db_name'] = config.storages.db.dbname
 
     constants.TF_CREDENTIALS_PATH.write_text(json.dumps(data))
 
@@ -92,5 +92,4 @@ def create(no_setup: bool):
     click.echo(f'Postgres full address is {database}')
     click.echo(f'Redis full address is {redis}')
 
-    if not no_setup:
-        setup(database=database, redis=redis, rabbitmq=None)
+    ctx.invoke(setup, database=database, redis=redis, rabbitmq=None)

@@ -1,7 +1,7 @@
 import click
 import yaml
 
-from cli import utils, constants
+from cli import utils, constants, models
 from cli.options import with_external_services_option
 
 
@@ -10,105 +10,83 @@ from cli.options import with_external_services_option
 def setup(redis, database, rabbitmq, **_kwargs):
     utils.backup_config()
 
-    config = utils.load_config()
-    utils.setup_auxiliary_structure(config)
+    basic_config = utils.load_basic_config()
+    config = utils.setup_auxiliary_structure(basic_config)
     utils.override_config(config, redis=redis, database=database, rabbitmq=rabbitmq)
+
     utils.dump_config(config)
 
-    setup_db(config)
-    setup_redis(config)
-    setup_rabbitmq(config)
-    setup_admin_api(config)
+    setup_db(config.storages.db)
+    setup_redis(config.storages.redis)
+    setup_rabbitmq(config.storages.rabbitmq)
+    setup_admin_api(config.admin)
 
     prepare_compose(redis=redis, database=database, rabbitmq=rabbitmq)
 
 
-def setup_db(config):
+def setup_db(config: models.DatabaseConfig):
     postgres_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'postgres_environment.env',
     )
 
-    db_config = config['storages']['db']
-    host = db_config['host']
-    port = db_config['port']
-    user = db_config['user']
-    password = db_config['password']
-    db = db_config['dbname']
-
     postgres_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        f'POSTGRES_HOST={host}',
-        f'POSTGRES_PORT={port}',
-        f'POSTGRES_USER={user}',
-        f'POSTGRES_PASSWORD={password}',
-        f'POSTGRES_DB={db}',
+        f'POSTGRES_HOST={config.host}',
+        f'POSTGRES_PORT={config.port}',
+        f'POSTGRES_USER={config.user}',
+        f'POSTGRES_PASSWORD={config.password}',
+        f'POSTGRES_DB={config.dbname}',
     ]
 
     postgres_env_path.write_text('\n'.join(postgres_config))
 
 
-def setup_redis(config):
+def setup_redis(config: models.RedisConfig):
     redis_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'redis_environment.env',
     )
 
-    redis_config = config['storages']['redis']
-    host = redis_config.get('host', 'redis')
-    port = redis_config.get('port', 6379)
-    password = redis_config.get('password', None)
-
     redis_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        f'REDIS_HOST={host}',
-        f'REDIS_PORT={port}',
-        f'REDIS_PASSWORD={password}',
+        f'REDIS_HOST={config.host}',
+        f'REDIS_PORT={config.port}',
+        f'REDIS_PASSWORD={config.password}',
     ]
 
     redis_env_path.write_text('\n'.join(redis_config))
 
 
-def setup_rabbitmq(config):
+def setup_rabbitmq(config: models.RabbitMQConfig):
     rabbitmq_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'rabbitmq_environment.env',
     )
 
-    rabbitmq_config = config['storages']['rabbitmq']
-    host = rabbitmq_config.get('host', 'rabbitmq')
-    port = rabbitmq_config.get('port', 5672)
-    user = rabbitmq_config['user']
-    password = rabbitmq_config['password']
-    vhost = rabbitmq_config['vhost']
-
     rabbitmq_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        f'RABBITMQ_HOST={host}',
-        f'RABBITMQ_PORT={port}',
-        f'RABBITMQ_DEFAULT_USER={user}',
-        f'RABBITMQ_DEFAULT_PASS={password}',
-        f'RABBITMQ_DEFAULT_VHOST={vhost}',
+        f'RABBITMQ_HOST={config.host}',
+        f'RABBITMQ_PORT={config.port}',
+        f'RABBITMQ_DEFAULT_USER={config.user}',
+        f'RABBITMQ_DEFAULT_PASS={config.password}',
+        f'RABBITMQ_DEFAULT_VHOST={config.vhost}',
     ]
 
     rabbitmq_env_path.write_text('\n'.join(rabbitmq_config))
 
 
-def setup_admin_api(config):
+def setup_admin_api(config: models.AdminConfig):
     admin_api_env_path = constants.BASE_DIR.joinpath(
         'docker_config',
         'services',
         'admin.env',
     )
 
-    admin_config = config['admin']
-    username = admin_config['username']
-    password = admin_config['password']
-
     admin_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
-        f'ADMIN_USERNAME={username}',
-        f'ADMIN_PASSWORD={password}',
+        f'ADMIN_USERNAME={config.username}',
+        f'ADMIN_PASSWORD={config.password}',
     ]
 
     admin_api_env_path.write_text('\n'.join(admin_config))

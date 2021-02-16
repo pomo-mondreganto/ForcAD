@@ -9,86 +9,80 @@ from typing import List, Tuple, Dict
 import click
 import yaml
 
-from .constants import (
-    BASE_DIR, CONFIG_PATH, VERSION,
-    BASE_COMPOSE_FILE, FAST_COMPOSE_FILE, TESTS_COMPOSE_FILE,
-)
+from . import constants, models
 
 
-def load_config():
-    with CONFIG_PATH.open(mode='r') as f:
-        config = yaml.safe_load(f)
-    return config
+def load_basic_config() -> models.BasicConfig:
+    with constants.CONFIG_PATH.open(mode='r') as f:
+        raw = yaml.safe_load(f)
+    return models.BasicConfig.parse_obj(raw)
+
+
+def load_config() -> models.Config:
+    with constants.CONFIG_PATH.open(mode='r') as f:
+        raw = yaml.safe_load(f)
+    return models.Config.parse_obj(raw)
 
 
 def backup_config():
-    backup_path = BASE_DIR / f'config_backup_{int(time.time())}.yml'
-    shutil.copy2(CONFIG_PATH, backup_path)
+    backup_path = constants.BASE_DIR / f'config_backup_{int(time.time())}.yml'
+    shutil.copy2(constants.CONFIG_PATH, backup_path)
 
 
-def dump_config(config):
-    with CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config, f)
+def dump_config(config: models.Config):
+    with constants.CONFIG_PATH.open(mode='w') as f:
+        yaml.safe_dump(config.dict(), f)
 
 
 def override_config(
-        config, *,
+        config: models.Config, *,
         redis: str = None,
         database: str = None,
         rabbitmq: str = None):
     # patch config host variables to connect to the right place
     if redis:
         host, port = parse_host_data(redis, 6379)
-        config['storages']['redis']['host'] = host
-        config['storages']['redis']['port'] = port
+        config.storages.redis.host = host
+        config.storages.redis.port = port
 
     if database:
         host, port = parse_host_data(database, 5432)
-        config['storages']['db']['host'] = host
-        config['storages']['db']['port'] = port
+        config.storages.db.host = host
+        config.storages.db.port = port
 
     if rabbitmq:
         host, port = parse_host_data(rabbitmq, 5672)
-        config['storages']['rabbitmq']['host'] = host
-        config['storages']['rabbitmq']['port'] = port
+        config.storages.rabbitmq.host = host
+        config.storages.rabbitmq.port = port
 
 
-def setup_auxiliary_structure(config):
-    if 'admin' not in config:
-        new_username = 'forcad'
+def setup_auxiliary_structure(config: models.BasicConfig) -> models.Config:
+    if not config.admin:
+        new_username = constants.ADMIN_USER
         new_password = secrets.token_hex(8)
-        config['admin'] = {
-            'username': new_username,
-            'password': new_password,
-        }
+        config.admin = models.AdminConfig(
+            username=new_username,
+            password=new_password,
+        )
 
         click.echo(f'Created new admin credentials: {new_username}:{new_password}')
 
-    username = config['admin']['username']
-    password = config['admin']['password']
+    username = config.admin.username
+    password = config.admin.password
 
-    config['storages'] = {
-        'db': {
-            'host': 'postgres',
-            'port': 5432,
-            'dbname': 'forcad',
-            'user': username,
-            'password': password,
-        },
-        'rabbitmq': {
-            'host': 'rabbitmq',
-            'port': 5672,
-            'vhost': 'forcad',
-            'user': username,
-            'password': password,
-        },
-        'redis': {
-            'host': 'redis',
-            'port': 6379,
-            'db': 0,
-            'password': password,
-        },
-    }
+    storages = models.StoragesConfig(
+        db=models.DatabaseConfig(user=username, password=password),
+        rabbitmq=models.RabbitMQConfig(user=username, password=password),
+        redis=models.RedisConfig(password=password),
+    )
+
+    return models.Config(
+        admin=config.admin,
+        global_=config.global_,
+        storages=storages,
+        tasks=config.tasks,
+        teams=config.teams,
+    )
 
 
 def run_command(command: List[str], cwd=None, env=None):
@@ -106,20 +100,20 @@ def get_output(command: List[str], cwd=None, env=None) -> str:
 def run_docker(args: List[str]):
     base = [
         'docker-compose',
-        '-f', BASE_COMPOSE_FILE,
+        '-f', constants.BASE_COMPOSE_FILE,
     ]
 
     ctx = click.get_current_context()
     if ctx.params.get('fast'):
-        base += ['-f', FAST_COMPOSE_FILE]
+        base += ['-f', constants.FAST_COMPOSE_FILE]
     elif os.getenv('TEST'):
-        base += ['-f', TESTS_COMPOSE_FILE]
+        base += ['-f', constants.TESTS_COMPOSE_FILE]
 
     env = os.environ.copy()
-    env['FORCAD_VERSION'] = VERSION
+    env['FORCAD_VERSION'] = constants.VERSION
     run_command(
         base + args,
-        cwd=BASE_DIR,
+        cwd=constants.BASE_DIR,
         env=env,
     )
 
