@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 from kombu.utils import json as kjson
 
@@ -129,6 +130,15 @@ def construct_latest_game_state(current_round: int) -> models.GameState:
     return state
 
 
+def get_cached_game_state() -> Optional[models.GameState]:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
+        state, = pipe.get(CacheKeys.game_state()).execute()
+
+    if not state:
+        return None
+    return models.GameState.from_json(state)
+
+
 def construct_scoreboard() -> dict:
     """
     Get formatted scoreboard to serve to frontend.
@@ -139,13 +149,9 @@ def construct_scoreboard() -> dict:
     tasks = [task.to_dict_for_participants() for task in storage.tasks.get_tasks()]
     cfg = storage.game.get_current_game_config().to_dict()
 
-    with storage.utils.redis_pipeline(transaction=False) as pipe:
-        state, = pipe.get(CacheKeys.game_state()).execute()
-
-    try:
-        state = models.GameState.from_json(state).to_dict()
-    except TypeError:
-        state = None
+    state = get_cached_game_state()
+    if state:
+        state = state.to_dict()
 
     data = {
         'state': state,
@@ -155,6 +161,36 @@ def construct_scoreboard() -> dict:
     }
 
     return data
+
+
+def prepare_ctftime_scoreboard() -> Optional[list]:
+    game_state = get_cached_game_state()
+
+    if not game_state:
+        return None
+
+    teams = storage.teams.get_teams()
+
+    standings = []
+    for team in teams:
+        teamtasks = list(filter(
+            lambda x: x['team_id'] == team.id,
+            game_state.team_tasks,
+        ))
+
+        score = sum(map(
+            lambda x: x['score'] * x['checks_passed'] / x['checks'],
+            teamtasks,
+        ))
+        score = round(score, 2)
+        standings.append({'team': team.name, 'score': score})
+
+    standings = sorted(standings, key=lambda x: x['score'], reverse=True)
+    standings = [
+        {'pos': i + 1, **data}
+        for i, data in enumerate(standings)
+    ]
+    return standings
 
 
 def update_round(finished_round: int) -> None:

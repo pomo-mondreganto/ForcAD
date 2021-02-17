@@ -40,6 +40,14 @@ def get_team_history(team_id):
     return jsonify(teamtasks)
 
 
+@client_bp.route('/ctftime/')
+def get_ctftime_scoreboard():
+    standings = storage.game.prepare_ctftime_scoreboard()
+    if not standings:
+        return jsonify({'error': 'not available'}), 400
+    return jsonify(standings)
+
+
 @client_bp.route('/health/')
 def health_check():
     return jsonify({'status': 'ok'})
