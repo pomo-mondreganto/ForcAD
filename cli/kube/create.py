@@ -1,26 +1,20 @@
 import json
-import sys
 
 import click
 
 from cli import utils, constants
 from cli.kube.setup import setup
+from cli.kube.validate import validate
 from .utils import get_terraform_outputs
 
 
 @click.command(help='Create Yandex.Cloud Kubernetes cluster for ForcAD')
 @click.pass_context
 def create(ctx: click.Context):
+    ctx.invoke(validate, full=False)
     utils.backup_config()
     basic_config = utils.load_basic_config()
     config = utils.setup_auxiliary_structure(basic_config)
-
-    if config.admin.username == 'admin':
-        utils.print_error(
-            '"admin" username is not allowed for YC Postgres cluster. '
-            'Please, change admin.username in config and try again.',
-        )
-        sys.exit(1)
 
     utils.dump_config(config)
 

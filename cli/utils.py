@@ -117,7 +117,7 @@ def run_command(command: List[str], cwd=None, env=None):
     p = subprocess.Popen(command, cwd=cwd, env=env)
     rc = p.wait()
     if rc != 0:
-        print('[-] Failed!')
+        print_error(f'Command {command} failed!')
         sys.exit(1)
 
 

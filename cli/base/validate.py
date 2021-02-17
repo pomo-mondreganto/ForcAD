@@ -11,6 +11,9 @@ from cli import utils
 )
 def validate(full: bool):
     if full:
+        utils.print_bold('Validating full configuration for local deploy')
         utils.load_config()
     else:
+        utils.print_bold('Validating basic configuration for local deploy')
         utils.load_basic_config()
+    utils.print_success('Configuration is valid!')

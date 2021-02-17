@@ -16,4 +16,18 @@ spec:
                 name: forcad-rabbitmq-secret
             - secretRef:
                 name: forcad-redis-secret
+          env:
+            - name: CONFIG_PATH
+              value: "/config/config.yml"
+          volumeMounts:
+            - name: config-file
+              mountPath: "/config"
+              readOnly: true
+      volumes:
+        - name: config-file
+          secret:
+            secretName: forcad-config-file
+            items:
+              - key: content
+                path: config.yml
       restartPolicy: OnFailure

@@ -2,13 +2,16 @@ import click
 import yaml
 
 from cli import utils, constants, models
+from cli.kube.validate import validate
 from cli.options import with_external_services_option
 from .utils import write_secret
 
 
 @click.command(help='Initialize ForcAD configuration for custom cluster deploy')
 @with_external_services_option
-def setup(redis, database, rabbitmq, **_kwargs):
+@click.pass_context
+def setup(ctx: click.Context, redis, database, rabbitmq, **_kwargs):
+    ctx.invoke(validate, full=False)
     raw_config = utils.load_basic_config()
     basic_config = models.BasicConfig.parse_obj(raw_config)
     config = utils.setup_auxiliary_structure(basic_config)
@@ -21,6 +24,7 @@ def setup(redis, database, rabbitmq, **_kwargs):
     setup_rabbitmq_secret(config.storages.rabbitmq)
     setup_redis_secret(config.storages.redis)
     setup_admin_secret(config.admin)
+    setup_config_file_secret()
 
     prepare_kustomize(redis=redis, database=database, rabbitmq=rabbitmq)
 
@@ -77,6 +81,14 @@ def setup_admin_secret(config: models.AdminConfig):
         'ADMIN_PASSWORD': config.password,
     }
 
+    write_secret(name=name, path=path, data=data)
+
+
+def setup_config_file_secret():
+    content = constants.CONFIG_PATH.read_text()
+    path = constants.SECRETS_DIR / 'config.yml'
+    name = 'forcad-config-file'
+    data = {'content': content}
     write_secret(name=name, path=path, data=data)
 
 

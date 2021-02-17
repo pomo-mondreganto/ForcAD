@@ -42,3 +42,5 @@ def destroy():
         ['terraform', 'destroy', '-auto-approve'],
         cwd=constants.TERRAFORM_DIR,
     )
+
+    utils.run_command(['skaffold', 'config', 'unset', 'default-repo'])

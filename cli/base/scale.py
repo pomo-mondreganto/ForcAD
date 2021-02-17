@@ -3,7 +3,7 @@ import click
 from cli.utils import run_docker
 
 
-@click.command(help='Scale any service (e.g. "celery 3" to set number of workers to 5)')
+@click.command(help='Scale the specified service')
 @click.option(
     '-s', '--service',
     type=(str, int),

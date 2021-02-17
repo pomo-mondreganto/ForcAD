@@ -31,3 +31,14 @@ def get_terraform_outputs() -> Dict[str, Dict[str, str]]:
         cwd=constants.TERRAFORM_DIR,
     )
     return json.loads(output)
+
+
+def get_resource_description(resource: str, name: str) -> dict:
+    cmd = [
+        'kubectl',
+        '--namespace', 'forcad',
+        'get', resource, name,
+        '-o', 'json',
+    ]
+    result = utils.get_output(cmd, cwd=constants.BASE_DIR)
+    return json.loads(result)
