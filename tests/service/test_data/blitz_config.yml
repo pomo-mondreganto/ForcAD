@@ -1,5 +1,5 @@
 admin:
-  password: secret
+  password: secretpass
   username: system_admin
 
 game:
