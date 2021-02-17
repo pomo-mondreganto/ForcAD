@@ -86,9 +86,9 @@ Config file (`config.yml`) is split into five main parts:
 
 - `db`: PostgreSQL settings:
 
-    - `user: system_admin`
+    - `user: forcad`
     - `password: **change_me**`
-    - `dbname: system_db`
+    - `dbname: forcad`
     - `host: postgres`
     - `port: 5432`
 
@@ -101,7 +101,7 @@ Config file (`config.yml`) is split into five main parts:
 
 - `rabbitmq`: RabbitMQ (broker) settings:
 
-    - `user: system_admin`
+    - `user: forcad`
     - `password: **change_me**`
     - `host: rabbitmq`
     - `port: 5672`
@@ -109,7 +109,7 @@ Config file (`config.yml`) is split into five main parts:
 
 - **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
-    - `username: system_admin`
+    - `username: forcad`
     - `password: **change_me**`
 
 - **teams** contains playing teams. Example contents:

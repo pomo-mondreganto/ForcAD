@@ -1,6 +1,6 @@
 admin:
-  password: secretpass
-  username: system_admin
+  password: secret
+  username: forcad
 
 game:
   timezone: Europe/Moscow

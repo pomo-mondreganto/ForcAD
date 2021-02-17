@@ -11,7 +11,7 @@ from .utils import get_terraform_outputs
 @click.command(help='Create Yandex.Cloud Kubernetes cluster for ForcAD')
 @click.pass_context
 def create(ctx: click.Context):
-    ctx.invoke(validate, full=False)
+    ctx.invoke(validate, full=False, yandex=True)
     utils.backup_config()
     basic_config = utils.load_basic_config()
     config = utils.setup_auxiliary_structure(basic_config)
