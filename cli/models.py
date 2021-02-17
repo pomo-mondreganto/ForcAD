@@ -38,7 +38,7 @@ class StoragesConfig(BaseModel):
     redis: RedisConfig
 
 
-class GlobalConfig(BaseModel):
+class GameConfig(BaseModel):
     flag_lifetime: int
     round_time: int
     start_time: datetime
@@ -46,12 +46,12 @@ class GlobalConfig(BaseModel):
     timezone: str = 'UTC'
     default_score: Union[int, float] = 2500
     game_hardness: Union[int, float] = 10
-    game_mode: str = 'classic'
+    mode: str = 'classic'
     get_period: Optional[int] = None
     inflation: bool = True
 
     checkers_path: str = '/checkers/'
-    env_path: str = ''
+    env_path: str = '/checkers/bin/'
 
 
 class Task(BaseModel):
@@ -72,15 +72,9 @@ class Team(BaseModel):
 
 class BasicConfig(BaseModel):
     admin: Optional[AdminConfig]
-    global_: GlobalConfig
+    game: GameConfig
     tasks: List[Task]
     teams: List[Team]
-
-    class Config:
-        allow_population_by_field_name = True
-        fields = {
-            'global_': 'global',
-        }
 
 
 class Config(BasicConfig):

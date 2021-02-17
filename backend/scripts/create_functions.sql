@@ -58,7 +58,7 @@ DECLARE
     _attacker_delta FLOAT;
     _victim_delta   FLOAT;
 BEGIN
-    SELECT real_round, game_hardness, inflation FROM globalconfig WHERE id = 1 INTO _round, hardness, inflate;
+    SELECT real_round, game_hardness, inflation FROM GameConfig WHERE id = 1 INTO _round, hardness, inflate;
 
 --     avoid deadlocks by locking min(attacker, victim), then max(attacker, victim)
     if _attacker_id < _victim_id THEN

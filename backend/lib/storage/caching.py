@@ -60,7 +60,7 @@ def cache_last_stolen(team_id: int, current_round: int, pipe: Pipeline) -> None:
     :param current_round: current round
     :param pipe: redis connection to add command to
     """
-    game_config = game.get_current_global_config()
+    game_config = game.get_current_game_config()
 
     with utils.db_cursor() as (_, curs):
         curs.execute(
@@ -87,7 +87,7 @@ def cache_last_flags(current_round: int, pipe: Pipeline) -> None:
     :param current_round: current round
     :param pipe: redis connection to add command to
     """
-    game_config = game.get_current_global_config()
+    game_config = game.get_current_game_config()
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with utils.db_cursor(dict_cursor=True) as (_, curs):
@@ -105,11 +105,11 @@ def cache_last_flags(current_round: int, pipe: Pipeline) -> None:
         pipe.set(CacheKeys.flag_by_str(flag.flag), flag.to_json(), ex=expires)
 
 
-def cache_global_config(pipe: Pipeline) -> None:
-    """Put global config to cache (without round or game_running)."""
-    global_config = game.get_db_global_config()
-    data = global_config.to_json()
-    pipe.set(CacheKeys.global_config(), data)
+def cache_game_config(pipe: Pipeline) -> None:
+    """Put game config to cache (without round or game_running)."""
+    game_config = game.get_db_game_config()
+    data = game_config.to_json()
+    pipe.set(CacheKeys.game_config(), data)
 
 
 def flush_teams_cache():

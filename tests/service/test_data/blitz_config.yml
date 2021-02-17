@@ -2,7 +2,7 @@ admin:
   password: secret
   username: system_admin
 
-global:
+game:
   timezone: Europe/Moscow
   checkers_path: /checkers/
   default_score: 2500
@@ -12,29 +12,8 @@ global:
   inflation: true
   round_time: 20
   start_time: 2019-11-30 15:30:00
-  game_mode: blitz
+  mode: blitz
   get_period: 10
-
-storages:
-  db:
-    dbname: system_db
-    host: postgres
-    password: secret
-    port: 5432
-    user: system_admin
-
-  redis:
-    db: 0
-    host: redis
-    port: 6379
-    password: secret
-
-  rabbitmq:
-    host: rabbitmq
-    port: 5672
-    vhost: forcad
-    user: system_admin
-    password: secret
 
 tasks:
   - checker: test_service/checker.py

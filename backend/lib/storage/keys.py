@@ -11,8 +11,8 @@ class CacheKeys:
         return 'real_round'
 
     @staticmethod
-    def global_config() -> str:
-        return 'global_config'
+    def game_config() -> str:
+        return 'game_config'
 
     @staticmethod
     def game_state() -> str:

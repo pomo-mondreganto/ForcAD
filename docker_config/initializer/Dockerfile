@@ -21,9 +21,6 @@ RUN chmod +x /await_start.sh
 
 COPY backend /app
 
-ENV CONFIG_PATH /app/config.yml
-COPY config.yml ${CONFIG_PATH}
-
 COPY ./docker_config/initializer/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

@@ -21,7 +21,7 @@ def get_tasks():
 
 @client_bp.route('/config/')
 def get_game_config():
-    cfg = storage.game.get_current_global_config().to_dict()
+    cfg = storage.game.get_current_game_config().to_dict()
     return jsonify(cfg)
 
 

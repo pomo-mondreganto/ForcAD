@@ -81,6 +81,7 @@ def update_round() -> int:
     current_round = storage.game.get_real_round_from_db()
     logger.info('Ending round %s', current_round)
     storage.game.update_round(current_round)
+    storage.game.update_game_state(current_round)
 
     round_to_check = current_round + 1
 
@@ -88,7 +89,7 @@ def update_round() -> int:
         logger.info('Not processing, round is 0')
         return 0
 
-    logger.info('Updating attack data contents for round %s', round_to_check)
-    storage.game.update_attack_data(round_to_check)
+    logger.info('Updating attack data contents for round %s', current_round)
+    storage.game.update_attack_data(current_round)
 
     return round_to_check

@@ -10,7 +10,7 @@ from services.tasks import get_celery_app
 from . import hooks
 from .models import TickerState, Schedule
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('ticker')
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 logger.addHandler(handler)
@@ -26,7 +26,7 @@ def bootstrap_state() -> TickerState:
 
 
 def bootstrap_schedules(state: TickerState):
-    game_config = storage.game.get_current_global_config()
+    game_config = storage.game.get_current_game_config()
     start_schedule = Schedule(
         schedule_id='start_game',
         start=game_config.start_time,
@@ -37,7 +37,7 @@ def bootstrap_schedules(state: TickerState):
 
     round_interval = timedelta(seconds=game_config.round_time)
 
-    if game_config.game_mode == models.GameMode.CLASSIC:
+    if game_config.mode == models.GameMode.CLASSIC:
         rounds_schedule = Schedule(
             schedule_id='classic_rounds',
             start=game_config.start_time,
@@ -47,7 +47,7 @@ def bootstrap_schedules(state: TickerState):
         rounds_schedule.load_last_run()
         state.register_schedule(rounds_schedule)
 
-    elif game_config.game_mode == models.GameMode.BLITZ:
+    elif game_config.mode == models.GameMode.BLITZ:
         rounds_schedule = Schedule(
             'blitz_rounds',
             start=game_config.start_time,
@@ -70,12 +70,12 @@ def bootstrap_schedules(state: TickerState):
             state.register_schedule(check_gets_schedule)
 
     else:
-        logger.critical('Game mode %s unsupported', game_config.game_mode)
+        logger.critical('Game mode %s unsupported', game_config.mode)
         sys.exit(1)
 
 
 def main(state: TickerState):
-    game_config = storage.game.get_current_global_config()
+    game_config = storage.game.get_current_game_config()
     tz = pytz.timezone(game_config.timezone)
     while True:
         now = tz.localize(datetime.now())

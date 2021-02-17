@@ -16,10 +16,9 @@ def create(ctx: click.Context):
     config = utils.setup_auxiliary_structure(basic_config)
 
     if config.admin.username == 'admin':
-        click.echo(
+        utils.print_error(
             '"admin" username is not allowed for YC Postgres cluster. '
             'Please, change admin.username in config and try again.',
-            err=True,
         )
         sys.exit(1)
 
@@ -50,9 +49,12 @@ def create(ctx: click.Context):
     constants.TF_CREDENTIALS_PATH.write_text(json.dumps(data))
 
     utils.run_command(['terraform', 'plan'], cwd=constants.TERRAFORM_DIR)
-    click.confirm('Does the plan above look ok?', abort=True)
+    click.confirm(
+        click.style('Does the plan above look ok?', bold=True),
+        abort=True,
+    )
 
-    click.echo('Applying the plan with Terraform')
+    utils.print_bold('Applying the plan with Terraform')
     utils.run_command(
         ['terraform', 'apply', '-auto-approve'],
         cwd=constants.TERRAFORM_DIR,
@@ -65,7 +67,7 @@ def create(ctx: click.Context):
     postgres_fqdn = tf_out['postgres-fqdn']['value']
     redis_fqdn = tf_out['redis-fqdn']['value']
 
-    click.echo('Adding cluster config to kubectl')
+    utils.print_bold('Adding cluster config to kubectl')
     cmd = [
         'yc', 'managed-kubernetes',
         'cluster', 'get-credentials',
@@ -76,20 +78,20 @@ def create(ctx: click.Context):
     ]
     utils.run_command(cmd)
 
-    click.echo('New kubectl config:')
+    utils.print_bold('New kubectl config:')
     utils.run_command(['kubectl', 'config', 'view'])
 
-    click.echo('Configuring local docker to authenticate in YC registry')
+    utils.print_bold('Configuring local docker to authenticate in YC registry')
     utils.run_command(['yc', 'container', 'registry', 'configure-docker'])
 
     repo = f'cr.yandex/{registry_id}'
-    click.echo(f'Configuring skaffold to use repo {repo} by default')
+    utils.print_bold(f'Configuring skaffold to use repo {repo} by default')
     utils.run_command(['skaffold', 'config', 'set', 'default-repo', repo])
 
     database = f'{postgres_fqdn}:6432'
     redis = f'{redis_fqdn}:6379'
 
-    click.echo(f'Postgres full address is {database}')
-    click.echo(f'Redis full address is {redis}')
+    utils.print_bold(f'Postgres full address is {database}')
+    utils.print_bold(f'Redis full address is {redis}')
 
     ctx.invoke(setup, database=database, redis=redis, rabbitmq=None)

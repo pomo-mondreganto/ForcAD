@@ -2,7 +2,6 @@ resource "yandex_kubernetes_cluster" "forcad" {
   name        = "forcad"
   description = "cluster for running ForcAD services"
 
-  folder_id  = var.yandex_folder_id
   network_id = yandex_vpc_network.forcad.id
 
   master {

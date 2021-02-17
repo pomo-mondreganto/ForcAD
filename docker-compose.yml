@@ -42,8 +42,11 @@ services:
       context: .
       dockerfile: ./docker_config/initializer/Dockerfile
     env_file: *db-environment
+    volumes:
+      - ./config.yml:/config.yml:ro
     environment:
       - TEST
+      - CONFIG_PATH=/config.yml
     restart: on-failure
 
   ticker:

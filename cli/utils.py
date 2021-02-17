@@ -4,34 +4,60 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 import click
 import yaml
+from pydantic import ValidationError
 
 from . import constants, models
 
 
 def load_basic_config() -> models.BasicConfig:
+    print_bold(f'Loading basic configuration from {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='r') as f:
         raw = yaml.safe_load(f)
-    return models.BasicConfig.parse_obj(raw)
+
+    # earlier this setting was called "global", so to make old configs work...
+    if 'global' in raw:
+        raw['game'] = raw.pop('global')
+
+    try:
+        config = models.BasicConfig.parse_obj(raw)
+    except ValidationError as e:
+        print_error(f'Invalid configuration file: {e}')
+        sys.exit(1)
+
+    return config
 
 
 def load_config() -> models.Config:
+    print_bold(f'Loading full configuration from {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='r') as f:
         raw = yaml.safe_load(f)
-    return models.Config.parse_obj(raw)
+
+    # earlier this setting was called "global", so to make old configs work...
+    if 'global' in raw:
+        raw['game'] = raw.pop('global')
+
+    try:
+        config = models.Config.parse_obj(raw)
+    except ValidationError as e:
+        print_error(f'Invalid configuration file: {e}')
+        sys.exit(1)
+
+    return config
 
 
 def backup_config():
     backup_path = constants.BASE_DIR / f'config_backup_{int(time.time())}.yml'
+    print_bold(f'Creating config backup at {backup_path}')
     shutil.copy2(constants.CONFIG_PATH, backup_path)
 
 
 def dump_config(config: models.Config):
     with constants.CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config.dict(), f)
+        yaml.safe_dump(config.dict(by_alias=True), f)
 
 
 def override_config(
@@ -65,7 +91,9 @@ def setup_auxiliary_structure(config: models.BasicConfig) -> models.Config:
             password=new_password,
         )
 
-        click.echo(f'Created new admin credentials: {new_username}:{new_password}')
+        print_bold(f'Created new admin credentials: {new_username}:{new_password}')
+    else:
+        print_bold('Using existing credentials specified in admin section')
 
     username = config.admin.username
     password = config.admin.password
@@ -78,7 +106,7 @@ def setup_auxiliary_structure(config: models.BasicConfig) -> models.Config:
 
     return models.Config(
         admin=config.admin,
-        global_=config.global_,
+        game=config.game,
         storages=storages,
         tasks=config.tasks,
         teams=config.teams,
@@ -127,8 +155,16 @@ def parse_host_data(value: str, default_port: int) -> Tuple[str, int]:
 
 
 def print_file_exception_info(_func, path, _exc_info):
-    print(f'File {path} not found')
+    print_bold(f'File {path} not found')
 
 
-def dump_tf_config(data: Dict[str, str]) -> str:
-    return '\n'.join(f'{name} = "{value}"' for name, value in data.items())
+def print_error(message: str):
+    click.secho(message, fg='red')
+
+
+def print_success(message: str):
+    click.secho(message, fg='green')
+
+
+def print_bold(message: str):
+    click.secho(message, bold=True)

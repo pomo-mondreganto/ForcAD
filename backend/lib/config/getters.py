@@ -42,7 +42,7 @@ def get_broker_url() -> str:
 
 
 def get_celery_config() -> dict:
-    game_config = storage.game.get_current_global_config()
+    game_config = storage.game.get_current_game_config()
 
     host = os.environ['REDIS_HOST']
     port = os.environ['REDIS_PORT']

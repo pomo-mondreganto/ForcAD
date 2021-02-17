@@ -10,7 +10,7 @@ server {
     server_name default;
 
     location /flower {
-        set $backend flower:5555;
+        set $backend flower:5000;
         proxy_pass http://$backend;
         include proxy_params_ws;
     }

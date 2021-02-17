@@ -54,14 +54,14 @@ System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first s
 corresponding service name. You can change flag generation in function `Flag.generate` in
 [backend/lib/models/flag.py](backend/lib/models/flag.py)
 
-Each flag is valid (received by flag receivers and can be checked by checker) for `flag_lifetime` rounds (global config
+Each flag is valid (received by flag receivers and can be checked by checker) for `flag_lifetime` rounds (game config
 variable).
 
 ### Configuration file
 
 Config file (`config.yml`) is split into five main parts:
 
-- **global** describes global settings:
+- **game** contains the following settings:
 
 - `timezone`: the timezone in which `start_time` is specified. Example: `Europe/Moscow`.
 

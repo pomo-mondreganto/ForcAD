@@ -21,7 +21,7 @@ WITH logged_teamtasks AS (
     WHERE team_id=%(team_id)s AND task_id=%(task_id)s
 )
 SELECT (SELECT MAX(id) FROM logged_teamtasks) + 1 AS id,
-       (SELECT real_round FROM globalconfig WHERE id=1) AS round,
+       (SELECT real_round FROM GameConfig WHERE id=1) AS round,
        *,
        now() AS ts
 FROM teamtasks

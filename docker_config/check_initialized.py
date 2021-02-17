@@ -1,7 +1,7 @@
 import os
+import sys
 
 import psycopg2
-import sys
 
 conn = psycopg2.connect(
     host=os.environ['POSTGRES_HOST'],
@@ -12,7 +12,7 @@ conn = psycopg2.connect(
 )
 curs = conn.cursor()
 
-query = 'SELECT COUNT(id) from globalconfig'
+query = 'SELECT COUNT(id) from GameConfig'
 try:
     curs.execute(query)
 except psycopg2.ProgrammingError:
