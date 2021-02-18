@@ -41,7 +41,7 @@ class MetricsServer:
                 amount=body.get('value', 1),
             )
         else:
-            self.app.logger.error(f'Unknown metric type in {body}')
+            self.app.logger.error('Unknown metric type in %s', body)
 
     def consume(self, conn, queue):
         with conn.channel() as channel:

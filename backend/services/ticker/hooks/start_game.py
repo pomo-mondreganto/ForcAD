@@ -25,5 +25,6 @@ def start_game(**_kwargs) -> None:
         logger.info('Game already started')
         return
 
+    logger.info('Updating game state for round 0')
     game_state = storage.game.update_game_state(for_round=0)
     logger.info('Initialized game state with %s', game_state.to_dict())

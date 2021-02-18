@@ -5,12 +5,12 @@ from lib.storage import utils, game
 from lib.storage.keys import CacheKeys
 
 _SELECT_LAST_STOLEN_TEAM_FLAGS_QUERY = """
-SELECT f.id FROM stolenflags sf
-JOIN flags f on f.id = sf.flag_id
+SELECT f.id FROM StolenFlags sf
+JOIN Flags f on f.id = sf.flag_id
 WHERE sf.attacker_id = %(attacker_id)s AND f.round >= %(round)s
 """
 
-_SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from flags WHERE round >= %(round)s"
+_SELECT_ALL_LAST_FLAGS_QUERY = "SELECT * from Flags WHERE round >= %(round)s"
 
 
 def cache_teams(pipe: Pipeline) -> None:

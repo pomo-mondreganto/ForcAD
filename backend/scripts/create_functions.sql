@@ -23,25 +23,25 @@ BEGIN
 --     avoid deadlocks by locking min(attacker, victim), then max(attacker, victim)
     if _attacker_id < _victim_id THEN
         SELECT score
-        FROM teamtasks
+        FROM TeamTasks
         WHERE team_id = _attacker_id
           AND task_id = _task_id FOR NO KEY UPDATE
         INTO attacker_score;
 
         SELECT score
-        FROM teamtasks
+        FROM TeamTasks
         WHERE team_id = _victim_id
           AND task_id = _task_id FOR NO KEY UPDATE
         INTO victim_score;
     ELSE
         SELECT score
-        FROM teamtasks
+        FROM TeamTasks
         WHERE team_id = _victim_id
           AND task_id = _task_id FOR NO KEY UPDATE
         INTO victim_score;
 
         SELECT score
-        FROM teamtasks
+        FROM TeamTasks
         WHERE team_id = _attacker_id
           AND task_id = _task_id FOR NO KEY UPDATE
         INTO attacker_score;
@@ -56,15 +56,15 @@ BEGIN
         _attacker_delta = least(_attacker_delta, -_victim_delta);
     END IF;
 
-    INSERT INTO stolenflags (attacker_id, flag_id) VALUES (_attacker_id, _flag_id);
+    INSERT INTO StolenFlags (attacker_id, flag_id) VALUES (_attacker_id, _flag_id);
 
-    UPDATE teamtasks
+    UPDATE TeamTasks
     SET stolen = stolen + 1,
         score  = score + _attacker_delta
     WHERE team_id = _attacker_id
       AND task_id = _task_id;
 
-    UPDATE teamtasks
+    UPDATE TeamTasks
     SET lost  = lost + 1,
         score = score + _victim_delta
     WHERE team_id = _victim_id
@@ -96,8 +96,8 @@ BEGIN
                                                                                    f.team_id      AS victim_id,
                                                                                    f.task_id      AS task_id,
                                                                                    f.vuln_number  as vuln_number
-                                     FROM stolenflags sf
-                                              JOIN flags f ON f.id = sf.flag_id
+                                     FROM StolenFlags sf
+                                              JOIN Flags f ON f.id = sf.flag_id
                                      ORDER BY f.task_id, f.vuln_number, sf.submit_time)
                  SELECT preprocess.submit_time AS submit_time,
                         tm.name                AS attacker_name,
@@ -107,8 +107,8 @@ BEGIN
                         tk.id                  AS task_id,
                         preprocess.vuln_number AS vuln_number
                  FROM preprocess
-                          JOIN teams tm ON tm.id = preprocess.attacker_id
-                          JOIN tasks tk ON tk.id = preprocess.task_id
+                          JOIN Teams tm ON tm.id = preprocess.attacker_id
+                          JOIN Tasks tk ON tk.id = preprocess.task_id
                  ORDER BY submit_time;
 END;
 $$ LANGUAGE plpgsql;
@@ -119,7 +119,7 @@ CREATE OR REPLACE FUNCTION fix_teamtasks()
 AS
 $$
 BEGIN
-    INSERT INTO teamtasks (task_id, team_id, status, score)
+    INSERT INTO TeamTasks (task_id, team_id, status, score)
     WITH product AS (
         SELECT teams.id as team_id, tasks.id as task_id, tasks.default_score as default_score
         FROM teams

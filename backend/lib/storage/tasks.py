@@ -6,7 +6,7 @@ from lib.models import TaskStatus, Action
 from lib.storage import caching
 from lib.storage.keys import CacheKeys
 
-_SELECT_TEAMTASKS_QUERY = "SELECT * from teamtasks"
+_SELECT_TEAMTASKS_QUERY = "SELECT * from TeamTasks"
 
 TEAMTASK_INSERT_QUERY = '''
 INSERT INTO TeamTasks
@@ -17,33 +17,33 @@ VALUES (%(task_id)s, %(team_id)s, %(score)s, %(status)s)
 # noinspection SqlInsertValues
 _SELECT_TEAMTASK_LOG_QUERY = '''
 WITH logged_teamtasks AS (
-    SELECT * FROM teamtaskslog
+    SELECT * FROM TeamTasksLog
     WHERE team_id=%(team_id)s AND task_id=%(task_id)s
 )
 SELECT (SELECT MAX(id) FROM logged_teamtasks) + 1 AS id,
        (SELECT real_round FROM GameConfig WHERE id=1) AS round,
        *,
        now() AS ts
-FROM teamtasks
+FROM TeamTasks
 WHERE team_id=%(team_id)s AND task_id=%(task_id)s
 UNION SELECT * FROM logged_teamtasks
 ORDER BY id DESC
 '''
 
 _INSERT_TEAMTASKS_TO_LOG_QUERY = '''
-INSERT INTO teamtaskslog 
+INSERT INTO TeamTasksLog 
 (round, task_id, team_id, status, stolen, lost, score, checks, checks_passed,
 public_message, private_message, command)
 SELECT %(round)s, %(task_id)s, %(team_id)s, status, stolen, lost, score, 
     checks, checks_passed, public_message, private_message, command
-FROM teamtasks
+FROM TeamTasks
 WHERE 
 team_id = %(team_id)s AND task_id = %(task_id)s
 FOR NO KEY UPDATE
 '''
 
 _UPDATE_TEAMTASKS_QUERY = '''
-UPDATE teamtasks
+UPDATE TeamTasks
 SET status = %(status)s,
     public_message = %(public_message)s,
     private_message = %(private_message)s,

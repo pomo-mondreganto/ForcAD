@@ -81,6 +81,7 @@ def update_round() -> int:
     current_round = storage.game.get_real_round_from_db()
     logger.info('Ending round %s', current_round)
     storage.game.update_round(current_round)
+    logger.info('Updating game state for round %s', current_round)
     storage.game.update_game_state(current_round)
 
     round_to_check = current_round + 1

@@ -47,9 +47,9 @@ class FlagSubmitTestCase(TestCase):
         curs = conn.cursor(cursor_factory=extras.RealDictCursor)
 
         query = '''
-        SELECT * FROM flags F
-        INNER JOIN teams T on F.team_id = T.id
-        WHERE round >= (SELECT MAX(round) - 3 FROM FLAGS) AND T.token = %s
+        SELECT * FROM Flags F
+        INNER JOIN Teams T on F.team_id = T.id
+        WHERE round >= (SELECT MAX(round) - 3 FROM Flags) AND T.token = %s
         '''
         curs.execute(query, (team_token,))
         return curs.fetchall()

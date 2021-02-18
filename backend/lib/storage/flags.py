@@ -8,13 +8,13 @@ from lib.storage import caching, game, utils
 from lib.storage.keys import CacheKeys
 
 _GET_UNEXPIRED_FLAGS_QUERY = """
-SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
-INNER JOIN teams t on f.team_id = t.id
+SELECT t.ip, f.task_id, f.public_flag_data FROM Flags f
+INNER JOIN Teams t on f.team_id = t.id
 WHERE f.round >= %s AND f.task_id IN %s
 """
 
 _GET_RANDOM_ROUND_FLAG_QUERY = """
-SELECT id FROM flags
+SELECT id FROM Flags
 WHERE round = %(round)s AND team_id = %(team_id)s AND task_id = %(task_id)s
 ORDER BY RANDOM()
 LIMIT 1
