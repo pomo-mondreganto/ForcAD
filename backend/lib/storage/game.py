@@ -174,7 +174,7 @@ def prepare_ctftime_scoreboard() -> Optional[list]:
     standings = []
     for team in teams:
         teamtasks = list(filter(
-            lambda x: x['team_id'] == team.id,
+            lambda x, team_id=team.id: x['team_id'] == team_id,
             game_state.team_tasks,
         ))
 

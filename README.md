@@ -18,14 +18,17 @@ statistics, services description, writing a checker, modifying the rating system
 <!-- toc -->
 
 * [Running](#running)
+
 * [Configuration and usage](#configuration-and-usage)
     * [Receiving flags](#receiving-flags)
     * [Flag format](#flag-format)
     * [Configuration file](#configuration-file)
+
 * [Checkers](#checkers)
     * [Configuration](#configuration)
     * [Checkers folder](#checkers-folder)
     * [Writing a checker](#writing-a-checker)
+
 * [Wiki](#wiki)
 
 <!-- tocstop -->
