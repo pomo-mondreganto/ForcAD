@@ -25,11 +25,6 @@ def setup(redis, database, rabbitmq, **_kwargs):
 
 
 def setup_db(config: models.DatabaseConfig):
-    postgres_env_path = constants.BASE_DIR.joinpath(
-        'docker_config',
-        'postgres_environment.env',
-    )
-
     postgres_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'POSTGRES_HOST={config.host}',
@@ -39,15 +34,10 @@ def setup_db(config: models.DatabaseConfig):
         f'POSTGRES_DB={config.dbname}',
     ]
 
-    postgres_env_path.write_text('\n'.join(postgres_config))
+    constants.POSTGRES_ENV_PATH.write_text('\n'.join(postgres_config))
 
 
 def setup_redis(config: models.RedisConfig):
-    redis_env_path = constants.BASE_DIR.joinpath(
-        'docker_config',
-        'redis_environment.env',
-    )
-
     redis_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'REDIS_HOST={config.host}',
@@ -55,15 +45,10 @@ def setup_redis(config: models.RedisConfig):
         f'REDIS_PASSWORD={config.password}',
     ]
 
-    redis_env_path.write_text('\n'.join(redis_config))
+    constants.REDIS_ENV_PATH.write_text('\n'.join(redis_config))
 
 
 def setup_rabbitmq(config: models.RabbitMQConfig):
-    rabbitmq_env_path = constants.BASE_DIR.joinpath(
-        'docker_config',
-        'rabbitmq_environment.env',
-    )
-
     rabbitmq_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'RABBITMQ_HOST={config.host}',
@@ -73,23 +58,17 @@ def setup_rabbitmq(config: models.RabbitMQConfig):
         f'RABBITMQ_DEFAULT_VHOST={config.vhost}',
     ]
 
-    rabbitmq_env_path.write_text('\n'.join(rabbitmq_config))
+    constants.RABBITMQ_ENV_PATH.write_text('\n'.join(rabbitmq_config))
 
 
 def setup_admin_api(config: models.AdminConfig):
-    admin_api_env_path = constants.BASE_DIR.joinpath(
-        'docker_config',
-        'services',
-        'admin.env',
-    )
-
     admin_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'ADMIN_USERNAME={config.username}',
         f'ADMIN_PASSWORD={config.password}',
     ]
 
-    admin_api_env_path.write_text('\n'.join(admin_config))
+    constants.ADMIN_ENV_PATH.write_text('\n'.join(admin_config))
 
 
 def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = None):

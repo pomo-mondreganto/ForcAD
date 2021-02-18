@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import List, Tuple
 
 import click
@@ -13,14 +14,24 @@ from pydantic import ValidationError
 from . import constants, models
 
 
-def load_basic_config() -> models.BasicConfig:
-    print_bold(f'Loading basic configuration from {constants.CONFIG_PATH}')
-    with constants.CONFIG_PATH.open(mode='r') as f:
+def load_raw_config(path: Path) -> dict:
+    if not path.is_file():
+        print_error(f'Config file missing at {path}')
+        sys.exit(1)
+
+    with path.open(mode='r') as f:
         raw = yaml.safe_load(f)
 
     # earlier this setting was called "global", so to make old configs work...
     if 'global' in raw:
         raw['game'] = raw.pop('global')
+
+    return raw
+
+
+def load_basic_config() -> models.BasicConfig:
+    print_bold(f'Loading basic configuration from {constants.CONFIG_PATH}')
+    raw = load_raw_config(constants.CONFIG_PATH)
 
     try:
         config = models.BasicConfig.parse_obj(raw)
@@ -33,12 +44,7 @@ def load_basic_config() -> models.BasicConfig:
 
 def load_config() -> models.Config:
     print_bold(f'Loading full configuration from {constants.CONFIG_PATH}')
-    with constants.CONFIG_PATH.open(mode='r') as f:
-        raw = yaml.safe_load(f)
-
-    # earlier this setting was called "global", so to make old configs work...
-    if 'global' in raw:
-        raw['game'] = raw.pop('global')
+    raw = load_raw_config(constants.CONFIG_PATH)
 
     try:
         config = models.Config.parse_obj(raw)
@@ -56,6 +62,7 @@ def backup_config():
 
 
 def dump_config(config: models.Config):
+    print_bold(f'Writing new configuration to {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='w') as f:
         yaml.safe_dump(config.dict(by_alias=True), f)
 
@@ -168,3 +175,30 @@ def print_success(message: str):
 
 def print_bold(message: str):
     click.secho(message, bold=True)
+
+
+def remove_file(path: Path):
+    if not path.exists():
+        return
+
+    print_bold(f'Removing file {path}')
+    if not path.is_file():
+        print_error(f'Not a file: {path}')
+        return
+
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def remove_dir(path: Path):
+    if not path.exists():
+        return
+
+    print_bold(f'Removing directory {path}')
+    if not path.is_dir():
+        print_error(f'Not a directory: {path}')
+        return
+
+    shutil.rmtree(path, ignore_errors=True)
