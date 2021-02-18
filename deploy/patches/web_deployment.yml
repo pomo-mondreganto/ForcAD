@@ -26,14 +26,14 @@ spec:
               memory: 50Mi
             limits:
               cpu: 1000m
-              memory: 300Mi
+              memory: 500Mi
           readinessProbe:
-            initialDelaySeconds: 20
-            periodSeconds: 15
+            initialDelaySeconds: 30
+            periodSeconds: 10
             httpGet:
               port: 5000
           livenessProbe:
-            initialDelaySeconds: 20
-            periodSeconds: 15
+            initialDelaySeconds: 60
+            periodSeconds: 20
             httpGet:
               port: 5000

@@ -90,12 +90,6 @@ services:
       - TEST
       - SERVICE=http_receiver
 
-  tcp-receiver:
-    <<: *default-ms
-    environment:
-      - TEST
-      - SERVICE=tcp_receiver
-
   nginx:
     build:
       context: .
@@ -105,7 +99,6 @@ services:
     ports:
       - "8080:80"
       - "80:80"
-      - "31337:31337"
     restart: on-failure
     depends_on:
       - flower
@@ -114,7 +107,6 @@ services:
       - events
       - monitoring
       - http-receiver
-      - tcp-receiver
 
   redis:
     image: redis:5.0.8-alpine
