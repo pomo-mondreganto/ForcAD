@@ -31,13 +31,13 @@ ORDER BY id DESC
 '''
 
 _INSERT_TEAMTASKS_TO_LOG_QUERY = '''
-INSERT INTO TeamTasksLog 
+INSERT INTO TeamTasksLog
 (round, task_id, team_id, status, stolen, lost, score, checks, checks_passed,
 public_message, private_message, command)
-SELECT %(round)s, %(task_id)s, %(team_id)s, status, stolen, lost, score, 
+SELECT %(round)s, %(task_id)s, %(team_id)s, status, stolen, lost, score,
     checks, checks_passed, public_message, private_message, command
 FROM TeamTasks
-WHERE 
+WHERE
 team_id = %(team_id)s AND task_id = %(task_id)s
 FOR NO KEY UPDATE
 '''
@@ -50,7 +50,7 @@ SET status = %(status)s,
     command = %(command)s,
     checks_passed = checks_passed + %(passed)s,
     checks = checks + 1
-WHERE 
+WHERE
 team_id = %(team_id)s AND task_id = %(task_id)s
 RETURNING *
 '''
