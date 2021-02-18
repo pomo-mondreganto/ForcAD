@@ -163,7 +163,7 @@ def construct_scoreboard() -> dict:
     return data
 
 
-def prepare_ctftime_scoreboard() -> Optional[list]:
+def construct_ctftime_scoreboard() -> Optional[list]:
     game_state = get_cached_game_state()
 
     if not game_state:
@@ -173,8 +173,9 @@ def prepare_ctftime_scoreboard() -> Optional[list]:
 
     standings = []
     for team in teams:
+        team_id = team.id
         teamtasks = list(filter(
-            lambda x, team_id=team.id: x['team_id'] == team_id,
+            lambda x: x['team_id'] == team_id,
             game_state.team_tasks,
         ))
 

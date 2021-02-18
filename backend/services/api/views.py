@@ -42,7 +42,7 @@ def get_team_history(team_id):
 
 @client_bp.route('/ctftime/')
 def get_ctftime_scoreboard():
-    standings = storage.game.prepare_ctftime_scoreboard()
+    standings = storage.game.construct_ctftime_scoreboard()
     if not standings:
         return jsonify({'error': 'not available'}), 400
     return jsonify(standings)
