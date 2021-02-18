@@ -22,7 +22,7 @@ VERSION_PATH = BASE_DIR / '.version'
 DOCKER_CONFIG_DIR = BASE_DIR / 'docker_config'
 DOCKER_VOLUMES_DIR = BASE_DIR / 'docker_volumes'
 
-ADMIN_ENV_PATH = DOCKER_CONFIG_DIR / 'services/' / 'admin_environment.env'
+ADMIN_ENV_PATH = DOCKER_CONFIG_DIR / 'services/' / 'admin.env'
 POSTGRES_ENV_PATH = DOCKER_CONFIG_DIR / 'postgres_environment.env'
 RABBITMQ_ENV_PATH = DOCKER_CONFIG_DIR / 'rabbitmq_environment.env'
 REDIS_ENV_PATH = DOCKER_CONFIG_DIR / 'redis_environment.env'
