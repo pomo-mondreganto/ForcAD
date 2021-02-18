@@ -30,6 +30,31 @@ UNION SELECT * FROM logged_teamtasks
 ORDER BY id DESC
 '''
 
+_INSERT_TEAMTASKS_TO_LOG_QUERY = '''
+INSERT INTO teamtaskslog 
+(round, task_id, team_id, status, stolen, lost, score, checks, checks_passed,
+public_message, private_message, command)
+SELECT %(round)s, %(task_id)s, %(team_id)s, status, stolen, lost, score, 
+    checks, checks_passed, public_message, private_message, command
+FROM teamtasks
+WHERE 
+team_id = %(team_id)s AND task_id = %(task_id)s
+FOR NO KEY UPDATE
+'''
+
+_UPDATE_TEAMTASKS_QUERY = '''
+UPDATE teamtasks
+SET status = %(status)s,
+    public_message = %(public_message)s,
+    private_message = %(private_message)s,
+    command = %(command)s,
+    checks_passed = checks_passed + %(passed)s,
+    checks = checks + 1
+WHERE 
+team_id = %(team_id)s AND task_id = %(task_id)s
+RETURNING *
+'''
+
 
 def get_tasks() -> List[models.Task]:
     """Get list of tasks registered in database."""
@@ -79,20 +104,20 @@ def update_task_status(
         if checker_verdict.action == Action.PUT:
             public = 'OK'
 
+    params = {
+        'round': current_round,
+        'task_id': task_id,
+        'team_id': team_id,
+        'status': checker_verdict.status.value,
+        'public_message': public,
+        'private_message': checker_verdict.private_message,
+        'command': checker_verdict.command,
+        'passed': add,
+    }
+
     with storage.utils.db_cursor(dict_cursor=True) as (conn, curs):
-        curs.callproc(
-            'update_teamtasks_status',
-            (
-                current_round,
-                team_id,
-                task_id,
-                checker_verdict.status.value,
-                add,
-                public,
-                checker_verdict.private_message,
-                checker_verdict.command,
-            ),
-        )
+        curs.execute(_INSERT_TEAMTASKS_TO_LOG_QUERY, params)
+        curs.execute(_UPDATE_TEAMTASKS_QUERY, params)
         data = curs.fetchone()
         conn.commit()
 
