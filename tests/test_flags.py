@@ -34,11 +34,11 @@ class FlagSubmitTestCase(TestCase):
                 self.unreachable_token = token
 
         database_config = config.get_db_config()
-        database_config['host'] = '127.0.0.1'
+        database_config.host = '127.0.0.1'
         self.db_pool = pool.SimpleConnectionPool(
             minconn=1,
             maxconn=20,
-            **database_config,
+            **database_config.dict(),
         )
 
     def get_last_flags_from_db(self, team_token):

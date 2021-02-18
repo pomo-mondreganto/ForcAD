@@ -1,32 +1,19 @@
 import os
 
 from lib import storage
+from . import models
 
 
-def get_web_credentials() -> dict:
-    return {
-        'username': os.environ['ADMIN_USERNAME'],
-        'password': os.environ['ADMIN_PASSWORD'],
-    }
+def get_web_credentials() -> models.WebCredentials:
+    return models.WebCredentials()
 
 
-def get_redis_config() -> dict:
-    return {
-        'host': os.environ['REDIS_HOST'],
-        'port': os.environ['REDIS_PORT'],
-        'password': os.environ['REDIS_PASSWORD'],
-        'db': 0,
-    }
+def get_redis_config() -> models.Redis:
+    return models.Redis()
 
 
-def get_db_config() -> dict:
-    return {
-        'host': os.environ['POSTGRES_HOST'],
-        'port': os.environ['POSTGRES_PORT'],
-        'user': os.environ['POSTGRES_USER'],
-        'password': os.environ['POSTGRES_PASSWORD'],
-        'dbname': os.environ['POSTGRES_DB'],
-    }
+def get_db_config() -> models.Database:
+    return models.Database()
 
 
 def get_broker_url() -> str:
@@ -41,29 +28,11 @@ def get_broker_url() -> str:
     return broker_url
 
 
-def get_celery_config() -> dict:
-    game_config = storage.game.get_current_game_config()
-
-    host = os.environ['REDIS_HOST']
-    port = os.environ['REDIS_PORT']
-    password = os.environ['REDIS_PASSWORD']
-    db = 1
-
-    result_backend = f'redis://:{password}@{host}:{port}/{db}'
-
-    broker_url = get_broker_url()
-
-    conf = {
-        'accept_content': ['pickle'],
-        'broker_url': broker_url,
-        'result_backend': result_backend,
-        'result_serializer': 'pickle',
-        'task_serializer': 'pickle',
-        'timezone': game_config.timezone,
-        'worker_prefetch_multiplier': 1,
-        'redis_socket_timeout': 10,
-        'redis_socket_keepalive': True,
-        'redis_retry_on_timeout': True,
-    }
-
-    return conf
+def get_celery_config() -> models.Celery:
+    redis_config = get_redis_config()
+    redis_config.db = 1
+    return models.Celery(
+        broker_url=get_broker_url(),
+        result_backend=redis_config.url,
+        timezone=storage.game.get_current_game_config().timezone,
+    )

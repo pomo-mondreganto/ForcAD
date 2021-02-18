@@ -16,7 +16,7 @@ def check_session():
 
     creds = config.get_web_credentials()
 
-    if data != creds['username']:
+    if data != creds.username:
         abort_with_error('Invalid session', 403)
 
     return True
@@ -32,7 +32,7 @@ def login():
     password = request.json.get('password')
 
     creds = config.get_web_credentials()
-    if username != creds['username'] or password != creds['password']:
+    if username != creds.username or password != creds.password:
         abort_with_error('Invalid credentials', 403)
 
     session = secrets.token_hex(32)

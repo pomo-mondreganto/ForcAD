@@ -17,7 +17,7 @@ class DBPool(Singleton[pool.SimpleConnectionPool]):
         return pool.SimpleConnectionPool(
             minconn=5,
             maxconn=20,
-            **database_config,
+            **database_config.dict(),
         )
 
 
@@ -26,8 +26,7 @@ class RedisStorage(Singleton[redis.Redis]):
     @staticmethod
     def create() -> redis.Redis:
         redis_config = config.get_redis_config()
-        redis_config['decode_responses'] = True
-        return redis.Redis(**redis_config)
+        return redis.Redis(decode_responses=True, **redis_config.dict())
 
 
 class SIOManager(Singleton[socketio.KombuManager]):

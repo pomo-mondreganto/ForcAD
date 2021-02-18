@@ -3,7 +3,6 @@ from typing import Optional, List, Dict, DefaultDict, Union
 
 from lib import models
 from lib.helpers.cache import cache_helper
-from lib.helpers.exceptions import FlagExceptionEnum
 from lib.storage import caching, game, utils
 from lib.storage.keys import CacheKeys
 
@@ -21,7 +20,7 @@ LIMIT 1
 """
 
 
-def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) -> None:
+def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) -> bool:
     """
     Flag validation function.
 
@@ -31,15 +30,7 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) ->
     :param flag: Flag model instance
     :param attacker: attacker team id
     :param current_round: current round
-
-    :raises FlagSubmitException: on validation error
     """
-    game_config = game.get_current_game_config()
-    if current_round - flag.round > game_config.flag_lifetime:
-        raise FlagExceptionEnum.FLAG_TOO_OLD
-    if flag.team_id == attacker:
-        raise FlagExceptionEnum.FLAG_YOUR_OWN
-
     stolen_key = CacheKeys.team_stolen_flags(attacker)
     with utils.redis_pipeline(transaction=True) as pipe:
         # optimization of redis request count
@@ -54,9 +45,7 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) ->
             )
 
         is_new, = pipe.sadd(stolen_key, flag.id).execute()
-
-        if not is_new:
-            raise FlagExceptionEnum.FLAG_ALREADY_STOLEN
+    return bool(is_new)
 
 
 def add_flag(flag: models.Flag) -> models.Flag:

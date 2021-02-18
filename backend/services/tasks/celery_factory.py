@@ -13,5 +13,5 @@ def get_celery_app():
         ],
     )
 
-    app.conf.update(celery_config)
+    app.conf.update(celery_config.dict())
     return app

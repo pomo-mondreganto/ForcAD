@@ -1,7 +1,7 @@
 from lib import models, storage
 from lib.helpers import exceptions
 from lib.helpers.exceptions import FlagExceptionEnum
-from lib.storage import utils
+from lib.storage import utils, game
 from lib.storage.keys import CacheKeys
 
 
@@ -40,14 +40,28 @@ def handle_attack(
         )
         if flag is None:
             raise FlagExceptionEnum.FLAG_INVALID
+        if flag.team_id == attacker_id:
+            raise FlagExceptionEnum.FLAG_YOUR_OWN
+
+        game_config = game.get_current_game_config()
+        if current_round - flag.round > game_config.flag_lifetime:
+            raise FlagExceptionEnum.FLAG_TOO_OLD
 
         result.victim_id = flag.team_id
         result.task_id = flag.task_id
-        storage.flags.try_add_stolen_flag(
+        success = storage.flags.try_add_stolen_flag(
             flag=flag,
             attacker=attacker_id,
             current_round=current_round,
         )
+        if not success:
+            raise FlagExceptionEnum.FLAG_YOUR_OWN
+
+    except exceptions.FlagSubmitException as e:
+        result.submit_ok = False
+        result.message = str(e)
+
+    else:
         result.submit_ok = True
 
         with utils.db_cursor() as (conn, curs):
@@ -66,8 +80,5 @@ def handle_attack(
         result.attacker_delta = attacker_delta
         result.victim_delta = victim_delta
         result.message = f'Flag accepted! Earned {attacker_delta} flag points!'
-
-    except exceptions.FlagSubmitException as e:
-        result.message = str(e)
 
     return result
