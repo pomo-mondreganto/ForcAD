@@ -1,5 +1,4 @@
 import re
-import socket
 import subprocess
 import sys
 import time
@@ -53,32 +52,6 @@ class FlagSubmitTestCase(TestCase):
         '''
         curs.execute(query, (team_token,))
         return curs.fetchall()
-
-    def submit_flags_to_tcp(self, token, flags=None, token_valid=True):
-        sock = socket.socket()
-        sock.connect(('127.0.0.1', 31337))
-        time.sleep(0.5)
-        greeting = sock.recv(1024).decode()
-        self.assertIn('Welcome', greeting)
-        self.assertIn('team token', greeting)
-        sock.send((token + '\n').encode())
-        time.sleep(0.5)
-        response = sock.recv(1024).decode()
-        if not token_valid:
-            self.assertIn('Invalid', response)
-            sock.close()
-            return []
-
-        self.assertIn('enter your flags', response)
-        results = []
-        for flag in flags:
-            sock.send((flag + '\n').encode())
-            time.sleep(0.5)
-            response = sock.recv(1024).decode()
-            results.append(response)
-
-        sock.close()
-        return results
 
     def submit_flags_to_http(self, token, flags=None, token_valid=True):
         response = requests.put(
@@ -195,11 +168,7 @@ class FlagSubmitTestCase(TestCase):
 
         self.assertTrue(len(ok_flags) > 1)
 
-        first_batch = ok_flags[:len(ok_flags) // 2]
-        second_batch = ok_flags[len(ok_flags) // 2:]
-
-        self.run_submission_tests(self.submit_flags_to_tcp, first_batch)
-        self.run_submission_tests(self.submit_flags_to_http, second_batch)
+        self.run_submission_tests(self.submit_flags_to_http, ok_flags)
 
         wait_rounds(1.5)
 

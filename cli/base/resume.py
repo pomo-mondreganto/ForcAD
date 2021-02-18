@@ -7,4 +7,4 @@ from cli.utils import run_docker
     help='Resume the game after pause',
 )
 def resume():
-    run_docker(['start', 'ticker', 'tcp-receiver', 'http-receiver'])
+    run_docker(['start', 'ticker', 'http-receiver'])

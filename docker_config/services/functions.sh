@@ -1,11 +1,5 @@
 #!/bin/bash -e
 
-start_tcp_receiver() {
-  echo "[*] Starting gevent flag receiver"
-  cd services/tcp_receiver
-  python3 server.py
-}
-
 start_web() {
   echo "[*] Starting web service $1"
   cd "services/$1"

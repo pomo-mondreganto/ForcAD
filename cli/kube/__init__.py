@@ -1,6 +1,7 @@
 import click
 
 from .build import build
+from .clean import clean
 from .create import create
 from .destroy import destroy
 from .print_tokens import print_tokens
@@ -17,6 +18,7 @@ def cli():
 
 cli: click.Group
 cli.add_command(build)
+cli.add_command(clean)
 cli.add_command(create)
 cli.add_command(destroy)
 cli.add_command(print_tokens)

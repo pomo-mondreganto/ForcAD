@@ -49,9 +49,6 @@ services:
   http-receiver:
     <<: *service-test
 
-  tcp-receiver:
-    <<: *service-test
-
   nginx:
     restart: "no"
 

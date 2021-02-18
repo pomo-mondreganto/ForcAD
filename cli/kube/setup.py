@@ -30,7 +30,6 @@ def setup(ctx: click.Context, redis, database, rabbitmq, **_kwargs):
 
 
 def setup_postgres_secret(config: models.DatabaseConfig):
-    path = constants.SECRETS_DIR / 'postgres.yml'
     name = 'forcad-postgres-secret'
 
     data = {
@@ -41,11 +40,10 @@ def setup_postgres_secret(config: models.DatabaseConfig):
         'POSTGRES_DB': config.dbname,
     }
 
-    write_secret(name=name, path=path, data=data)
+    write_secret(name=name, path=constants.POSTGRES_SECRET_PATH, data=data)
 
 
 def setup_rabbitmq_secret(config: models.RabbitMQConfig):
-    path = constants.SECRETS_DIR / 'rabbitmq.yml'
     name = 'forcad-rabbitmq-secret'
 
     data = {
@@ -56,11 +54,10 @@ def setup_rabbitmq_secret(config: models.RabbitMQConfig):
         'RABBITMQ_DEFAULT_VHOST': config.vhost,
     }
 
-    write_secret(name=name, path=path, data=data)
+    write_secret(name=name, path=constants.RABBITMQ_SECRET_PATH, data=data)
 
 
 def setup_redis_secret(config: models.RedisConfig):
-    path = constants.SECRETS_DIR / 'redis.yml'
     name = 'forcad-redis-secret'
 
     data = {
@@ -69,11 +66,10 @@ def setup_redis_secret(config: models.RedisConfig):
         'REDIS_PASSWORD': config.password,
     }
 
-    write_secret(name=name, path=path, data=data)
+    write_secret(name=name, path=constants.REDIS_SECRET_PATH, data=data)
 
 
 def setup_admin_secret(config: models.AdminConfig):
-    path = constants.SECRETS_DIR / 'admin.yml'
     name = 'forcad-admin-secret'
 
     data = {
@@ -81,15 +77,14 @@ def setup_admin_secret(config: models.AdminConfig):
         'ADMIN_PASSWORD': config.password,
     }
 
-    write_secret(name=name, path=path, data=data)
+    write_secret(name=name, path=constants.ADMIN_SECRET_PATH, data=data)
 
 
 def setup_config_file_secret():
     content = constants.CONFIG_PATH.read_text()
-    path = constants.SECRETS_DIR / 'config.yml'
     name = 'forcad-config-file'
     data = {'content': content}
-    write_secret(name=name, path=path, data=data)
+    write_secret(name=name, path=constants.CONFIG_SECRET_PATH, data=data)
 
 
 def prepare_kustomize(redis: str = None, database: str = None, rabbitmq: str = None):

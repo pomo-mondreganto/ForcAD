@@ -1,23 +1,21 @@
-import shutil
 import subprocess
 
 import click
 
 from cli import constants, utils
+from cli.base.clean import clean
 
 
 @click.command(help='Reset the game & clean up')
-def reset():
-    data_path = constants.BASE_DIR / 'docker_volumes' / 'postgres' / 'data'
-    shutil.rmtree(data_path, onerror=utils.print_file_exception_info)
-
+@click.pass_context
+def reset(ctx: click.Context):
+    utils.print_bold('Trying to wipe the database')
     command = [
         'docker-compose',
         '-f', constants.FULL_COMPOSE_PATH,
         'run', 'initializer',
         'python3', '/app/scripts/reset_db.py',
     ]
-    print('Trying to wipe the database')
     subprocess.run(
         command,
         cwd=constants.BASE_DIR,
@@ -25,6 +23,7 @@ def reset():
         check=False,
     )
 
+    utils.print_bold('Bringing down services')
     command = [
         'docker-compose',
         '-f', constants.FULL_COMPOSE_PATH,
@@ -33,4 +32,7 @@ def reset():
     ]
     utils.run_command(command, cwd=constants.BASE_DIR)
 
-    utils.print_success('Done')
+    utils.print_bold('Running clean')
+    ctx.invoke(clean)
+
+    utils.print_success('Done!')

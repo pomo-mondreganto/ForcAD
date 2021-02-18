@@ -83,6 +83,7 @@ def main(state: TickerState):
         for schedule in due_schedules:
             logger.info('Executing schedule %s', schedule.schedule_id)
             schedule.execute(state=state)
+            logger.info('Schedule %s completed', schedule.schedule_id)
             schedule.last_run = now
             schedule.save_last_run()
         time.sleep(0.1)  # 100ms precision

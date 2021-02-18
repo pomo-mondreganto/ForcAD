@@ -1,6 +1,7 @@
 import click
 
 from .build import build
+from .clean import clean
 from .pause import pause
 from .print_tokens import print_tokens
 from .reset import reset
@@ -15,6 +16,7 @@ from .worker import worker
 
 def register(cli: click.Group):
     cli.add_command(build)
+    cli.add_command(clean)
     cli.add_command(pause)
     cli.add_command(print_tokens)
     cli.add_command(reset)

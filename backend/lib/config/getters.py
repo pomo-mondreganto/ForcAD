@@ -61,6 +61,9 @@ def get_celery_config() -> dict:
         'task_serializer': 'pickle',
         'timezone': game_config.timezone,
         'worker_prefetch_multiplier': 1,
+        'redis_socket_timeout': 10,
+        'redis_socket_keepalive': True,
+        'redis_retry_on_timeout': True,
     }
 
     return conf

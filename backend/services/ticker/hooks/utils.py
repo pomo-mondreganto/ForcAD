@@ -30,18 +30,12 @@ def get_noop_signature(app: Celery) -> signature:
 
 
 def get_check_signature(app: Celery, kwargs: dict, params: dict) -> signature:
-    return app.signature(
-        JobNames.check_action,
-        kwargs=kwargs,
-    ).set(**params)
+    return app.signature(JobNames.check_action, kwargs=kwargs, **params)
 
 
 def get_puts_group(app: Celery, task: models.Task, kwargs: dict, params: dict) -> group:
     signatures = [
-        app.signature(
-            JobNames.put_action,
-            kwargs=kwargs,
-        ).set(**params)
+        app.signature(JobNames.put_action, kwargs=kwargs, **params)
         for _ in range(task.puts)
     ]
     return group(*signatures)
@@ -49,10 +43,7 @@ def get_puts_group(app: Celery, task: models.Task, kwargs: dict, params: dict) -
 
 def get_gets_chain(app: Celery, task: models.Task, kwargs: dict, params: dict) -> chain:
     signatures = [
-        app.signature(
-            JobNames.get_action,
-            kwargs=kwargs,
-        ).set(**params)
+        app.signature(JobNames.get_action, kwargs=kwargs, **params)
         for _ in range(task.gets)
     ]
     return chain(*signatures)
@@ -63,11 +54,13 @@ def get_result_handler_signature(app: Celery, kwargs: dict) -> signature:
 
 
 def get_round_setup(
-        team: models.Team, task: models.Task, current_round: int
-) -> Tuple[dict, dict]:
+        app: Celery,
+        team: models.Team,
+        task: models.Task,
+        current_round: int) -> Tuple[dict, dict]:
     params = {
         'time_limit': task.checker_timeout + 5,
-        'link_error': JobNames.error_handler,
+        'link_error': app.signature(JobNames.error_handler),
     }
     kwargs = {
         'team': team,

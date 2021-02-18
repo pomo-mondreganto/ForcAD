@@ -19,10 +19,10 @@ spec:
           image: forcad-nginx
           resources:
             requests:
-              cpu: 200m
+              cpu: 100m
               memory: 100Mi
             limits:
-              cpu: 300m
+              cpu: 1000m
               memory: 300Mi
         - name: dnsmasq
           image: "janeczku/go-dnsmasq:release-1.0.5"
@@ -54,8 +54,4 @@ spec:
       protocol: TCP
       port: 80
       targetPort: 80
-    - name: tcp
-      protocol: TCP
-      port: 31337
-      targetPort: 31337
   type: LoadBalancer
