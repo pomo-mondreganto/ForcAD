@@ -8,3 +8,4 @@
 .mypy_cache
 /cli
 /docker_volumes
+/deploy

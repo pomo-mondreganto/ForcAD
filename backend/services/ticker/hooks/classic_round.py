@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def submit_full_round_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
-    kwargs, params = utils.get_round_setup(team, task, r)
+    kwargs, params = utils.get_round_setup(app, team, task, r)
 
     check = utils.get_check_signature(app, kwargs, params)
     noop = utils.get_noop_signature(app)

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def submit_puts_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
-    kwargs, params = utils.get_round_setup(team, task, r)
+    kwargs, params = utils.get_round_setup(app, team, task, r)
 
     handler = utils.get_result_handler_signature(app, kwargs)
 
@@ -24,7 +24,7 @@ def submit_puts_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
 
 
 def submit_check_gets_jobs(app: Celery, team: models.Team, task: models.Task, r: int):
-    kwargs, params = utils.get_round_setup(team, task, r)
+    kwargs, params = utils.get_round_setup(app, team, task, r)
 
     handler = utils.get_result_handler_signature(app, kwargs)
     check = utils.get_check_signature(app, kwargs, params)
