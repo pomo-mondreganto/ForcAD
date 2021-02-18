@@ -8,6 +8,12 @@ checkers/requirements.txt
 cli
 config.yml.example
 control.py
+deploy/config
+deploy/patches
+deploy/secrets/.keep
+deploy/terraform
+deploy/kustomization.base.yml
+deploy/skaffold.yml
 docker-compose-fast.yml
 docker-compose.yml
 docker_config

@@ -8,15 +8,15 @@ from lib.helpers.cache import cache_helper
 from lib.storage import caching, utils
 from lib.storage.keys import CacheKeys
 
-_CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM globalconfig WHERE id=1'
+_CURRENT_REAL_ROUND_QUERY = 'SELECT real_round FROM GameConfig WHERE id=1'
 
-_UPDATE_REAL_ROUND_QUERY = 'UPDATE globalconfig SET real_round = %(round)s WHERE id=1'
+_UPDATE_REAL_ROUND_QUERY = 'UPDATE GameConfig SET real_round = %(round)s WHERE id=1'
 
-_SET_GAME_RUNNING_QUERY = 'UPDATE globalconfig SET game_running = %(value)s WHERE id=1'
+_SET_GAME_RUNNING_QUERY = 'UPDATE GameConfig SET game_running = %(value)s WHERE id=1'
 
-_GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM globalconfig WHERE id=1'
+_GET_GAME_RUNNING_QUERY = 'SELECT game_running FROM GameConfig WHERE id=1'
 
-_GET_GLOBAL_CONFIG_QUERY = 'SELECT * FROM globalconfig WHERE id=1'
+_GET_GAME_CONFIG_QUERY = 'SELECT * FROM GameConfig WHERE id=1'
 
 
 def get_round_start(r: int) -> int:
@@ -55,7 +55,7 @@ def get_real_round_from_db() -> int:
 
 
 def update_real_round_in_db(new_round: int) -> None:
-    """Update real_round of global config stored in DB."""
+    """Update real_round of game config stored in DB."""
     with utils.db_cursor() as (conn, curs):
         curs.execute(_UPDATE_REAL_ROUND_QUERY, {'round': new_round})
         conn.commit()
@@ -77,32 +77,32 @@ def get_game_running() -> bool:
     return game_running
 
 
-def get_db_global_config() -> models.GlobalConfig:
-    """Get global config from database."""
+def get_db_game_config() -> models.GameConfig:
+    """Get game config from database."""
     with utils.db_cursor(dict_cursor=True) as (_, curs):
-        curs.execute(_GET_GLOBAL_CONFIG_QUERY)
+        curs.execute(_GET_GAME_CONFIG_QUERY)
         result = curs.fetchone()
 
-    return models.GlobalConfig.from_dict(result)
+    return models.GameConfig.from_dict(result)
 
 
-def get_current_global_config() -> models.GlobalConfig:
-    """Get global config from cache is cached, cache it otherwise."""
+def get_current_game_config() -> models.GameConfig:
+    """Get game config from cache is cached, cache it otherwise."""
     with utils.redis_pipeline(transaction=True) as pipe:
         cache_helper(
             pipeline=pipe,
-            cache_key=CacheKeys.global_config(),
-            cache_func=caching.cache_global_config,
+            cache_key=CacheKeys.game_config(),
+            cache_func=caching.cache_game_config,
             cache_args=(pipe,),
         )
 
-        result, = pipe.get(CacheKeys.global_config()).execute()
-        global_config = models.GlobalConfig.from_json(result)
+        result, = pipe.get(CacheKeys.game_config()).execute()
 
-    return global_config
+    game_config = models.GameConfig.from_json(result)
+    return game_config
 
 
-def construct_game_state_from_db(current_round: int) -> Optional[models.GameState]:
+def construct_game_state_from_db(current_round: int) -> models.GameState:
     """Get game state for specified round with teamtasks from db."""
     teamtasks = storage.tasks.get_teamtasks_from_db()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
@@ -130,6 +130,15 @@ def construct_latest_game_state(current_round: int) -> models.GameState:
     return state
 
 
+def get_cached_game_state() -> Optional[models.GameState]:
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
+        state, = pipe.get(CacheKeys.game_state()).execute()
+
+    if not state:
+        return None
+    return models.GameState.from_json(state)
+
+
 def construct_scoreboard() -> dict:
     """
     Get formatted scoreboard to serve to frontend.
@@ -138,15 +147,11 @@ def construct_scoreboard() -> dict:
 
     teams = [team.to_dict_for_participants() for team in storage.teams.get_teams()]
     tasks = [task.to_dict_for_participants() for task in storage.tasks.get_tasks()]
-    cfg = storage.game.get_current_global_config().to_dict()
+    cfg = storage.game.get_current_game_config().to_dict()
 
-    with storage.utils.redis_pipeline(transaction=False) as pipe:
-        state, = pipe.get(CacheKeys.game_state()).execute()
-
-    try:
-        state = models.GameState.from_json(state).to_dict()
-    except TypeError:
-        state = None
+    state = get_cached_game_state()
+    if state:
+        state = state.to_dict()
 
     data = {
         'state': state,
@@ -156,6 +161,37 @@ def construct_scoreboard() -> dict:
     }
 
     return data
+
+
+def construct_ctftime_scoreboard() -> Optional[list]:
+    game_state = get_cached_game_state()
+
+    if not game_state:
+        return None
+
+    teams = storage.teams.get_teams()
+
+    standings = []
+    for team in teams:
+        team_id = team.id
+        teamtasks = list(filter(
+            lambda x: x['team_id'] == team_id,
+            game_state.team_tasks,
+        ))
+
+        score = sum(map(
+            lambda x: x['score'] * x['checks_passed'] / x['checks'],
+            teamtasks,
+        ))
+        score = round(score, 2)
+        standings.append({'team': team.name, 'score': score})
+
+    standings = sorted(standings, key=lambda x: x['score'], reverse=True)
+    standings = [
+        {'pos': i + 1, **data}
+        for i, data in enumerate(standings)
+    ]
+    return standings
 
 
 def update_round(finished_round: int) -> None:
@@ -176,3 +212,18 @@ def update_attack_data(current_round: int) -> None:
     with utils.redis_pipeline(transaction=False) as pipe:
         pipe.set(CacheKeys.attack_data(), kjson.dumps(attack_data))
         pipe.execute()
+
+
+def update_game_state(for_round: int) -> models.GameState:
+    game_state = storage.game.construct_game_state_from_db(for_round)
+    with utils.redis_pipeline(transaction=True) as pipe:
+        pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
+        pipe.execute()
+
+    utils.SIOManager.write_only().emit(
+        event='update_scoreboard',
+        data={'data': game_state.to_dict()},
+        namespace='/game_events',
+    )
+
+    return game_state

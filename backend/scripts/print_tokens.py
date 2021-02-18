@@ -2,7 +2,7 @@
 
 from lib import storage
 
-_SELECT_TEAMS_NAME_TOKEN_QUERY = "SELECT name, token from teams"
+_SELECT_TEAMS_NAME_TOKEN_QUERY = "SELECT name, token from Teams"
 
 
 def run():

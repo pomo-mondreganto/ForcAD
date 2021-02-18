@@ -21,7 +21,7 @@ def get_tasks():
 
 @client_bp.route('/config/')
 def get_game_config():
-    cfg = storage.game.get_current_global_config().to_dict()
+    cfg = storage.game.get_current_game_config().to_dict()
     return jsonify(cfg)
 
 
@@ -38,6 +38,14 @@ def get_team_history(team_id):
     teamtasks = storage.tasks.get_teamtasks_for_team(team_id)
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
     return jsonify(teamtasks)
+
+
+@client_bp.route('/ctftime/')
+def get_ctftime_scoreboard():
+    standings = storage.game.construct_ctftime_scoreboard()
+    if not standings:
+        return jsonify({'error': 'not available'}), 400
+    return jsonify(standings)
 
 
 @client_bp.route('/health/')

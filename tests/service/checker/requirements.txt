@@ -1,2 +1,2 @@
-checklib==0.2.8
-gevent==1.4.0
+checklib==0.5.2
+gevent==20.6.2

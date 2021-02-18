@@ -1,86 +1,99 @@
 import click
 import yaml
 
-from cli import utils
-from cli.base.setup import override_config
-from cli.constants import SECRETS_DIR, KUSTOMIZATION_BASE_PATH, KUSTOMIZATION_PATH
+from cli import utils, constants, models
+from cli.kube.validate import validate
 from cli.options import with_external_services_option
 from .utils import write_secret
 
 
-@click.command(help='Initialize ForcAD configuration')
+@click.command(help='Initialize ForcAD configuration for custom cluster deploy')
 @with_external_services_option
-def setup(redis, database, rabbitmq, **_kwargs):
-    override_config(redis=redis, database=database, rabbitmq=rabbitmq)
-    config = utils.load_config()
-    setup_postgres_secret(config)
-    setup_rabbitmq_secret(config)
-    setup_redis_secret(config)
-    setup_admin_secret(config)
+@click.pass_context
+def setup(ctx: click.Context, redis, database, rabbitmq, **_kwargs):
+    ctx.invoke(validate, full=False)
+    raw_config = utils.load_basic_config()
+    basic_config = models.BasicConfig.parse_obj(raw_config)
+    config = utils.setup_auxiliary_structure(basic_config)
+
+    utils.override_config(config, redis=redis, database=database, rabbitmq=rabbitmq)
+    utils.backup_config()
+    utils.dump_config(config)
+
+    setup_postgres_secret(config.storages.db)
+    setup_rabbitmq_secret(config.storages.rabbitmq)
+    setup_redis_secret(config.storages.redis)
+    setup_admin_secret(config.admin)
+    setup_config_file_secret()
+
     prepare_kustomize(redis=redis, database=database, rabbitmq=rabbitmq)
 
 
-def setup_postgres_secret(config):
-    path = SECRETS_DIR / 'postgres.yml'
+def setup_postgres_secret(config: models.DatabaseConfig):
+    path = constants.SECRETS_DIR / 'postgres.yml'
     name = 'forcad-postgres-secret'
 
-    db_config = config['storages']['db']
     data = {
-        'POSTGRES_HOST': db_config['host'],
-        'POSTGRES_PORT': db_config['port'],
-        'POSTGRES_USER': db_config['user'],
-        'POSTGRES_PASSWORD': db_config['password'],
-        'POSTGRES_DB': db_config['dbname'],
+        'POSTGRES_HOST': config.host,
+        'POSTGRES_PORT': config.port,
+        'POSTGRES_USER': config.user,
+        'POSTGRES_PASSWORD': config.password,
+        'POSTGRES_DB': config.dbname,
     }
 
     write_secret(name=name, path=path, data=data)
 
 
-def setup_rabbitmq_secret(config):
-    path = SECRETS_DIR / 'rabbitmq.yml'
+def setup_rabbitmq_secret(config: models.RabbitMQConfig):
+    path = constants.SECRETS_DIR / 'rabbitmq.yml'
     name = 'forcad-rabbitmq-secret'
 
-    rabbitmq_config = config['storages']['rabbitmq']
     data = {
-        'RABBITMQ_HOST': rabbitmq_config.get('host', 'rabbitmq'),
-        'RABBITMQ_PORT': rabbitmq_config.get('port', 5672),
-        'RABBITMQ_DEFAULT_USER': rabbitmq_config['user'],
-        'RABBITMQ_DEFAULT_PASS': rabbitmq_config['password'],
-        'RABBITMQ_DEFAULT_VHOST': rabbitmq_config['vhost'],
+        'RABBITMQ_HOST': config.host,
+        'RABBITMQ_PORT': config.port,
+        'RABBITMQ_DEFAULT_USER': config.user,
+        'RABBITMQ_DEFAULT_PASS': config.password,
+        'RABBITMQ_DEFAULT_VHOST': config.vhost,
     }
 
     write_secret(name=name, path=path, data=data)
 
 
-def setup_redis_secret(config):
-    path = SECRETS_DIR / 'redis.yml'
+def setup_redis_secret(config: models.RedisConfig):
+    path = constants.SECRETS_DIR / 'redis.yml'
     name = 'forcad-redis-secret'
 
-    redis_config = config['storages']['redis']
     data = {
-        'REDIS_HOST': redis_config.get('host', 'redis'),
-        'REDIS_PORT': redis_config.get('port', 6379),
-        'REDIS_PASSWORD': redis_config.get('password', None),
+        'REDIS_HOST': config.host,
+        'REDIS_PORT': config.port,
+        'REDIS_PASSWORD': config.password,
     }
 
     write_secret(name=name, path=path, data=data)
 
 
-def setup_admin_secret(config):
-    path = SECRETS_DIR / 'admin.yml'
+def setup_admin_secret(config: models.AdminConfig):
+    path = constants.SECRETS_DIR / 'admin.yml'
     name = 'forcad-admin-secret'
 
-    admin_config = config['admin']
     data = {
-        'ADMIN_USERNAME': admin_config['username'],
-        'ADMIN_PASSWORD': admin_config['password'],
+        'ADMIN_USERNAME': config.username,
+        'ADMIN_PASSWORD': config.password,
     }
 
+    write_secret(name=name, path=path, data=data)
+
+
+def setup_config_file_secret():
+    content = constants.CONFIG_PATH.read_text()
+    path = constants.SECRETS_DIR / 'config.yml'
+    name = 'forcad-config-file'
+    data = {'content': content}
     write_secret(name=name, path=path, data=data)
 
 
 def prepare_kustomize(redis: str = None, database: str = None, rabbitmq: str = None):
-    with KUSTOMIZATION_BASE_PATH.open(mode='r') as f:
+    with constants.KUSTOMIZATION_BASE_PATH.open(mode='r') as f:
         base_conf = yaml.safe_load(f)
 
     if redis:
@@ -90,5 +103,5 @@ def prepare_kustomize(redis: str = None, database: str = None, rabbitmq: str = N
     if rabbitmq:
         base_conf['resources'].remove('config/rabbitmq.yml')
 
-    with KUSTOMIZATION_PATH.open(mode='w') as f:
+    with constants.KUSTOMIZATION_PATH.open(mode='w') as f:
         yaml.safe_dump(base_conf, f)

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS GlobalConfig
+CREATE TABLE IF NOT EXISTS GameConfig
 (
     id            SERIAL PRIMARY KEY,
     game_running  BOOLEAN     DEFAULT FALSE,
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS GlobalConfig
     game_hardness FLOAT CHECK ( game_hardness >= 1 ),
     inflation     BOOLEAN,
     round_time    INTEGER CHECK ( round_time > 0 ),
-    game_mode     VARCHAR(8)  DEFAULT 'classic',
+    mode          VARCHAR(8)  DEFAULT 'classic',
     timezone      VARCHAR(32) DEFAULT 'UTC',
     start_time    TIMESTAMP WITH TIME ZONE
 );
@@ -75,8 +75,7 @@ CREATE TABLE IF NOT EXISTS TeamTasks
     CONSTRAINT sla_valid CHECK ( checks >= 0 AND checks_passed >= 0 AND checks_passed <= checks )
 );
 
-CREATE
-UNLOGGED TABLE IF NOT EXISTS TeamTasksLog
+CREATE TABLE IF NOT EXISTS TeamTasksLog
 (
     id              SERIAL PRIMARY KEY,
     round           INTEGER,

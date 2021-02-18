@@ -104,7 +104,7 @@ def get_action(
 
         return new_verdict
 
-    flag_lifetime = storage.game.get_current_global_config().flag_lifetime
+    flag_lifetime = storage.game.get_current_game_config().flag_lifetime
 
     rounds_to_check = list(
         set(max(1, current_round - x) for x in range(0, flag_lifetime))

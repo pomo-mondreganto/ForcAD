@@ -25,19 +25,6 @@ def start_game(**_kwargs) -> None:
         logger.info('Game already started')
         return
 
-    game_state = storage.game.construct_game_state_from_db(current_round=0)
-    if not game_state:
-        logger.warning('Initial game state missing')
-        return
-
-    logger.info('Initializing game state with %s', game_state.to_dict())
-
-    with storage.utils.redis_pipeline(transaction=False) as pipe:
-        pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
-        pipe.execute()
-
-    storage.utils.SIOManager.write_only().emit(
-        event='update_scoreboard',
-        data={'data': game_state.to_dict()},
-        namespace='/game_events',
-    )
+    logger.info('Updating game state for round 0')
+    game_state = storage.game.update_game_state(for_round=0)
+    logger.info('Initialized game state with %s', game_state.to_dict())

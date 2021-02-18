@@ -36,11 +36,11 @@ def init_teams(config, curs):
     return teams
 
 
-def init_tasks(config, global_config, curs):
+def init_tasks(config, game_config, curs):
     task_defaults = {
-        'env_path': global_config['env_path'],
-        'default_score': global_config['default_score'],
-        'get_period': global_config.get('get_period', global_config['round_time']),
+        'env_path': game_config['env_path'],
+        'default_score': game_config['default_score'],
+        'get_period': game_config.get('get_period', game_config['round_time']),
         'checker_type': 'hackerdom',
     }
 
@@ -52,7 +52,7 @@ def init_tasks(config, global_config, curs):
                 task_conf[k] = v
 
         task_conf['checker'] = os.path.join(
-            global_config['checkers_path'],
+            game_config['checkers_path'],
             task_conf['checker'],
         )
 
@@ -63,36 +63,23 @@ def init_tasks(config, global_config, curs):
     return tasks
 
 
-def init_global_config(global_config, curs):
-    global_config.pop('env_path', None)
-    global_config.pop('default_score', None)
-    global_config.pop('checkers_path', None)
-    global_config.pop('get_period', None)
+def init_game_config(game_config, curs):
+    game_config.pop('env_path', None)
+    game_config.pop('default_score', None)
+    game_config.pop('checkers_path', None)
+    game_config.pop('get_period', None)
 
-    tz = pytz.timezone(global_config['timezone'])
-    global_config['start_time'] = tz.localize(global_config['start_time'])
+    tz = pytz.timezone(game_config['timezone'])
+    game_config['start_time'] = tz.localize(game_config['start_time'])
 
-    global_config['real_round'] = 0
-    global_config['game_running'] = False
+    game_config['real_round'] = 0
+    game_config['game_running'] = False
 
     # noinspection PyArgumentList
-    global_config['game_mode'] = models.GameMode(global_config['game_mode'])
+    game_config['mode'] = models.GameMode(game_config['mode'])
 
-    global_config = models.GlobalConfig(id=None, **global_config)
-    global_config.insert(curs)
-
-
-def init_game_state():
-    game_state = storage.game.construct_game_state_from_db(current_round=0)
-    with storage.utils.redis_pipeline(transaction=True) as pipe:
-        pipe.set(storage.keys.CacheKeys.game_state(), game_state.to_json())
-        pipe.execute()
-
-    storage.utils.SIOManager.write_only().emit(
-        event='update_scoreboard',
-        data={'data': game_state.to_dict()},
-        namespace='/game_events',
-    )
+    game_config = models.GameConfig(id=None, **game_config)
+    game_config.insert(curs)
 
 
 def run():
@@ -106,7 +93,7 @@ def run():
         print('Initializing teams')
         teams = init_teams(file_config['teams'], curs)
 
-        global_defaults = {
+        game_defaults = {
             'checkers_path': '/checkers/',
             'env_path': '/checkers/bin/',
             'default_score': 2000.0,
@@ -115,16 +102,16 @@ def run():
             'flag_lifetime': 5,
             'round_time': 60,
             'timezone': 'UTC',
-            'game_mode': 'classic',
+            'mode': 'classic',
         }
 
-        global_config = file_config['global']
-        for k, v in global_defaults.items():
-            if k not in global_config:
-                global_defaults[k] = v
+        game_config = file_config['game']
+        for k, v in game_defaults.items():
+            if k not in game_config:
+                game_defaults[k] = v
 
         print('Initializing tasks')
-        tasks = init_tasks(file_config['tasks'], global_config, curs)
+        tasks = init_tasks(file_config['tasks'], game_config, curs)
 
         data = [
             {
@@ -138,13 +125,13 @@ def run():
         ]
         curs.executemany(storage.tasks.TEAMTASK_INSERT_QUERY, data)
 
-        print('Initializing global config')
-        init_global_config(global_config, curs)
+        print('Initializing game config')
+        init_game_config(game_config, curs)
 
         conn.commit()
 
     print('Initializing game state')
-    init_game_state()
+    storage.game.update_game_state(for_round=0)
 
 
 if __name__ == '__main__':

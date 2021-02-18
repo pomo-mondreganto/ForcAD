@@ -1,5 +1,4 @@
 import secrets
-
 from typing import Optional, Dict, Any
 
 from .base import BaseModel
@@ -41,4 +40,4 @@ class Team(BaseModel):
         return d
 
     def __str__(self) -> str:
-        return f"Team({self.id, self.name})"
+        return f"Team({self.id}, {self.name})"

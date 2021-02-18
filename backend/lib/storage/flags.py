@@ -8,13 +8,13 @@ from lib.storage import caching, game, utils
 from lib.storage.keys import CacheKeys
 
 _GET_UNEXPIRED_FLAGS_QUERY = """
-SELECT t.ip, f.task_id, f.public_flag_data FROM flags f
-INNER JOIN teams t on f.team_id = t.id
+SELECT t.ip, f.task_id, f.public_flag_data FROM Flags f
+INNER JOIN Teams t on f.team_id = t.id
 WHERE f.round >= %s AND f.task_id IN %s
 """
 
 _GET_RANDOM_ROUND_FLAG_QUERY = """
-SELECT id FROM flags
+SELECT id FROM Flags
 WHERE round = %(round)s AND team_id = %(team_id)s AND task_id = %(task_id)s
 ORDER BY RANDOM()
 LIMIT 1
@@ -34,7 +34,7 @@ def try_add_stolen_flag(flag: models.Flag, attacker: int, current_round: int) ->
 
     :raises FlagSubmitException: on validation error
     """
-    game_config = game.get_current_global_config()
+    game_config = game.get_current_game_config()
     if current_round - flag.round > game_config.flag_lifetime:
         raise FlagExceptionEnum.FLAG_TOO_OLD
     if flag.team_id == attacker:
@@ -71,7 +71,7 @@ def add_flag(flag: models.Flag) -> models.Flag:
         flag.insert(curs)
         conn.commit()
 
-    game_config = game.get_current_global_config()
+    game_config = game.get_current_game_config()
     expires = game_config.flag_lifetime * game_config.round_time * 2
 
     with utils.redis_pipeline(transaction=True) as pipe:
@@ -184,7 +184,7 @@ def get_attack_data(
     task_ids = tuple(task.id for task in tasks)
     task_names = {task.id: task.name for task in tasks}
 
-    config = game.get_current_global_config()
+    config = game.get_current_game_config()
     need_round = current_round - config.flag_lifetime
 
     if task_ids:

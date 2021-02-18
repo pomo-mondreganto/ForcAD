@@ -1,5 +1,7 @@
 from pathlib import Path
 
+ADMIN_USER = 'forcad'
+
 BASE_DIR = Path(__file__).absolute().resolve().parents[1]
 BASE_COMPOSE_FILE = 'docker-compose-base.yml'
 FAST_COMPOSE_FILE = 'docker-compose-fast.yml'
@@ -9,6 +11,9 @@ DEPLOY_DIR = BASE_DIR / 'deploy'
 SECRETS_DIR = DEPLOY_DIR / 'secrets'
 KUSTOMIZATION_BASE_PATH = DEPLOY_DIR / 'kustomization.base.yml'
 KUSTOMIZATION_PATH = DEPLOY_DIR / 'kustomization.yml'
+
+TERRAFORM_DIR = DEPLOY_DIR / 'terraform'
+TF_CREDENTIALS_PATH = TERRAFORM_DIR / 'credentials.auto.tfvars.json'
 
 FULL_COMPOSE_PATH = BASE_DIR / 'docker-compose.yml'
 CONFIG_PATH = BASE_DIR / 'config.yml'

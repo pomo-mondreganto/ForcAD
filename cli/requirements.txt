@@ -1,2 +1,3 @@
-PyYAML==5.4.1
 click==7.1.2
+pydantic==1.7.3
+PyYAML==5.4.1

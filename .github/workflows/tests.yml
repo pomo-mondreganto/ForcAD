@@ -8,6 +8,10 @@ on:
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - "static/**"
 
 jobs:
   tests:
@@ -34,6 +38,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.7'
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Setup tests
         run: python tests/setup_forcad.py
       - name: Install requirements
@@ -136,3 +146,21 @@ jobs:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Skaffold build
         run: ./control.py kube build
+
+  terraform_checks:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        working-directory: deploy/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+      - name: Terraform fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform Init
+        run: terraform init
+      - name: Terraform Validate
+        run: terraform validate
