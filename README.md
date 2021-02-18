@@ -1,7 +1,6 @@
 ![tests](https://github.com/pomo-mondreganto/ForcAD/workflows/tests/badge.svg)
 
-ForcAD
-======
+# ForcAD
 
 ![Front page](static/front_page.png)
 
@@ -9,18 +8,15 @@ Pure-python distributable Attack-Defence CTF platform, created to be easily set 
 
 The name is pronounced as "forkád".
 
-#### This documentation is for the latest (development) version of ForcAD. It might not be stable or even working. The latest stable version can be found [here](https://github.com/pomo-mondreganto/ForcAD/releases/latest), see the README.md there.
+> This documentation is for the latest (development) version of ForcAD. It might not be stable or even working. The latest stable version can be found [here](https://github.com/pomo-mondreganto/ForcAD/releases/latest), see the README.md there.
 
 Note that there's a [wiki](https://github.com/pomo-mondreganto/ForcAD/wiki) containing some useful queries for game
 statistics, services description, writing a checker, modifying the rating system, etc.
 
-Table of contents
-=================
+## Table of contents
 
-<!--ts-->
+<!-- toc -->
 
-* [ForcAD](#forcad)
-* [Table of contents](#table-of-contents)
 * [Running](#running)
 * [Configuration and usage](#configuration-and-usage)
     * [Receiving flags](#receiving-flags)
@@ -32,19 +28,16 @@ Table of contents
     * [Writing a checker](#writing-a-checker)
 * [Wiki](#wiki)
 
-<!--te-->
+<!-- tocstop -->
 
-Running
-=======
+## Running
 
 5 easy steps to start a game (assuming current working directory to be the project root):
 
-1. Open `config.yml` file
-   (or `cp config.yml.example config.yml`, if the latter is missing).
+1. Open `config.yml` file (or `cp config.yml.example config.yml`, if the latter is missing).
 
-2. Add teams and tasks to corresponding config sections following the example's format, set `start_time`, `timezone` (
-   e.g. `Europe/Moscow`) and `round_time` (in seconds) (for recommendations see
-   [checker_timeout](#checkers) variable).
+2. Add teams and tasks to corresponding config sections following the example's format, set `start_time`, `timezone`
+   (e.g. `Europe/Moscow`) and `round_time` (in seconds) (for recommendations see [checker_timeout](#checkers) variable).
 
 3. Install `cli/requirements.txt` (`pip3 install -r cli/requirements.txt`)
 
@@ -62,18 +55,15 @@ That's all! Now you should be able to access the scoreboard at `http://127.0.0.1
 
 > Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks)
 
-Configuration and usage
-=======================
+## Configuration and usage
 
-Receiving flags
----------------
+### Receiving flags
 
 Teams are identified by tokens (unique and randomly generated on startup). Look for them in the logs of `initializer`
 container or print using the following command after the system started: `./control.py print_tokens`. Token is private
 information, so send them to each team correspondingly.
 
-Flag format
------------
+### Flag format
 
 System uses the most common flag format by default: `[A-Z0-9]{31}=`, the first symbol is the first letter of
 corresponding service name. You can change flag generation in function `Flag.generate` in
@@ -82,42 +72,41 @@ corresponding service name. You can change flag generation in function `Flag.gen
 Each flag is valid (received by flag receivers and can be checked by checker) for `flag_lifetime` rounds (game config
 variable).
 
-Configuration file
-------------------
+### Configuration file
 
 Config file (`config.yml`) is split into five main parts:
 
-- **game** contains the following settings:
+* **game** contains the following settings:
 
-    - `start_time` (required): the datetime of game start (timezone will be taken from the `timezone` option).
+    * `start_time` (required): the datetime of game start (timezone will be taken from the `timezone` option).
       Example: `2019-11-30 15:30:00`.
 
-    - `round_time` (required): round duration in seconds. Example: `30`.
+    * `round_time` (required): round duration in seconds. Example: `30`.
 
-    - `flag_lifetime` (required): flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`.
+    * `flag_lifetime` (required): flag lifetime in rounds (see [flag format](#flag-format) section). Example: `5`.
 
-    - `timezone` (optional, default `UTC`): the timezone in which `start_time` is specified. Example: `Europe/Moscow`.
+    * `timezone` (optional, default `UTC`): the timezone in which `start_time` is specified. Example: `Europe/Moscow`.
 
-    - `default_score` (optional, default `2500`): default score for tasks.
+    * `default_score` (optional, default `2500`): default score for tasks.
 
-    - `env_path` (optional, default `/checkers/bin/`): string to append to checkers' `$PATH` environment variable
+    * `env_path` (optional, default `/checkers/bin/`): string to append to checkers' `$PATH` environment variable
       (see [checkers](#checkers) section). Example: `/checkers/bin/`.
 
-    - `game_hardness` (optional, default `10`): game hardness parameter
+    * `game_hardness` (optional, default `10`): game hardness parameter
       (see [rating system](https://github.com/pomo-mondreganto/ForcAD/wiki/Rating-system) wiki page). Example: `10.5`.
 
-    - `inflation` (optional, default `true`): inflation
+    * `inflation` (optional, default `true`): inflation
       (see [rating system](https://github.com/pomo-mondreganto/ForcAD/wiki/Rating-system) wiki page). Example: `true`.
 
-    - `checkers_path` (optional, default `/checkers/`): path to checkers inside Docker container. Do not change unless
+    * `checkers_path` (optional, default `/checkers/`): path to checkers inside Docker container. Do not change unless
       you've changed the `celery` image.
 
-- **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
+* **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
-    - `username: forcad`
-    - `password: **change_me**`
+    * `username: forcad`
+    * `password: **change_me**`
 
-- **teams** contains playing teams. Example contents:
+* **teams** contains playing teams. Example contents:
 
 ```yaml
 teams:
@@ -130,7 +119,7 @@ teams:
 
 Highlighted teams will be marked on the scoreboard with a rainbow border.
 
-- **tasks** contains configuration of checkers and task-related parameters. More detailed explanation is
+* **tasks** contains configuration of checkers and task-related parameters. More detailed explanation is
   in [checkers](#checkers) section. Example:
 
 ```yaml
@@ -153,41 +142,39 @@ tasks:
     puts: 2
 ```
 
-- **storages** is an **auto-generated section**, which will be overridden by `control.py setup/kube setup` and describes
+* **storages** is an **auto-generated section**, which will be overridden by `control.py setup/kube setup` and describes
   settings used to connect to PostgreSQL, Redis and RabbitMQ:
 
-    - `db`: PostgreSQL settings:
+    * `db`: PostgreSQL settings:
 
-        - `user: <admin.username>`
-        - `password: <admin.password>`
-        - `dbname: forcad`
-        - `host: postgres`
-        - `port: 5432`
+        * `user: <admin.username>`
+        * `password: <admin.password>`
+        * `dbname: forcad`
+        * `host: postgres`
+        * `port: 5432`
 
-    - `redis`: Redis (cache) settings:
+    * `redis`: Redis (cache) settings:
 
-        - `password: <admin.password>`
-        - `db: 0`
-        - `host: redis`
-        - `port: 6379`
+        * `password: <admin.password>`
+        * `db: 0`
+        * `host: redis`
+        * `port: 6379`
 
-    - `rabbitmq`: RabbitMQ (broker) settings:
+    * `rabbitmq`: RabbitMQ (broker) settings:
 
-        - `user: <admin.username>`
-        - `password: <admin.password>`
-        - `host: rabbitmq`
-        - `port: 5672`
-        - `vhost: forcad`
+        * `user: <admin.username>`
+        * `password: <admin.password>`
+        * `host: rabbitmq`
+        * `port: 5672`
+        * `vhost: forcad`
 
 For those familiar with Python typings, formal definition of configuration can be found [here](cli/models.py)
 . `BasicConfig` describes what is required before `setup`
 cli command is called, and `Config` describes the full configuration.
 
-Checkers
-========
+## Checkers
 
-Configuration
--------------
+### Configuration
 
 Checksystem is completely compatible with Hackerdom checkers, but some config-level enhancements were added (see below).
 Checkers are configured for each task independently. It's recommended to put each checker in a separate folder
@@ -196,52 +183,51 @@ the same folder.
 
 The following options are supported:
 
-- `name` (required): name of the service shown on the scoreboard.
+* `name` (required): name of the service shown on the scoreboard.
 
-- `checker` (required): path to the checker executable (relative to `checkers` folder), which needs to be **
+* `checker` (required): path to the checker executable (relative to `checkers` folder), which needs to be **
   world-readable and world-executable** (run `chmod o+rx checker_executable`), as checkers are run with `nobody` as the
   user. It's usually `<service_name>/checker.py`.
 
-- `checker_timeout` (required): timeout in seconds for **each** checker action. As there're at minumum 3 actions run
+* `checker_timeout` (required): timeout in seconds for **each** checker action. As there're at minumum 3 actions run
   (depending on `puts` and `gets`), it's recommended to set `round_time` at least 4 times greater than the maximum
   checker timeout if possible.
 
-- `puts` (optional, default `1`): number of flags to put for each team for each round.
+* `puts` (optional, default `1`): number of flags to put for each team for each round.
 
-- `gets` (optional, default `1`): number of flags to check from the last `flag_lifetime` rounds
+* `gets` (optional, default `1`): number of flags to check from the last `flag_lifetime` rounds
   (see [Configuration and usage](#configuration-and-usage) for lifetime description).
 
-- `places` (optional, default `1`): large tasks may contain a lot of possible places for a flag, that is the number.
+* `places` (optional, default `1`): large tasks may contain a lot of possible places for a flag, that is the number.
   It's randomized for each `put` in range `[1, places]` and passed to the checker's `PUT` and `GET` actions.
 
-- `checker_type` (optional, default `hackerdom`): an option containing underscore-separated tags,
+* `checker_type` (optional, default `hackerdom`): an option containing underscore-separated tags,
   (missing tags are ignored). Examples: `hackerdom` (hackerdom tag ignored, so no modifier tags are applied),
   `gevent_pfr` (gevent checker with public flag data returned). Currently, supported tags are:
 
-    - `pfr`: checker returns public flag data (e.g. username of flag user) from `PUT` action as a **public message**,
+    * `pfr`: checker returns public flag data (e.g. username of flag user) from `PUT` action as a **public message**,
       private flag data (`flag_id`) as a **private message**, and **public message** is shown
       on `/api/client/attack_data` for participants. If checker does not have this tag, no attack data is shown for the
       task.
 
-    - `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. That way, `flag_id` is used to seed the
+    * `nfr`: `flag_id` passed to `PUT` is also passed to `GET` the same flag. That way, `flag_id` is used to seed the
       random generator in checkers so it would return the same values for `GET` and `PUT`. Checkers supporting this
       options are quite rare (and old), so **don't use it** unless you're sure.
 
-    - `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure you
+    * `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure you
       know how it works. **Don't use it** on long and (or) large competitions! Example checker
       is [here](tests/service/checker/gevent_checker.py).
 
 More detailed explanation of checker tags can be
 found [in this issue](https://github.com/pomo-mondreganto/ForcAD/issues/18#issuecomment-618072993).
 
-- `env_path` (optional, default `/checkers/bin`): path or a combination of paths to be prepended to `PATH` env
+* `env_path` (optional, default `/checkers/bin`): path or a combination of paths to be prepended to `PATH` env
   variable (e.g. path to chromedriver). By default, `/checkers/bin` is used, so all auxiliary executables can be but
   in `checkers/bin`.
 
 See more in [checker writing](#writing-a-checker) section.
 
-Checkers folder
----------------
+### Checkers folder
 
 `checkers` folder in project root (containing all checker folders) is recommended to have the following structure:
 
@@ -254,13 +240,11 @@ checkers:
       - checker.py  <--   executable
 ```
 
-Writing a checker
------------------
+### Writing a checker
 
 See the [corresponding wiki page](https://github.com/pomo-mondreganto/ForcAD/wiki/Writing-a-checker) on how to write a
 checker.
 
-Wiki
-====
+## Wiki
 
 More extensive reading can be found in the [wiki pages](https://github.com/pomo-mondreganto/ForcAD/wiki).
