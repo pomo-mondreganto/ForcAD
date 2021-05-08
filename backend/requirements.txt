@@ -1,5 +1,5 @@
 celery==5.0.5
-eventlet==0.30.1
+eventlet==0.31.0
 Flask==1.1.2
 Flask-Cors==3.0.10
 Flask-SocketIO==5.0.1
