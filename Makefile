@@ -2,14 +2,14 @@
 lint:
 	flake8 --config .flake8
 
-.PHONY: test
-test:
-	./scripts/run_tests.sh
-
 .PHONY: clean
 clean:
 	./control.py reset
 	./control.py clean
+
+.PHONY: test
+test: clean
+	./scripts/run_tests.sh
 
 .PHONY: build-base
 build-base:

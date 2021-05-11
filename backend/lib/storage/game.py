@@ -107,6 +107,14 @@ def construct_game_state_from_db(current_round: int) -> models.GameState:
     teamtasks = storage.tasks.get_teamtasks_from_db()
     teamtasks = storage.tasks.filter_teamtasks_for_participants(teamtasks)
 
+    team_ids = {team.id for team in storage.teams.get_teams()}
+    task_ids = {task.id for task in storage.tasks.get_tasks()}
+
+    teamtasks = list(filter(
+        lambda tt: tt['team_id'] in team_ids and tt['task_id'] in task_ids,
+        teamtasks,
+    ))
+
     round_start = get_round_start(current_round)
     state = models.GameState(
         round_start=round_start,
