@@ -37,7 +37,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
@@ -80,7 +80,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: Install dependencies
         run: pip install flake8
       - name: Run linters
@@ -119,7 +119,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: Install skaffold
         run: |
           curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.19.0/skaffold-linux-amd64
