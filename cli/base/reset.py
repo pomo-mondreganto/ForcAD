@@ -3,12 +3,10 @@ import subprocess
 import click
 
 from cli import constants, utils
-from cli.base.clean import clean
 
 
 @click.command(help='Reset the game & clean up')
-@click.pass_context
-def reset(ctx: click.Context):
+def reset():
     utils.print_bold('Trying to wipe the database')
     command = [
         'docker-compose',
@@ -31,8 +29,4 @@ def reset(ctx: click.Context):
         '--remove-orphans',
     ]
     utils.run_command(command, cwd=constants.BASE_DIR)
-
-    utils.print_bold('Running clean')
-    ctx.invoke(clean)
-
     utils.print_success('Done!')
