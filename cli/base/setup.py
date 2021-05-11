@@ -34,6 +34,7 @@ def setup_db(config: models.DatabaseConfig):
         f'POSTGRES_DB={config.dbname}',
     ]
 
+    utils.print_bold(f'Writing database env to {constants.POSTGRES_ENV_PATH}')
     constants.POSTGRES_ENV_PATH.write_text('\n'.join(postgres_config))
 
 
@@ -45,6 +46,7 @@ def setup_redis(config: models.RedisConfig):
         f'REDIS_PASSWORD={config.password}',
     ]
 
+    utils.print_bold(f'Writing redis env to {constants.REDIS_ENV_PATH}')
     constants.REDIS_ENV_PATH.write_text('\n'.join(redis_config))
 
 
@@ -58,6 +60,7 @@ def setup_rabbitmq(config: models.RabbitMQConfig):
         f'RABBITMQ_DEFAULT_VHOST={config.vhost}',
     ]
 
+    utils.print_bold(f'Writing broker env to {constants.RABBITMQ_ENV_PATH}')
     constants.RABBITMQ_ENV_PATH.write_text('\n'.join(rabbitmq_config))
 
 
@@ -68,6 +71,7 @@ def setup_admin_api(config: models.AdminConfig):
         f'ADMIN_PASSWORD={config.password}',
     ]
 
+    utils.print_bold(f'Writing admin env to {constants.ADMIN_ENV_PATH}')
     constants.ADMIN_ENV_PATH.write_text('\n'.join(admin_config))
 
 
@@ -85,5 +89,6 @@ def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = Non
         del base_conf['services']['rabbitmq']
 
     res_path = constants.BASE_DIR / constants.BASE_COMPOSE_FILE
+    utils.print_bold(f'Writing generated compose base to {res_path}')
     with res_path.open(mode='w') as f:
         yaml.dump(base_conf, f)

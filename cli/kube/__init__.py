@@ -16,7 +16,7 @@ def cli():
     pass
 
 
-cli: click.Group
+cli: click.Group  # noqa
 cli.add_command(build)
 cli.add_command(clean)
 cli.add_command(create)

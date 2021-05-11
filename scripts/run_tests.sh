@@ -4,6 +4,7 @@ export TEST=1
 
 python tests/setup_forcad.py
 ./control.py setup
+# shellcheck disable=SC2038,SC2046
 export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
 ./control.py reset
 ./control.py build
