@@ -11,8 +11,8 @@ class TeamTaskApi(ApiSet):
     @staticmethod
     def list():
         try:
-            team_id = int(request.args['team_id'][0])
-            task_id = int(request.args['task_id'][0])
+            team_id = int(request.args['team_id'])
+            task_id = int(request.args['task_id'])
         except (KeyError, ValueError):
             return make_err_response(
                 'Provide team_id and task_id as get params',
