@@ -4,7 +4,7 @@ lint:
 
 .PHONY: clean
 clean:
-	./control.py reset
+	./control.py reset || :
 	./control.py clean
 
 .PHONY: test
