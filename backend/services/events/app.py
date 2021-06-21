@@ -19,7 +19,7 @@ sio = SocketIO(
     async_mode='eventlet',
     client_manager=sio_manager,
     path='socket.io',
-    cors_allowed_origins=[],
+    cors_allowed_origins='*',
 )
 
 

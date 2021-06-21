@@ -23,4 +23,4 @@ release-base:
 start: clean
 	./control.py setup
 	./control.py start --fast
-	./control.py rd logs -f inititializer
+	./control.py rd logs -f initializer

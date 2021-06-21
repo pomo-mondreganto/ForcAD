@@ -57,8 +57,6 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
-
 export default {
     props: {
         updateRound: Function,
@@ -103,9 +101,7 @@ export default {
                 };
                 this.message = 'Creating task';
             } else {
-                const { data: tasks } = await this.$http.get(
-                    `${serverUrl}/api/admin/tasks/`
-                );
+                const { data: tasks } = await this.$http.get('/admin/tasks/');
                 this.task = tasks.filter(({ id }) => id == this.taskId)[0];
                 this.message = `Editing task ${this.task.id} ${this.task.name}`;
             }
@@ -113,7 +109,7 @@ export default {
         submitForm: async function() {
             if (!this.taskId) {
                 const { data: task } = await this.$http.post(
-                    `${serverUrl}/api/admin/tasks/`,
+                    '/admin/tasks/',
                     this.task
                 );
                 this.$router
@@ -121,7 +117,7 @@ export default {
                     .catch(() => {});
             } else {
                 const { data: task } = await this.$http.put(
-                    `${serverUrl}/api/admin/tasks/${this.taskId}/`,
+                    `/admin/tasks/${this.taskId}/`,
                     this.task
                 );
                 this.task = task;

@@ -23,37 +23,23 @@
                 </div>
                 <div class="service">
                     <div
-                        v-for="{
-                            id,
-                            checks,
-                            checks_passed: checksPassed,
-                            score,
-                            stolen,
-                            lost,
-                            message,
-                            status,
-                        } in state.tasks"
-                        :key="id"
+                        v-for="({ sla, score, stolen, lost, message, status },
+                        i) in state.tasks"
+                        :key="i"
                         class="service-cell"
                         :style="{
-                            'font-size': `${1 - tasks.length / 20}em`,
+                            fontSize: `${1 - tasks.length / 20}em`,
+                            backgroundColor: getTeamTaskBackground(status),
                         }"
-                        :class="`status-${status}`"
                     >
                         <button class="info">
                             <i class="fas fa-info-circle" />
                             <span class="tooltip">
-                                {{ message === '' ? 'OK' : message }}
+                                {{ message }}
                             </span>
                         </button>
                         <div class="sla">
-                            <strong>SLA</strong>:
-                            {{
-                                (
-                                    (100.0 * checksPassed) /
-                                    Math.max(checks, 1)
-                                ).toFixed(2)
-                            }}%
+                            <strong>SLA</strong>: {{ sla.toFixed(2) }}%
                         </div>
                         <div class="fp">
                             <strong>FP</strong>: {{ score.toFixed(2) }}
@@ -69,7 +55,9 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import { getTeamTaskBackground } from '@/utils/colors';
+import Task from '@/models/task';
+import TeamTask from '@/models/teamTask';
 
 export default {
     props: {
@@ -85,23 +73,20 @@ export default {
             tasks: null,
             round: 0,
             by_task: [],
+            getTeamTaskBackground,
         };
     },
 
     created: async function() {
         this.teamId = this.$route.params.id;
         try {
-            const { data: teams } = await this.$http.get(
-                `${serverUrl}/api/client/teams/`
-            );
-            const { data: tasks } = await this.$http.get(
-                `${serverUrl}/api/client/tasks/`
-            );
+            const { data: teams } = await this.$http.get('/client/teams/');
+            const { data: tasks } = await this.$http.get('/client/tasks/');
             let { data: states } = await this.$http.get(
-                `${serverUrl}/api/client/teams/${this.teamId}`
+                `/client/teams/${this.teamId}`
             );
             this.team = teams.filter(({ id }) => id == this.teamId)[0];
-            this.tasks = tasks.sort(({ id: idA }, { id: idB }) => idA - idB);
+            this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
 
             this.round = states.reduce(
                 (acc, { round }) => Math.max(acc, round),
@@ -142,9 +127,10 @@ export default {
                 }
             );
 
+            states = states.map(state => new TeamTask(state));
             this.by_task = {};
             for (const state of states) {
-                let key = state.task_id - 1;
+                let key = state.taskId - 1;
                 if (!this.by_task[key]) {
                     this.by_task[key] = [];
                 }
@@ -159,18 +145,11 @@ export default {
                     tasks: this.by_task.map(x => x[i]),
                     score: this.by_task
                         .map(x => x[i])
-                        .reduce(
-                            (
-                                acc,
-                                { score, checks, checks_passed: checksPassed }
-                            ) =>
-                                acc +
-                                score * (checksPassed / Math.max(checks, 1)),
-                            0
-                        ),
+                        .reduce((acc, { score, sla }) => acc + score * sla, 0),
                 });
             }
         } catch (e) {
+            // console.error(e);
             this.error = "Can't connect to server";
         }
     },
