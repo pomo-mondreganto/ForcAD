@@ -21,7 +21,7 @@
             </div>
             <div
                 class="row"
-                :class="`status-${status}`"
+                :style="{ backgroundColor: getTeamTaskBackground(status) }"
                 v-for="{
                     id,
                     round,
@@ -51,15 +51,9 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import { getTeamTaskBackground } from '@/utils/colors';
 
 export default {
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-        timer: Number,
-    },
-
     data: function() {
         return {
             error: null,
@@ -68,6 +62,8 @@ export default {
             teamtasks: null,
             teamName: null,
             taskName: null,
+
+            getTeamTaskBackground,
         };
     },
 
@@ -79,31 +75,32 @@ export default {
     },
 
     created: async function() {
-        this.taskId = this.$route.params.taskId;
-        this.teamId = this.$route.params.teamId;
-        let r = await this.$http.get(
-            `${serverUrl}/api/admin/teamtasks/?team_id=${this.teamId}&task_id=${this.taskId}`
-        );
-        this.teamtasks = r.data;
+        try {
+            this.taskId = this.$route.params.taskId;
+            this.teamId = this.$route.params.teamId;
+            let r = await this.$http.get('/admin/teamtasks/', {
+                params: { team_id: this.teamId, task_id: this.taskId },
+            });
+            this.teamtasks = r.data;
 
-        r = await this.$http.get(`${serverUrl}/api/admin/teams/`);
-        this.teamName = r.data.filter(({ id }) => id == this.teamId)[0].name;
+            r = await this.$http.get(`/admin/teams/`);
+            this.teamName = r.data.filter(
+                ({ id }) => id == this.teamId
+            )[0].name;
 
-        r = await this.$http.get(`${serverUrl}/api/admin/tasks/`);
-        this.taskName = r.data.filter(({ id }) => id == this.taskId)[0].name;
+            r = await this.$http.get(`/admin/tasks/`);
+            this.taskName = r.data.filter(
+                ({ id }) => id == this.taskId
+            )[0].name;
+        } catch (e) {
+            console.error(e);
+            this.error = 'Error occured while fetching data.';
+        }
     },
 };
 </script>
 
 <style lang="scss" scoped>
-.pd-3 {
-    margin-left: 2px;
-}
-
-.default-team {
-    background-color: white;
-}
-
 .table {
     display: flex;
     flex-flow: column nowrap;

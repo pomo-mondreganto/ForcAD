@@ -37,8 +37,6 @@
 </template>
 
 <script>
-import { serverUrl } from '@/config';
-
 export default {
     props: {
         updateRound: Function,
@@ -77,9 +75,7 @@ export default {
                 };
                 this.message = 'Creating team';
             } else {
-                const { data: teams } = await this.$http.get(
-                    `${serverUrl}/api/admin/teams/`
-                );
+                const { data: teams } = await this.$http.get('/admin/teams/');
                 this.team = teams.filter(({ id }) => id == this.teamId)[0];
                 this.message = `Editing team ${this.team.id} ${this.team.name}`;
             }
@@ -87,7 +83,7 @@ export default {
         submitForm: async function() {
             if (!this.teamId) {
                 const { data: team } = await this.$http.post(
-                    `${serverUrl}/api/admin/teams/`,
+                    '/admin/teams/',
                     this.team
                 );
                 this.$router
@@ -95,7 +91,7 @@ export default {
                     .catch(() => {});
             } else {
                 const { data: team } = await this.$http.put(
-                    `${serverUrl}/api/admin/teams/${this.teamId}/`,
+                    `/admin/teams/${this.teamId}/`,
                     this.team
                 );
                 this.team = team;
