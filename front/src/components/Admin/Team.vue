@@ -1,9 +1,9 @@
 <template>
-    <div v-if="error !== null">
-        {{ error }}
-    </div>
-    <form @submit.prevent="submitForm" v-else-if="team !== null">
-        <p>{{ message }}</p>
+    <form-wrapper
+        v-if="task !== null"
+        :title="message"
+        :submitCallback="submitForm"
+    >
         <p>
             Name:
             <input type="text" v-model="team.name" />
@@ -32,12 +32,15 @@
                 :checked="team.active"
             />
         </p>
-        <input type="submit" value="Submit" />
-    </form>
+    </form-wrapper>
 </template>
 
 <script>
+import FormWrapper from '@/components/Lib/FormWrapper';
+
 export default {
+    components: { FormWrapper },
+
     props: {
         updateRound: Function,
         updateRoundStart: Function,
@@ -95,6 +98,7 @@ export default {
                     this.team
                 );
                 this.team = team;
+                await this.updateData();
             }
         },
     },

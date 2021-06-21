@@ -4,7 +4,10 @@
             <topbar :round="round" />
         </header>
         <container>
-            <form @submit.prevent="submitForm">
+            <form-wrapper
+                title="Log into the admin panel"
+                :submitCallback="submitCallback"
+            >
                 <p>
                     Username:
                     <input
@@ -21,9 +24,7 @@
                         placeholder="Password"
                     />
                 </p>
-                <p v-if="error !== null" class="error-message">{{ error }}</p>
-                <input type="submit" value="Submit" />
-            </form>
+            </form-wrapper>
         </container>
         <footer class="footer">
             Powered by
@@ -35,11 +36,13 @@
 <script>
 import Container from '@/components/Lib/Container';
 import Topbar from '@/components/General/Topbar';
+import FormWrapper from '@/components/Lib/FormWrapper';
 
 export default {
     components: {
         Container,
         Topbar,
+        FormWrapper,
     },
 
     data: function() {
@@ -55,16 +58,12 @@ export default {
         updateRound: function(round) {
             this.round = round;
         },
-        submitForm: async function() {
-            try {
-                await this.$http.post('/admin/login/', {
-                    username: this.username,
-                    password: this.password,
-                });
-                this.$router.push({ name: 'admin' }).catch(() => {});
-            } catch (e) {
-                this.error = e.response.data;
-            }
+        submitCallback: async function() {
+            await this.$http.post('/admin/login/', {
+                username: this.username,
+                password: this.password,
+            });
+            this.$router.push({ name: 'admin' }).catch(() => {});
         },
     },
 };
