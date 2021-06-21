@@ -1,18 +1,19 @@
 <template>
-    <div v-if="error !== null">{{ error }}</div>
-    <score-table
-        v-else-if="teams !== null"
-        headRowTitle="#"
-        @openTeam="openTeam"
-        @openTask="openTask"
-        @openTeamAdmin="openTeamAdmin"
-        @openTaskAdmin="openTaskAdmin"
-        @openTeamTaskHistory="openTeamTaskHistory"
-        :teamClickable="true"
-        :admin="true"
-        :tasks="tasks"
-        :teams="teams"
-    />
+    <error-box :error="error">
+        <score-table
+            v-if="teams !== null"
+            headRowTitle="#"
+            @openTeam="openTeam"
+            @openTask="openTask"
+            @openTeamAdmin="openTeamAdmin"
+            @openTaskAdmin="openTaskAdmin"
+            @openTeamTaskHistory="openTeamTaskHistory"
+            :teamClickable="true"
+            :admin="true"
+            :tasks="tasks"
+            :teams="teams"
+        />
+    </error-box>
 </template>
 
 <script>
@@ -20,11 +21,13 @@ import io from 'socket.io-client';
 import { serverUrl } from '@/config';
 import Task from '@/models/task';
 import Team from '@/models/team';
-import ScoreTable from '@/components/ScoreTable/Index';
+import ScoreTable from '@/components/Lib/ScoreTable';
+import ErrorBox from '@/components/Lib/ErrorBox';
 
 export default {
     components: {
         ScoreTable,
+        ErrorBox,
     },
 
     props: {

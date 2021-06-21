@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import LiveScoreboard from '@/components/LiveScoreboard/Index';
+import LiveScoreboard from '@/components/Scores/LiveScoreboard';
 
 export default {
     components: {

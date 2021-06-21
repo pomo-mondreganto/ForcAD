@@ -1,23 +1,29 @@
 <template>
-    <div class="flag" v-if="error !== null">{{ error }}</div>
-    <div class="flag" v-else>
-        <div
-            :key="index"
-            v-for="({ attacker, victim, task, delta }, index) in events"
-        >
-            <span class="mark">{{ attacker }}</span> stole a flag from
-            <span class="mark">{{ victim }}</span
-            >'s service <span class="mark">{{ task }}</span> and got
-            <span class="mark">{{ delta }}</span> points
-        </div>
+    <div class="flag">
+        <error-box :error="error">
+            <div
+                :key="index"
+                v-for="({ attacker, victim, task, delta }, index) in events"
+            >
+                <span class="mark">{{ attacker }}</span> stole a flag from
+                <span class="mark">{{ victim }}</span
+                >'s service <span class="mark">{{ task }}</span> and got
+                <span class="mark">{{ delta }}</span> points
+            </div>
+        </error-box>
     </div>
 </template>
 
 <script>
 import { serverUrl } from '@/config';
 import io from 'socket.io-client';
+import ErrorBox from '@/components/Lib/ErrorBox';
 
 export default {
+    components: {
+        ErrorBox,
+    },
+
     data: function() {
         return {
             error: null,
@@ -38,8 +44,9 @@ export default {
             );
             this.teams = teams;
             this.tasks = tasks;
-        } catch {
+        } catch (e) {
             this.error = "Can't connect to server";
+            console.error(e);
             return;
         }
 

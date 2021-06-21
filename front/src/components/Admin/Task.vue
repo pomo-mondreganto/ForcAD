@@ -1,8 +1,5 @@
 <template>
-    <div v-if="error !== null">
-        {{ error }}
-    </div>
-    <form @submit.prevent="submitForm" v-else-if="task !== null">
+    <form @submit.prevent="submitForm">
         <p>{{ message }}</p>
         <p>
             Name:
@@ -52,6 +49,7 @@
                 :checked="task.active"
             />
         </p>
+        <p v-if="error !== null" class="error-message">{{ error }}</p>
         <input type="submit" value="Submit" />
     </form>
 </template>
@@ -65,7 +63,6 @@ export default {
 
     data: function() {
         return {
-            error: null,
             task: null,
             taskId: null,
             message: null,

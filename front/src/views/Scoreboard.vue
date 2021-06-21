@@ -23,10 +23,10 @@
 </template>
 
 <script>
-import Container from '@/components/Container/Index';
-import Topbar from '@/components/Topbar/Index';
-import Scoreboard from '@/components/Scoreboard/Index';
-import Statuses from '@/components/Statuses/Index';
+import Container from '@/components/Lib/Container';
+import Topbar from '@/components/General/Topbar';
+import Scoreboard from '@/components/Scores/Scoreboard';
+import Statuses from '@/components/General/Statuses';
 import axios from 'axios';
 import { serverUrl } from '@/config';
 
