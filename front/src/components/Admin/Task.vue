@@ -1,6 +1,9 @@
 <template>
-    <form @submit.prevent="submitForm">
-        <p>{{ message }}</p>
+    <form-wrapper
+        v-if="task !== null"
+        :title="message"
+        :submitCallback="submitForm"
+    >
         <p>
             Name:
             <input type="text" v-model="task.name" />
@@ -49,13 +52,14 @@
                 :checked="task.active"
             />
         </p>
-        <p v-if="error !== null" class="error-message">{{ error }}</p>
-        <input type="submit" value="Submit" />
-    </form>
+    </form-wrapper>
 </template>
 
 <script>
+import FormWrapper from '@/components/Lib/FormWrapper';
+
 export default {
+    components: { FormWrapper },
     props: {
         updateRound: Function,
         updateRoundStart: Function,
@@ -100,7 +104,7 @@ export default {
             } else {
                 const { data: tasks } = await this.$http.get('/admin/tasks/');
                 this.task = tasks.filter(({ id }) => id == this.taskId)[0];
-                this.message = `Editing task ${this.task.id} ${this.task.name}`;
+                this.message = `Editing task ${this.task.name} (${this.task.id})`;
             }
         },
         submitForm: async function() {
@@ -118,6 +122,7 @@ export default {
                     this.task
                 );
                 this.task = task;
+                await this.updateData();
             }
         },
     },
