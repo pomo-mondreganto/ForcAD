@@ -33,9 +33,8 @@
 </template>
 
 <script>
-import Container from '@/components/Container/Index';
-import Topbar from '@/components/Topbar/Index';
-import { serverUrl } from '@/config';
+import Container from '@/components/Lib/Container';
+import Topbar from '@/components/General/Topbar';
 
 export default {
     components: {
@@ -58,7 +57,7 @@ export default {
         },
         submitForm: async function() {
             try {
-                await this.$http.post(`${serverUrl}/api/admin/login/`, {
+                await this.$http.post('/admin/login/', {
                     username: this.username,
                     password: this.password,
                 });
@@ -86,9 +85,5 @@ export default {
 .footer {
     text-align: center;
     margin-top: 3em;
-}
-
-.error-message {
-    color: red;
 }
 </style>

@@ -15,10 +15,10 @@
 </template>
 
 <script>
-import Container from '@/components/Container/Index';
-import Topbar from '@/components/Topbar/Index';
-import TeamScoreboard from '@/components/TeamScoreboard/Index';
-import Statuses from '@/components/Statuses/Index';
+import Container from '@/components/Lib/Container';
+import Topbar from '@/components/General/Topbar';
+import Statuses from '@/components/General/Statuses';
+import TeamScoreboard from '@/components/Scores/TeamScoreboard';
 
 export default {
     components: {

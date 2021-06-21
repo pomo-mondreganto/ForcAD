@@ -1,59 +1,65 @@
 <template>
-    <div v-if="error !== null">{{ error }}</div>
-    <div v-else-if="teams !== null">
-        <p>
-            Team
-            <b>{{ teamName }}</b>
-            ({{ teamId }}) task
-            <b>{{ taskName }}</b>
-            ({{ taskId }}) history
-        </p>
-        <div class="table">
-            <div class="row">
-                <div class="round">round</div>
-                <div class="status">status</div>
-                <div class="score">score</div>
-                <div class="flags">flags</div>
-                <div class="checks">checks</div>
-                <div class="public">public</div>
-                <div class="private">private</div>
-                <div class="command">command</div>
-            </div>
-            <div
-                class="row"
-                :style="{ backgroundColor: getTeamTaskBackground(status) }"
-                v-for="{
-                    id,
-                    round,
-                    status,
-                    score,
-                    stolen,
-                    lost,
-                    checks,
-                    checks_passed,
-                    public_message,
-                    private_message,
-                    command,
-                } in teamtasks"
-                :key="id"
-            >
-                <div class="round">{{ round }}</div>
-                <div class="status">{{ status }}</div>
-                <div class="score">{{ score }}</div>
-                <div class="flags">+{{ stolen }}/-{{ lost }}</div>
-                <div class="checks">{{ checks_passed }}/{{ checks }}</div>
-                <div class="public">{{ public_message }}</div>
-                <div class="private">{{ private_message }}</div>
-                <div class="command">{{ command }}</div>
+    <error-box :error="error">
+        <div v-if="teams !== null">
+            <p>
+                Team
+                <b>{{ teamName }}</b>
+                ({{ teamId }}) task
+                <b>{{ taskName }}</b>
+                ({{ taskId }}) history
+            </p>
+            <div class="table">
+                <div class="row">
+                    <div class="round">round</div>
+                    <div class="status">status</div>
+                    <div class="score">score</div>
+                    <div class="flags">flags</div>
+                    <div class="checks">checks</div>
+                    <div class="public">public</div>
+                    <div class="private">private</div>
+                    <div class="command">command</div>
+                </div>
+                <div
+                    class="row"
+                    :style="{ backgroundColor: getTeamTaskBackground(status) }"
+                    v-for="{
+                        id,
+                        round,
+                        status,
+                        score,
+                        stolen,
+                        lost,
+                        checks,
+                        checks_passed,
+                        public_message,
+                        private_message,
+                        command,
+                    } in teamtasks"
+                    :key="id"
+                >
+                    <div class="round">{{ round }}</div>
+                    <div class="status">{{ status }}</div>
+                    <div class="score">{{ score }}</div>
+                    <div class="flags">+{{ stolen }}/-{{ lost }}</div>
+                    <div class="checks">{{ checks_passed }}/{{ checks }}</div>
+                    <div class="public">{{ public_message }}</div>
+                    <div class="private">{{ private_message }}</div>
+                    <div class="command">{{ command }}</div>
+                </div>
             </div>
         </div>
-    </div>
+    </error-box>
 </template>
 
 <script>
 import { getTeamTaskBackground } from '@/utils/colors';
+import ErrorBox from '@/components/Lib/ErrorBox';
 
 export default {
+    components: {
+        ErrorBox,
+    },
+
     data: function() {
         return {
             error: null,

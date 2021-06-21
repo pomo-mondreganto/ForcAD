@@ -30,9 +30,9 @@
 </template>
 
 <script>
-import Container from '@/components/Container/Index';
-import Topbar from '@/components/Topbar/Index';
-import AdminScoreboard from '@/components/AdminScoreboard/Index';
+import Container from '@/components/Lib/Container';
+import Topbar from '@/components/General/Topbar';
+import AdminScoreboard from '@/components/Admin/Scoreboard';
 import axios from 'axios';
 import { serverUrl } from '@/config';
 

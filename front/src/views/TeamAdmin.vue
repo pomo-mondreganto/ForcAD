@@ -14,9 +14,9 @@
 </template>
 
 <script>
-import Container from '@/components/Container/Index';
-import Topbar from '@/components/Topbar/Index';
-import TeamAdmin from '@/components/TeamAdmin/Index';
+import Container from '@/components/Lib/Container';
+import Topbar from '@/components/General/Topbar';
+import TeamAdmin from '@/components/Admin/Team';
 
 export default {
     components: {
