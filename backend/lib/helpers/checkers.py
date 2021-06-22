@@ -1,20 +1,10 @@
 from logging import Logger
-from typing import Optional, List
+from typing import Optional
 
 from lib import models
 from lib.helpers.commands import run_generic_command
 from lib.helpers.thread_actions import run_generic_action_in_thread
-from lib.models import TaskStatus, Action
-
-
-def first_error_or_first_verdict(
-        verdicts: List[models.CheckerVerdict],
-) -> models.CheckerVerdict:
-    for verdict in verdicts:
-        if verdict.status != TaskStatus.UP:
-            return verdict
-
-    return verdicts[0]
+from lib.models import Action
 
 
 class CheckerRunner:

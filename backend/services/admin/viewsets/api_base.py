@@ -1,5 +1,6 @@
-from flask import Blueprint, request
 from typing import Mapping
+
+from flask import Blueprint, request
 
 from .authentication import check_session
 from .utils import abort_with_error
@@ -25,7 +26,7 @@ class ApiSet:
             f'/{self.model}s/<int:{self.get_id_kwarg()}>/',
             endpoint=f'{self.model}_detail',
             view_func=self.Dispatch(self),
-            methods=['PUT', 'DELETE'],
+            methods=['GET', 'PUT', 'DELETE'],
         )
 
         self.kwargs: Mapping = {}

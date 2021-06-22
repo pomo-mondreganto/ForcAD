@@ -10,6 +10,16 @@ class TaskApi(ApiSet):
     model = 'task'
 
     @staticmethod
+    def retrieve(task_id):
+        tasks = storage.tasks.get_all_tasks()
+        try:
+            task = next(filter(lambda x: x.id == task_id, tasks))
+        except StopIteration:
+            return make_err_response('No such task', status=404)
+
+        return jsonify(task.to_dict())
+
+    @staticmethod
     def list():
         tasks = storage.tasks.get_all_tasks()
         dumped = [task.to_dict() for task in tasks]

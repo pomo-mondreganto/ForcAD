@@ -1,7 +1,7 @@
 amqp==5.0.6
 bidict==0.21.2
 billiard==3.6.4.0
-celery==5.0.5
+celery==5.1.1
 certifi==2020.12.5
 click==7.1.2
 click-didyoumean==0.0.3
@@ -20,7 +20,7 @@ hiredis==2.0.0
 humanize==3.5.0
 itsdangerous==1.1.0
 Jinja2==2.11.3
-kombu==5.0.2
+kombu==5.1.0
 librabbitmq==2.0.0
 MarkupSafe==1.1.1
 prometheus-client==0.8.0
