@@ -10,6 +10,16 @@ class TeamApi(ApiSet):
     model = 'team'
 
     @staticmethod
+    def retrieve(team_id):
+        teams = storage.teams.get_all_teams()
+        try:
+            team = next(filter(lambda x: x.id == team_id, teams))
+        except StopIteration:
+            return make_err_response('No such team', status=404)
+
+        return jsonify(team.to_dict())
+
+    @staticmethod
     def list():
         teams = storage.teams.get_all_teams()
         dumped = [team.to_dict() for team in teams]
