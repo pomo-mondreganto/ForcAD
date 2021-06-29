@@ -2,7 +2,7 @@
 lint-backend:
 	flake8 --config .flake8
 
-.PHONY: lint-frontend:
+.PHONY: lint-frontend
 lint-frontend:
 	cd front && npx eslint .
 

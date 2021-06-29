@@ -25,7 +25,7 @@ def destroy():
     for entry in to_unset:
         utils.run_command(['kubectl', 'config', 'unset', entry])
 
-    click.echo('Cleaning up the registry')
+    click.echo('Cleaning up the registry', err=True)
     cmd = [
         'yc', 'container', 'image', 'list',
         '--registry-id', registry_id,
@@ -35,7 +35,7 @@ def destroy():
     for image in registry_images:
         image_id = image['id']
         image_name = image['name']
-        click.echo(f'Removing image {image_name}')
+        click.echo(f'Removing image {image_name}', err=True)
         utils.run_command(['yc', 'container', 'image', 'delete', image_id])
 
     utils.run_command(
