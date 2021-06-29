@@ -1,6 +1,6 @@
 <template>
     <form-wrapper
-        v-if="task !== null"
+        v-if="team !== null"
         :title="message"
         :submitCallback="submitForm"
     >
@@ -41,11 +41,6 @@ import FormWrapper from '@/components/Lib/FormWrapper';
 export default {
     components: { FormWrapper },
 
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-    },
-
     data: function() {
         return {
             error: null,
@@ -78,9 +73,11 @@ export default {
                 };
                 this.message = 'Creating team';
             } else {
-                const { data: teams } = await this.$http.get('/admin/teams/');
-                this.team = teams.filter(({ id }) => id == this.teamId)[0];
-                this.message = `Editing team ${this.team.id} ${this.team.name}`;
+                const { data: team } = await this.$http.get(
+                    `/admin/teams/${this.teamId}/`
+                );
+                this.team = team;
+                this.message = `Editing team ${this.team.name} (${this.team.id})`;
             }
         },
         submitForm: async function() {

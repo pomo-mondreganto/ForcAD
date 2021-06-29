@@ -58,13 +58,9 @@
 import { getTeamTaskBackground } from '@/utils/colors';
 import Task from '@/models/task';
 import TeamTask from '@/models/teamTask';
+import '@/assets/table.scss';
 
 export default {
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-    },
-
     data: function() {
         return {
             error: null,
@@ -83,7 +79,7 @@ export default {
             const { data: teams } = await this.$http.get('/client/teams/');
             const { data: tasks } = await this.$http.get('/client/tasks/');
             let { data: states } = await this.$http.get(
-                `/client/teams/${this.teamId}`
+                `/client/teams/${this.teamId}/`
             );
             this.team = teams.filter(({ id }) => id == this.teamId)[0];
             this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
@@ -93,7 +89,7 @@ export default {
                 0
             );
 
-            this.updateRound(this.round);
+            this.$store.commit('setRound', this.round);
 
             states = states.map(x => ({
                 id: Number(x.id),
@@ -149,7 +145,6 @@ export default {
                 });
             }
         } catch (e) {
-            // console.error(e);
             this.error = "Can't connect to server";
         }
     },
@@ -157,45 +152,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.table {
-    display: flex;
-    flex-flow: column nowrap;
-
-    & > :first-child > :not(:last-child) {
-        font-weight: bold;
-        padding-top: 0.6em;
-        padding-bottom: 0.6em;
-    }
-
-    & > :not(:first-child) > * {
-        height: 6em;
-    }
-
-    & > :last-child > :last-child > * {
-        border-bottom: 1px solid #c6cad1;
-    }
-}
-
-.row {
-    display: flex;
-    flex-flow: row nowrap;
-    text-align: center;
-
-    & > * {
-        border-top: 1px solid #c6cad1;
-        word-wrap: break-word;
-        min-width: 0;
-    }
-
-    & > :first-child {
-        border-left: 1px solid #c6cad1;
-    }
-
-    & > :last-child {
-        border-right: 1px solid #c6cad1;
-    }
-}
-
 .team-name {
     font-weight: bold;
 }

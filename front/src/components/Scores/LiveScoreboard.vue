@@ -46,7 +46,6 @@ export default {
             this.tasks = tasks;
         } catch (e) {
             this.error = "Can't connect to server";
-            console.error(e);
             return;
         }
 

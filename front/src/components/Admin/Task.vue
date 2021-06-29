@@ -60,10 +60,6 @@ import FormWrapper from '@/components/Lib/FormWrapper';
 
 export default {
     components: { FormWrapper },
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-    },
 
     data: function() {
         return {
@@ -102,8 +98,10 @@ export default {
                 };
                 this.message = 'Creating task';
             } else {
-                const { data: tasks } = await this.$http.get('/admin/tasks/');
-                this.task = tasks.filter(({ id }) => id == this.taskId)[0];
+                const { data: task } = await this.$http.get(
+                    `/admin/tasks/${this.taskId}`
+                );
+                this.task = task;
                 this.message = `Editing task ${this.task.name} (${this.task.id})`;
             }
         },
