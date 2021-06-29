@@ -1,0 +1,41 @@
+.table {
+    display: flex;
+    flex-flow: column nowrap;
+
+    & > :first-child > :not(:last-child) {
+        font-weight: bold;
+        padding-top: 0.6em;
+        padding-bottom: 0.6em;
+    }
+
+    & > :not(:first-child) > * {
+        min-height: 6em;
+    }
+
+    & > :last-child > :last-child > * {
+        border-bottom: 1px solid #c6cad1;
+    }
+}
+
+.row {
+    display: flex;
+    flex-flow: row nowrap;
+    text-align: center;
+
+    border-top: 1px solid #c6cad1;
+    border-left: 1px solid #c6cad1;
+    border-right: 1px solid #c6cad1;
+
+    &.highlighted > * {
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+
+    &.highlighted > :first-child {
+        padding-left: 3px;
+    }
+
+    &.highlighted > :last-child {
+        padding-right: 3px;
+    }
+}

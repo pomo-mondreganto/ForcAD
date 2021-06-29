@@ -125,6 +125,7 @@
 
 <script>
 import { getTeamRowBackground, getTeamTaskBackground } from '@/utils/colors';
+import '@/assets/table.scss';
 
 export default {
     props: {
@@ -185,53 +186,6 @@ export default {
 
 .teams-list-move {
     transition: transform 1s;
-}
-
-.table {
-    display: flex;
-    flex-flow: column nowrap;
-
-    & > :first-child > :not(:last-child) {
-        font-weight: bold;
-        padding-top: 0.6em;
-        padding-bottom: 0.6em;
-    }
-
-    & > :not(:first-child) > * {
-        height: 6em;
-    }
-
-    & > :last-child > :last-child > * {
-        border-bottom: 1px solid #c6cad1;
-    }
-}
-
-.row {
-    display: flex;
-    flex-flow: row nowrap;
-    text-align: center;
-
-    & > * {
-        word-wrap: break-word;
-        min-width: 0;
-    }
-
-    border-top: 1px solid #c6cad1;
-    border-left: 1px solid #c6cad1;
-    border-right: 1px solid #c6cad1;
-
-    &.highlighted > * {
-        padding-top: 3px;
-        padding-bottom: 3px;
-    }
-
-    &.highlighted > :first-child {
-        padding-left: 3px;
-    }
-
-    &.highlighted > :last-child {
-        padding-right: 3px;
-    }
 }
 
 .team-name {

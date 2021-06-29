@@ -1,15 +1,6 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 
-import Scoreboard from '@/views/Scoreboard';
-import LiveScoreboard from '@/views/LiveScoreboard';
-import TeamScoreboard from '@/views/TeamScoreboard';
-import AdminScoreboard from '@/views/AdminScoreboard';
-import TaskAdmin from '@/views/TaskAdmin';
-import TeamAdmin from '@/views/TeamAdmin';
-import AdminLogin from '@/views/AdminLogin';
-import AdminTeamTaskLog from '@/views/AdminTeamTaskLog';
-
 import { serverUrl } from '@/config';
 
 Vue.use(VueRouter);
@@ -18,27 +9,30 @@ const routes = [
     {
         path: '/',
         name: 'index',
-        component: Scoreboard,
+        component: () => import('@/views/Scoreboard'),
     },
     {
         path: '/live/',
         name: 'live',
-        component: LiveScoreboard,
+        component: () => import('@/views/LiveScoreboard'),
+        meta: {
+            layout: 'empty-layout',
+        },
     },
     {
         path: '/team/:id/',
         name: 'team',
-        component: TeamScoreboard,
+        component: () => import('@/views/TeamScoreboard'),
     },
     {
         path: '/admin/login/',
         name: 'adminLogin',
-        component: AdminLogin,
+        component: () => import('@/views/AdminLogin'),
     },
     {
         path: '/admin/',
         name: 'admin',
-        component: AdminScoreboard,
+        component: () => import('@/views/AdminScoreboard'),
         meta: {
             auth: true,
         },
@@ -46,7 +40,7 @@ const routes = [
     {
         path: '/admin/task/:id/',
         name: 'taskAdmin',
-        component: TaskAdmin,
+        component: () => import('@/views/TaskAdmin'),
         meta: {
             auth: true,
         },
@@ -54,7 +48,7 @@ const routes = [
     {
         path: '/admin/team/:id/',
         name: 'teamAdmin',
-        component: TeamAdmin,
+        component: () => import('@/views/TeamAdmin'),
         meta: {
             auth: true,
         },
@@ -62,7 +56,7 @@ const routes = [
     {
         path: '/admin/create_task/',
         name: 'createTask',
-        component: TaskAdmin,
+        component: () => import('@/views/TaskAdmin'),
         meta: {
             auth: true,
         },
@@ -70,7 +64,7 @@ const routes = [
     {
         path: '/admin/create_team/',
         name: 'createTeam',
-        component: TeamAdmin,
+        component: () => import('@/views/TeamAdmin'),
         meta: {
             auth: true,
         },
@@ -78,7 +72,7 @@ const routes = [
     {
         path: '/admin/teamtask_log/team/:teamId/task/:taskId/',
         name: 'adminTeamTaskLog',
-        component: AdminTeamTaskLog,
+        component: () => import('@/views/AdminTeamTaskLog'),
         meta: {
             auth: true,
         },

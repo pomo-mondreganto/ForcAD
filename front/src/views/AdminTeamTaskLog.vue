@@ -1,62 +1,15 @@
 <template>
-    <div id="app">
-        <header>
-            <topbar :round="round" />
-        </header>
-        <container>
-            <admin-team-task-log />
-        </container>
-        <footer class="footer">
-            Powered by
-            <span class="team">C4T BuT S4D</span> CTF team
-        </footer>
-    </div>
+    <admin-team-task-log />
 </template>
 
 <script>
-import Container from '@/components/Lib/Container';
-import Topbar from '@/components/General/Topbar';
 import AdminTeamTaskLog from '@/components/Admin/TeamTaskLog';
 
 export default {
     components: {
-        Container,
-        Topbar,
         AdminTeamTaskLog,
-    },
-
-    data: function() {
-        return {
-            round: 0,
-        };
-    },
-
-    methods: {
-        updateRound: function(round) {
-            this.round = round;
-        },
     },
 };
 </script>
 
-<style lang="scss" scoped>
-#app {
-    height: 100%;
-    display: flex;
-
-    flex-flow: column nowrap;
-
-    & > :nth-child(2) {
-        flex-grow: 1;
-    }
-}
-
-.footer {
-    text-align: center;
-    margin-top: 3em;
-}
-
-.team {
-    font-size: 1.1em;
-}
-</style>
+<style lang="scss" scoped></style>

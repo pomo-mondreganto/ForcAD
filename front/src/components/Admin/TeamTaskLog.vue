@@ -1,6 +1,6 @@
 <template>
     <error-box :error="error">
-        <div v-if="teams !== null">
+        <div>
             <p>
                 Team
                 <b>{{ teamName }}</b>
@@ -20,31 +20,23 @@
                     <div class="command">command</div>
                 </div>
                 <div
-                    class="row"
-                    :style="{ backgroundColor: getTeamTaskBackground(status) }"
-                    v-for="{
-                        id,
-                        round,
-                        status,
-                        score,
-                        stolen,
-                        lost,
-                        checks,
-                        checks_passed,
-                        public_message,
-                        private_message,
-                        command,
-                    } in teamtasks"
-                    :key="id"
+                    class="row content-row"
+                    :style="{
+                        backgroundColor: getTeamTaskBackground(tt.status),
+                    }"
+                    v-for="tt in teamtasks"
+                    :key="tt.id"
                 >
-                    <div class="round">{{ round }}</div>
-                    <div class="status">{{ status }}</div>
-                    <div class="score">{{ score }}</div>
-                    <div class="flags">+{{ stolen }}/-{{ lost }}</div>
-                    <div class="checks">{{ checks_passed }}/{{ checks }}</div>
-                    <div class="public">{{ public_message }}</div>
-                    <div class="private">{{ private_message }}</div>
-                    <div class="command">{{ command }}</div>
+                    <div class="round">{{ tt.round }}</div>
+                    <div class="status">{{ tt.status }}</div>
+                    <div class="score">{{ tt.score }}</div>
+                    <div class="flags">+{{ tt.stolen }}/-{{ tt.lost }}</div>
+                    <div class="checks">
+                        {{ tt.checks_passed }}/{{ tt.checks }}
+                    </div>
+                    <div class="public">{{ tt.public_message }}</div>
+                    <div class="private">{{ tt.private_message }}</div>
+                    <div class="command">{{ tt.command }}</div>
                 </div>
             </div>
         </div>
@@ -54,6 +46,7 @@
 <script>
 import { getTeamTaskBackground } from '@/utils/colors';
 import ErrorBox from '@/components/Lib/ErrorBox';
+import '@/assets/table.scss';
 
 export default {
     components: {
@@ -75,7 +68,6 @@ export default {
 
     methods: {
         openTeam: function(id) {
-            clearInterval(this.timer);
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
     },
@@ -89,15 +81,15 @@ export default {
             });
             this.teamtasks = r.data;
 
-            r = await this.$http.get(`/admin/teams/`);
-            this.teamName = r.data.filter(
-                ({ id }) => id == this.teamId
-            )[0].name;
+            const {
+                data: { name: teamName },
+            } = await this.$http.get(`/admin/teams/${this.teamId}/`);
+            this.teamName = teamName;
 
-            r = await this.$http.get(`/admin/tasks/`);
-            this.taskName = r.data.filter(
-                ({ id }) => id == this.taskId
-            )[0].name;
+            const {
+                data: { name: taskName },
+            } = await this.$http.get(`/admin/tasks/${this.taskId}/`);
+            this.taskName = taskName;
         } catch (e) {
             console.error(e);
             this.error = 'Error occured while fetching data.';
@@ -107,54 +99,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.table {
-    display: flex;
-    flex-flow: column nowrap;
-
-    & > :first-child > :not(:last-child) {
-        font-weight: bold;
-        padding-top: 0.6em;
-        padding-bottom: 0.6em;
-    }
-
-    & > :not(:first-child) > * {
-        min-height: 6em;
-    }
-
-    & > :last-child > :last-child > * {
-        border-bottom: 1px solid #c6cad1;
-    }
-}
-
-.row {
-    display: flex;
-    flex-flow: row nowrap;
-    text-align: center;
-
-    & > * {
-        word-wrap: break-word;
+.content-row {
+    & > :not(:first-child) {
         border-left: 1px solid #c6cad1;
-        min-width: 0;
-    }
-
-    border-top: 1px solid #c6cad1;
-    border-left: 1px solid #c6cad1;
-    border-right: 1px solid #c6cad1;
-
-    &.highlighted > * {
-        padding-top: 3px;
-        padding-bottom: 3px;
-    }
-
-    &.highlighted > :first-child {
-        padding-left: 3px;
-    }
-
-    &.highlighted > :last-child {
-        padding-right: 3px;
     }
 }
-
 .round {
     flex: 1 1 0;
     display: flex;

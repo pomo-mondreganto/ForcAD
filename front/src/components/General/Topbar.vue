@@ -1,30 +1,36 @@
 <template>
     <div class="topbar">
-        <router-link class="tp" to="/live/" @click="go">Live</router-link>
-        <div class="progress-bar" :style="{ width: roundProgressInteger }" />
+        <router-link class="tp" to="/live/">Live</router-link>
+        <div class="progress-bar" :style="{ width: `${roundProgress}%` }" />
         <div class="tp">Round: {{ round }}</div>
     </div>
 </template>
 
 <script>
+import { mapState } from 'vuex';
 export default {
-    props: {
-        round: Number,
-        timer: Number,
-        roundProgress: Number,
+    data: function() {
+        return {
+            timer: null,
+        };
     },
 
-    computed: {
-        roundProgressInteger: function() {
-            return `${Math.floor(this.roundProgress * 100)}%`;
-        },
+    created: async function() {
+        console.log('Creating timer');
+        await this.$store.dispatch('fetchRoundTime');
+        this.timer = setInterval(
+            () => this.$store.dispatch('calculateRoundProgress'),
+            500
+        );
     },
 
-    methods: {
-        go: function() {
-            clearInterval(this.timer);
-        },
+    beforeRouteLeave: function(to, from, next) {
+        console.log('Destroying timer');
+        clearInterval(this.timer);
+        next();
     },
+
+    computed: mapState(['round', 'roundProgress']),
 };
 </script>
 
