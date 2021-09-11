@@ -3,18 +3,36 @@ import VueRouter from 'vue-router';
 
 import { serverUrl } from '@/config';
 
+const Scoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/Scoreboard');
+const LiveScoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/LiveScoreboard');
+const TeamScoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/TeamScoreboard');
+
+const AdminLogin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminLogin');
+const AdminScoreboard = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminScoreboard');
+const TaskAdmin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/TaskAdmin');
+const TeamAdmin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/TeamAdmin');
+const AdminTeamTaskLog = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminTeamTaskLog');
+
 Vue.use(VueRouter);
 
 const routes = [
     {
         path: '/',
         name: 'index',
-        component: () => import('@/views/Scoreboard'),
+        component: Scoreboard,
     },
     {
         path: '/live/',
         name: 'live',
-        component: () => import('@/views/LiveScoreboard'),
+        component: LiveScoreboard,
         meta: {
             layout: 'empty-layout',
         },
@@ -22,17 +40,17 @@ const routes = [
     {
         path: '/team/:id/',
         name: 'team',
-        component: () => import('@/views/TeamScoreboard'),
+        component: TeamScoreboard,
     },
     {
         path: '/admin/login/',
         name: 'adminLogin',
-        component: () => import('@/views/AdminLogin'),
+        component: AdminLogin,
     },
     {
         path: '/admin/',
         name: 'admin',
-        component: () => import('@/views/AdminScoreboard'),
+        component: AdminScoreboard,
         meta: {
             auth: true,
         },
@@ -40,7 +58,7 @@ const routes = [
     {
         path: '/admin/task/:id/',
         name: 'taskAdmin',
-        component: () => import('@/views/TaskAdmin'),
+        component: TaskAdmin,
         meta: {
             auth: true,
         },
@@ -48,7 +66,7 @@ const routes = [
     {
         path: '/admin/team/:id/',
         name: 'teamAdmin',
-        component: () => import('@/views/TeamAdmin'),
+        component: TeamAdmin,
         meta: {
             auth: true,
         },
@@ -56,7 +74,7 @@ const routes = [
     {
         path: '/admin/create_task/',
         name: 'createTask',
-        component: () => import('@/views/TaskAdmin'),
+        component: TaskAdmin,
         meta: {
             auth: true,
         },
@@ -64,7 +82,7 @@ const routes = [
     {
         path: '/admin/create_team/',
         name: 'createTeam',
-        component: () => import('@/views/TeamAdmin'),
+        component: TeamAdmin,
         meta: {
             auth: true,
         },
@@ -72,7 +90,7 @@ const routes = [
     {
         path: '/admin/teamtask_log/team/:teamId/task/:taskId/',
         name: 'adminTeamTaskLog',
-        component: () => import('@/views/AdminTeamTaskLog'),
+        component: () => AdminTeamTaskLog,
         meta: {
             auth: true,
         },
