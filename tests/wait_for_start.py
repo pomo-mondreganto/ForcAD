@@ -12,7 +12,7 @@ sys.path.insert(0, str(TESTS_DIR))
 from helpers import wait_rounds
 
 DOCKER_COMPOSE_FILE = 'docker-compose-tests.yml'
-INITIALIZER_CONTAINER_NAME = 'forcad_initializer_1'
+INITIALIZER_CONTAINER_NAME = 'forcad-initializer-1'
 
 
 def wait_for_container(name):
