@@ -16,7 +16,6 @@ export default {
     },
 
     created: async function() {
-        console.log('Creating timer');
         await this.$store.dispatch('fetchRoundTime');
         this.timer = setInterval(
             () => this.$store.dispatch('calculateRoundProgress'),
@@ -25,7 +24,6 @@ export default {
     },
 
     beforeRouteLeave: function(to, from, next) {
-        console.log('Destroying timer');
         clearInterval(this.timer);
         next();
     },
