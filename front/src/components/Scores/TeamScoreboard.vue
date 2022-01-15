@@ -141,7 +141,11 @@ export default {
                     tasks: this.by_task.map(x => x[i]),
                     score: this.by_task
                         .map(x => x[i])
-                        .reduce((acc, { score, sla }) => acc + score * sla, 0),
+                        .reduce(
+                            (acc, { score, sla }) =>
+                                acc + (score * sla) / 100.0,
+                            0
+                        ),
                 });
             }
         } catch (e) {
