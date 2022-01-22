@@ -51,6 +51,7 @@ def setup_redis(config: models.RedisConfig):
 
 
 def setup_rabbitmq(config: models.RabbitMQConfig):
+    management_url = f'http://{config.user}:{config.password}@{config.host}:15672/api/'
     rabbitmq_config = [
         "# THIS FILE IS MANAGED BY 'control.py'",
         f'RABBITMQ_HOST={config.host}',
@@ -58,6 +59,7 @@ def setup_rabbitmq(config: models.RabbitMQConfig):
         f'RABBITMQ_DEFAULT_USER={config.user}',
         f'RABBITMQ_DEFAULT_PASS={config.password}',
         f'RABBITMQ_DEFAULT_VHOST={config.vhost}',
+        f'BROKER_API_URL={management_url}',
     ]
 
     utils.print_bold(f'Writing broker env to {constants.RABBITMQ_ENV_PATH}')
