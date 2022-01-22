@@ -1,5 +1,6 @@
-from kombu.utils import json as kjson
 from typing import Optional, List, Dict, Any
+
+from kombu.utils import json as kjson
 
 from .base import BaseModel
 from .flag import Flag
@@ -63,7 +64,9 @@ class Task(BaseModel):
 
     @property
     def is_checker_gevent_optimized(self) -> bool:
-        return 'gevent' in self.checker_tags
+        # Disabling due to major stability issues with Celery + Gevent.
+        # return 'gevent' in self.checker_tags
+        return False
 
     @property
     def checker_returns_flag_id(self) -> bool:

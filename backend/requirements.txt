@@ -9,7 +9,7 @@ click-plugins==1.1.1
 click-repl==0.2.0
 Deprecated==1.2.13
 dnspython==1.16.0
-eventlet==0.31.0
+eventlet==0.30.2
 Flask==2.0.2
 Flask-Cors==3.0.10
 Flask-SocketIO==5.1.1
