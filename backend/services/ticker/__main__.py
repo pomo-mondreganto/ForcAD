@@ -1,9 +1,7 @@
 import logging
 import sys
 import time
-from datetime import timedelta, datetime
-
-import pytz
+from datetime import timedelta, datetime, timezone
 
 from lib import storage, models
 from services.tasks import get_celery_app
@@ -75,10 +73,8 @@ def bootstrap_schedules(state: TickerState):
 
 
 def main(state: TickerState):
-    game_config = storage.game.get_current_game_config()
-    tz = pytz.timezone(game_config.timezone)
     while True:
-        now = tz.localize(datetime.now())
+        now = datetime.now(timezone.utc)
         due_schedules = state.get_due_schedules(now)
         for schedule in due_schedules:
             logger.info('Executing schedule %s', schedule.schedule_id)
