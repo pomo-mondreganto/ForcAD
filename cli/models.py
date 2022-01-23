@@ -55,13 +55,16 @@ class GameConfig(BaseModel):
 
 
 class Task(BaseModel):
-    checker: str
     name: str
+    checker: str
+    gets: int
+    puts: int
+    places: int
+    checker_timeout: int
     checker_type: str = 'hackerdom'
-    checker_timeout: int = 15
-    gets: int = 1
-    puts: int = 1
-    places: int = 1
+    env_path: str = ''
+    default_score: Optional[float]
+    get_period: Optional[int]
 
 
 class Team(BaseModel):
