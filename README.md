@@ -54,7 +54,7 @@ statistics, services description, writing a checker, modifying the rating system
    images or backend requirements, omit this option to run the full build.
 
 That's all! Now you should be able to access the scoreboard at `http://127.0.0.1:8080/`. Admin panel is accessible at
-`http://127.0.0.1:8080/admin`. Celery visualization (flower) is at `http://127.0.0.1:8080/flower`.
+`http://127.0.0.1:8080/admin/`. Celery visualization (flower) is at `http://127.0.0.1:8080/flower/`.
 
 > Before each new game run `./control.py reset` to delete old database and temporary files (and docker networks)
 
@@ -92,7 +92,7 @@ Config file (`config.yml`) is split into five main parts:
 
     * `default_score` (optional, default `2500`): default score for tasks.
 
-    * `env_path` (optional, default `/checkers/bin/`): string to append to checkers' `$PATH` environment variable
+    * `env_path` (optional): string to append to checkers' `$PATH` environment variable
       (see [checkers](#checkers) section). Example: `/checkers/bin/`.
 
     * `game_hardness` (optional, default `10`): game hardness parameter
@@ -108,6 +108,8 @@ Config file (`config.yml`) is split into five main parts:
 
     * `username: forcad`
     * `password: **change_me**`
+
+    It will be auto-generated if missing. Usernames & passwords to all storages will be the same as to the admin panel.
 
 * **teams** contains playing teams. Example contents:
 
@@ -145,7 +147,7 @@ tasks:
     puts: 2
 ```
 
-* **storages** is an **auto-generated section**, which will be overridden by `control.py setup/kube setup` and describes
+* **storages** is an **auto-generated section**, which will be overridden by `control.py <setup>/<kube setup>` and describes
   settings used to connect to PostgreSQL, Redis and RabbitMQ:
 
     * `db`: PostgreSQL settings:
@@ -206,7 +208,7 @@ The following options are supported:
 
 * `checker_type` (optional, default `hackerdom`): an option containing underscore-separated tags,
   (missing tags are ignored). Examples: `hackerdom` (hackerdom tag ignored, so no modifier tags are applied),
-  `gevent_pfr` (gevent checker with public flag data returned). Currently, supported tags are:
+  `pfr` (checker with public flag data returned). Currently, supported tags are:
 
     * `pfr`: checker returns public flag data (e.g. username of flag user) from `PUT` action as a **public message**,
       private flag data (`flag_id`) as a **private message**, and **public message** is shown
@@ -217,16 +219,11 @@ The following options are supported:
       random generator in checkers so it would return the same values for `GET` and `PUT`. Checkers supporting this
       options are quite rare (and old), so **don't use it** unless you're sure.
 
-    * `gevent`: an experimental checker type to make checkers faster. **Don't use it** if you're not absolutely sure you
-      know how it works. **Don't use it** on long and (or) large competitions! Example checker
-      is [here](tests/service/checker/gevent_checker.py).
-
 More detailed explanation of checker tags can be
 found [in this issue](https://github.com/pomo-mondreganto/ForcAD/issues/18#issuecomment-618072993).
 
-* `env_path` (optional, default `/checkers/bin`): path or a combination of paths to be prepended to `PATH` env
-  variable (e.g. path to chromedriver). By default, `/checkers/bin` is used, so all auxiliary executables can be but
-  in `checkers/bin`.
+* `env_path` (optional): path or a combination of paths to be prepended to `PATH` env
+  variable (e.g. path to chromedriver).
 
 See more in [checker writing](#writing-a-checker) section.
 
@@ -236,11 +233,11 @@ See more in [checker writing](#writing-a-checker) section.
 
 ```yaml
 checkers:
-  - requirements.txt  <--   automatically installed (with pip) combined requirements of all checkers
+  - requirements.txt  <--   automatically installed (with pip) combined requirements of all checkers (must be present)
   - task1:
-      - checker.py  <--   executable
+      - checker.py  <--   executable (o+rx)
   - task2:
-      - checker.py  <--   executable
+      - checker.py  <--   executable (o+rx)
 ```
 
 ### Writing a checker
