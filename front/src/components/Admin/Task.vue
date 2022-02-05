@@ -99,7 +99,7 @@ export default {
                 this.message = 'Creating task';
             } else {
                 const { data: task } = await this.$http.get(
-                    `/admin/tasks/${this.taskId}`
+                    `/admin/tasks/${this.taskId}/`
                 );
                 this.task = task;
                 this.message = `Editing task ${this.task.name} (${this.task.id})`;

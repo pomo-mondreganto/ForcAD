@@ -64,7 +64,7 @@ def backup_config():
 def dump_config(config: models.Config):
     print_bold(f'Writing new configuration to {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config.dict(by_alias=True, exclude_unset=True), f)
+        yaml.safe_dump(config.dict(by_alias=True, exclude_none=True), f)
 
 
 def override_config(
