@@ -134,7 +134,7 @@ export default {
 .public {
     @extend .round;
     flex: 1.5 2 15%;
-    overflow: scroll;
+    overflow-x: auto;
 }
 
 .private {

@@ -90,7 +90,7 @@ const routes = [
     {
         path: '/admin/teamtask_log/team/:teamId/task/:taskId/',
         name: 'adminTeamTaskLog',
-        component: () => AdminTeamTaskLog,
+        component: AdminTeamTaskLog,
         meta: {
             auth: true,
         },

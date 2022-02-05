@@ -51,7 +51,7 @@ class GameConfig(BaseModel):
     inflation: bool = True
 
     checkers_path: str = '/checkers/'
-    env_path: Optional[str]
+    env_path: str = ''
 
 
 class Task(BaseModel):
