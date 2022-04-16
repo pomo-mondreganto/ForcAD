@@ -1,9 +1,9 @@
 <template>
-    <div v-if="error !== null">
-        {{ error }}
-    </div>
-    <form @submit.prevent="submitForm" v-else-if="team !== null">
-        <p>{{ message }}</p>
+    <form-wrapper
+        v-if="team !== null"
+        :title="message"
+        :submitCallback="submitForm"
+    >
         <p>
             Name:
             <input type="text" v-model="team.name" />
@@ -32,18 +32,14 @@
                 :checked="team.active"
             />
         </p>
-        <input type="submit" value="Submit" />
-    </form>
+    </form-wrapper>
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import FormWrapper from '@/components/Lib/FormWrapper';
 
 export default {
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-    },
+    components: { FormWrapper },
 
     data: function() {
         return {
@@ -77,17 +73,17 @@ export default {
                 };
                 this.message = 'Creating team';
             } else {
-                const { data: teams } = await this.$http.get(
-                    `${serverUrl}/api/admin/teams/`
+                const { data: team } = await this.$http.get(
+                    `/admin/teams/${this.teamId}/`
                 );
-                this.team = teams.filter(({ id }) => id == this.teamId)[0];
-                this.message = `Editing team ${this.team.id} ${this.team.name}`;
+                this.team = team;
+                this.message = `Editing team ${this.team.name} (${this.team.id})`;
             }
         },
         submitForm: async function() {
             if (!this.teamId) {
                 const { data: team } = await this.$http.post(
-                    `${serverUrl}/api/admin/teams/`,
+                    '/admin/teams/',
                     this.team
                 );
                 this.$router
@@ -95,10 +91,11 @@ export default {
                     .catch(() => {});
             } else {
                 const { data: team } = await this.$http.put(
-                    `${serverUrl}/api/admin/teams/${this.teamId}/`,
+                    `/admin/teams/${this.teamId}/`,
                     this.team
                 );
                 this.team = team;
+                await this.updateData();
             }
         },
     },

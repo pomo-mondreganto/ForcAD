@@ -17,14 +17,11 @@ jobs:
   tests:
     strategy:
       matrix:
-        os:
-          - ubuntu-20.04
-          - ubuntu-18.04
         test_type:
           - BLITZ
           - CLASSIC
 
-    runs-on: ${{ matrix.os }}
+    runs-on: "ubuntu-20.04"
     timeout-minutes: 15
     env:
       TEST: 1
@@ -41,7 +38,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}-${{ hashFiles('cli/requirements.txt') }}-${{ hashFiles('tests/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: Setup tests

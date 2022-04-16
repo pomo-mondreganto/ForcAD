@@ -5,7 +5,6 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 
 from lib import storage, models
-from lib.helpers import checkers
 from lib.helpers.jobs import JobNames
 from lib.models import TaskStatus, Action
 
@@ -61,8 +60,8 @@ def checker_results_handler(
     """
     Parse returning verdicts and return the final one.
 
-    If there were any errors, the first one'll be returned
-    Otherwise, verdict of the first (sequentially) action will be returned.
+    If there were any errors, the first error is returned
+    Otherwise, verdict of the first action's verdict is returned.
     """
     check_verdict = None
     puts_verdicts = []
@@ -96,7 +95,13 @@ def checker_results_handler(
         parsed_verdicts.append(gets_verdict)
 
     if verdicts:
-        result_verdict = checkers.first_error_or_first_verdict(parsed_verdicts)
+        try:
+            result_verdict = next(filter(
+                lambda x: x.status != TaskStatus.UP,
+                verdicts,
+            ))
+        except StopIteration:
+            result_verdict = verdicts[0]
     else:
         logger.critical('No verdicts returned from actions!')
         result_verdict = models.CheckerVerdict(

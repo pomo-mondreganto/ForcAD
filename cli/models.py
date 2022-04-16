@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -44,24 +44,27 @@ class GameConfig(BaseModel):
     start_time: datetime
 
     timezone: str = 'UTC'
-    default_score: Union[int, float] = 2500
-    game_hardness: Union[int, float] = 10
+    default_score: float = 2500
+    game_hardness: float = 10
     mode: str = 'classic'
-    get_period: Optional[int] = None
+    get_period: Optional[int]
     inflation: bool = True
 
     checkers_path: str = '/checkers/'
-    env_path: str = '/checkers/bin/'
+    env_path: str = ''
 
 
 class Task(BaseModel):
-    checker: str
     name: str
+    checker: str
+    gets: int
+    puts: int
+    places: int
+    checker_timeout: int
     checker_type: str = 'hackerdom'
-    checker_timeout: int = 15
-    gets: int = 1
-    puts: int = 1
-    places: int = 1
+    env_path: Optional[str]
+    default_score: Optional[float]
+    get_period: Optional[int]
 
 
 class Team(BaseModel):

@@ -1,5 +1,6 @@
-from kombu.utils import json as kjson
 from typing import Optional, List, Dict, Any
+
+from kombu.utils import json as kjson
 
 from .base import BaseModel
 from .flag import Flag
@@ -60,10 +61,6 @@ class Task(BaseModel):
     @property
     def checker_tags(self) -> List[str]:
         return self.checker_type.split('_')
-
-    @property
-    def is_checker_gevent_optimized(self) -> bool:
-        return 'gevent' in self.checker_tags
 
     @property
     def checker_returns_flag_id(self) -> bool:

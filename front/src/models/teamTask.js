@@ -19,7 +19,7 @@ class TeamTask {
         this.lost = lost;
         this.sla = (100.0 * checksPassed) / Math.max(checks, 1);
         this.score = score;
-        this.message = message;
+        this.message = message === '' && this.status == 101 ? 'OK' : message;
     }
 
     static comp(A, B) {
