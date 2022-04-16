@@ -1,7 +1,7 @@
 from . import (
     cache, checkers, commands,
     events, exceptions, jobs,
-    thread_actions, singleton,
+    singleton,
 )
 
 __all__ = (
@@ -11,6 +11,5 @@ __all__ = (
     'events',
     'exceptions',
     'jobs',
-    'thread_actions',
     'singleton',
 )
