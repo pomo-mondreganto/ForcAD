@@ -2,10 +2,6 @@ class FlagSubmitException(Exception):
     """Exception for flag validation."""
 
 
-class CheckerTimeoutException(BaseException):
-    """Exception raised by gevent-optimized checkers."""
-
-
 class FlagExceptionEnum:
     GAME_NOT_AVAILABLE = FlagSubmitException('Game is not available.')
     FLAG_INVALID = FlagSubmitException('Flag is invalid or too old.')
