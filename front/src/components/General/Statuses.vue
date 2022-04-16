@@ -3,7 +3,7 @@
         <div
             v-for="status in statuses"
             :key="status"
-            :class="`status-${status}`"
+            :style="{ backgroundColor: getTeamTaskBackground(status) }"
             class="status-cell"
         >
             {{ statusesNames[status] }}
@@ -13,12 +13,14 @@
 
 <script>
 import { statuses, statusesNames } from '@/config';
+import { getTeamTaskBackground } from '@/utils/colors';
 
 export default {
     data: function() {
         return {
             statuses,
             statusesNames,
+            getTeamTaskBackground,
         };
     },
 };

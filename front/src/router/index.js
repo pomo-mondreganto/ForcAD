@@ -1,16 +1,25 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 
-import Scoreboard from '@/views/Scoreboard';
-import LiveScoreboard from '@/views/LiveScoreboard';
-import TeamScoreboard from '@/views/TeamScoreboard';
-import AdminScoreboard from '@/views/AdminScoreboard';
-import TaskAdmin from '@/views/TaskAdmin';
-import TeamAdmin from '@/views/TeamAdmin';
-import AdminLogin from '@/views/AdminLogin';
-import AdminTeamTaskLog from '@/views/AdminTeamTaskLog';
-
 import { serverUrl } from '@/config';
+
+const Scoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/Scoreboard');
+const LiveScoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/LiveScoreboard');
+const TeamScoreboard = () =>
+    import(/* webpackChunkName: "main" */ '@/views/TeamScoreboard');
+
+const AdminLogin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminLogin');
+const AdminScoreboard = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminScoreboard');
+const TaskAdmin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/TaskAdmin');
+const TeamAdmin = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/TeamAdmin');
+const AdminTeamTaskLog = () =>
+    import(/* webpackChunkName: "admin" */ '@/views/AdminTeamTaskLog');
 
 Vue.use(VueRouter);
 
@@ -24,6 +33,9 @@ const routes = [
         path: '/live/',
         name: 'live',
         component: LiveScoreboard,
+        meta: {
+            layout: 'empty-layout',
+        },
     },
     {
         path: '/team/:id/',

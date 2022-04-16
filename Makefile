@@ -1,6 +1,13 @@
-.PHONY: lint
-lint:
+.PHONY: lint-backend
+lint-backend:
 	flake8 --config .flake8
+
+.PHONY: lint-frontend
+lint-frontend:
+	cd front && npx eslint .
+
+.PHONY: lint
+lint: lint-backend lint-frontend
 
 .PHONY: clean
 clean:
@@ -23,4 +30,4 @@ release-base:
 start: clean
 	./control.py setup
 	./control.py start --fast
-	./control.py rd logs -f inititializer
+	./control.py rd logs -f initializer

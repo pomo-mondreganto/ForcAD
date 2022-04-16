@@ -39,10 +39,11 @@ class Celery(BaseModel):
 
     worker_prefetch_multiplier: int = 1
 
+    result_expires = 15 * 60
     redis_socket_timeout: int = 10
     redis_socket_keepalive: bool = True
     redis_retry_on_timeout: bool = True
 
-    accept_content: List[str] = ['pickle']
+    accept_content: List[str] = ['pickle', 'json']
     result_serializer: str = 'pickle'
     task_serializer: str = 'pickle'

@@ -1,18 +1,23 @@
 <template>
-    <div v-if="error !== null">{{ error }}</div>
-    <div v-else-if="teams !== null" class="table">
+    <div class="table">
         <div class="row">
-            <div class="number">#</div>
+            <div class="number">{{ headRowTitle }}</div>
             <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
                 <div
                     :key="name"
+                    :style="taskStyle"
+                    @click="$emit('openTask', id)"
                     class="service-cell"
-                    v-for="{ id, name } in tasks"
+                    v-for="{ name, id } in tasks"
                 >
                     {{ name }}
-                    <button @click="openTaskAdmin(id)" class="edit">
+                    <button
+                        v-if="admin"
+                        @click="$emit('openTaskAdmin', id)"
+                        class="edit"
+                    >
                         <i class="fas fa-edit" />
                     </button>
                 </div>
@@ -24,31 +29,34 @@
                 v-for="({ name, score, tasks, ip, id, highlighted },
                 index) in teams"
                 :key="name"
-                :class="[`top-${index + 1}`, highlighted ? 'highlighted' : '']"
+                :class="[highlighted ? 'highlighted' : '']"
+                :style="{
+                    backgroundColor: getTeamRowBackground(index),
+                }"
             >
                 <div class="team-group" :class="highlighted ? '' : 'pd-3'">
                     <div
                         class="number"
-                        :class="[
-                            `top-${index + 1}`,
-                            index > 2 ? 'default-team' : '',
-                        ]"
+                        :style="{
+                            backgroundColor: getTeamRowBackground(index),
+                        }"
                     >
                         {{ index + 1 }}
                     </div>
                     <div
                         class="team team-row"
-                        @click="openTeam(id)"
-                        :class="[
-                            `top-${index + 1}`,
-                            index > 2 ? 'default-team' : '',
+                        @click="$emit('openTeam', id)"
+                        :style="[
+                            teamStyle,
+                            { backgroundColor: getTeamRowBackground(index) },
                         ]"
                     >
                         <div class="team-name">{{ name }}</div>
                         <div class="ip">{{ ip }}</div>
                         <button
-                            @click="openTeamAdmin(id)"
+                            @click="$emit('openTeamAdmin', id)"
                             class="edit"
+                            v-if="admin"
                             v-on:click.stop
                         >
                             <i class="fas fa-edit" />
@@ -56,10 +64,9 @@
                     </div>
                     <div
                         class="score"
-                        :class="[
-                            `top-${index + 1}`,
-                            index > 2 ? 'default-team' : '',
-                        ]"
+                        :style="{
+                            backgroundColor: getTeamRowBackground(index),
+                        }"
                     >
                         {{ score.toFixed(2) }}
                     </div>
@@ -80,21 +87,22 @@
                         :key="id"
                         class="service-cell"
                         :style="{
-                            'font-size': `${1 - tasks.length / 20}em`,
+                            fontSize: `${1 - tasks.length / 20}em`,
+                            backgroundColor: getTeamTaskBackground(status),
                         }"
-                        :class="`status-${status}`"
                     >
                         <button
-                            @click="openTeamTaskHistory(teamId, taskId)"
+                            v-if="admin"
+                            @click="
+                                $emit('openTeamTaskHistory', teamId, taskId)
+                            "
                             class="tt-edit"
                         >
                             <i class="fas fa-edit" />
                         </button>
                         <button class="info">
                             <i class="fas fa-info-circle" />
-                            <span class="tooltip">{{
-                                message === '' ? 'OK' : message
-                            }}</span>
+                            <span class="tooltip">{{ message }}</span>
                         </button>
                         <div class="sla">
                             <strong>SLA</strong>
@@ -116,101 +124,51 @@
 </template>
 
 <script>
-import io from 'socket.io-client';
-import { serverUrl } from '@/config';
-import Task from '@/models/task';
-import Team from '@/models/team';
+import { getTeamRowBackground, getTeamTaskBackground } from '@/utils/colors';
+import '@/assets/table.scss';
 
 export default {
     props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-        timer: Number,
+        headRowTitle: {
+            type: String,
+            default: '#',
+        },
+        tasks: {
+            type: Array,
+            required: true,
+        },
+        teams: {
+            type: Array,
+            required: true,
+        },
+        teamClickable: Boolean,
+        taskClickable: Boolean,
+        admin: Boolean,
     },
 
     data: function() {
         return {
-            error: null,
-            server: null,
-            tasks: null,
-            teams: null,
-            round_start: 0,
+            getTeamRowBackground,
+            getTeamTaskBackground,
         };
     },
 
-    methods: {
-        openTeam: function(id) {
-            clearInterval(this.timer);
-            this.$router.push({ name: 'team', params: { id } }).catch(() => {});
+    computed: {
+        teamStyle: function() {
+            return this.teamClickable
+                ? {
+                      cursor: 'pointer',
+                  }
+                : {};
         },
-        openTaskAdmin: function(id) {
-            clearInterval(this.timer);
-            this.$router
-                .push({ name: 'taskAdmin', params: { id } })
-                .catch(() => {});
+
+        taskStyle: function() {
+            return this.taskClickable
+                ? {
+                      cursor: 'pointer',
+                  }
+                : {};
         },
-        openTeamAdmin: function(id) {
-            clearInterval(this.timer);
-            this.$router
-                .push({ name: 'teamAdmin', params: { id } })
-                .catch(() => {});
-        },
-        openTeamTaskHistory: function(teamId, taskId) {
-            clearInterval(this.timer);
-            this.$router
-                .push({
-                    name: 'adminTeamTaskLog',
-                    params: { teamId: teamId, taskId: taskId },
-                })
-                .catch(() => {});
-        },
-    },
-
-    created: function() {
-        this.server = io(`${serverUrl}/game_events`, {
-            forceNew: true,
-        });
-        this.server.on('connect_error', () => {
-            this.error = "Can't connect to server";
-        });
-        this.server.on('init_scoreboard', async ({ data }) => {
-            this.error = null;
-            const {
-                state: { round_start, round, team_tasks: teamTasks },
-            } = data;
-
-            const { data: tasks } = await this.$http.get(
-                `${serverUrl}/api/admin/tasks/`
-            );
-
-            const { data: teams } = await this.$http.get(
-                `${serverUrl}/api/admin/teams/`
-            );
-
-            this.updateRoundStart(round_start);
-            this.updateRound(round);
-            this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
-            this.teams = teams
-                .map(
-                    team =>
-                        new Team({
-                            ...team,
-                            tasks: this.tasks,
-                            teamTasks,
-                        })
-                )
-                .sort(Team.comp);
-        });
-        this.server.on('update_scoreboard', ({ data }) => {
-            this.error = null;
-            const { round, team_tasks: teamTasks, round_start } = data;
-            this.updateRoundStart(round_start);
-            this.updateRound(round);
-            this.teams.forEach(team => {
-                team.update(teamTasks);
-            });
-            this.teams = this.teams.sort(Team.comp);
-        });
     },
 };
 </script>
@@ -220,69 +178,14 @@ export default {
     margin-left: 2px;
 }
 
-.default-team {
-    background-color: white;
-}
-
 .team-group {
     flex: 7 1 20%;
     display: flex;
     flex-flow: row nowrap;
 }
 
-.team-row {
-    cursor: pointer;
-}
-
 .teams-list-move {
     transition: transform 1s;
-}
-
-.table {
-    display: flex;
-    flex-flow: column nowrap;
-
-    & > :first-child > :not(:last-child) {
-        font-weight: bold;
-        padding-top: 0.6em;
-        padding-bottom: 0.6em;
-    }
-
-    & > :not(:first-child) > * {
-        height: 6em;
-    }
-
-    & > :last-child > :last-child > * {
-        border-bottom: 1px solid #c6cad1;
-    }
-}
-
-.row {
-    display: flex;
-    flex-flow: row nowrap;
-    text-align: center;
-
-    & > * {
-        word-wrap: break-word;
-        min-width: 0;
-    }
-
-    border-top: 1px solid #c6cad1;
-    border-left: 1px solid #c6cad1;
-    border-right: 1px solid #c6cad1;
-
-    &.highlighted > * {
-        padding-top: 3px;
-        padding-bottom: 3px;
-    }
-
-    &.highlighted > :first-child {
-        padding-left: 3px;
-    }
-
-    &.highlighted > :last-child {
-        padding-right: 3px;
-    }
 }
 
 .team-name {

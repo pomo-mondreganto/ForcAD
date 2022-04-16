@@ -1,9 +1,9 @@
 <template>
-    <div v-if="error !== null">
-        {{ error }}
-    </div>
-    <form @submit.prevent="submitForm" v-else-if="task !== null">
-        <p>{{ message }}</p>
+    <form-wrapper
+        v-if="task !== null"
+        :title="message"
+        :submitCallback="submitForm"
+    >
         <p>
             Name:
             <input type="text" v-model="task.name" />
@@ -52,22 +52,17 @@
                 :checked="task.active"
             />
         </p>
-        <input type="submit" value="Submit" />
-    </form>
+    </form-wrapper>
 </template>
 
 <script>
-import { serverUrl } from '@/config';
+import FormWrapper from '@/components/Lib/FormWrapper';
 
 export default {
-    props: {
-        updateRound: Function,
-        updateRoundStart: Function,
-    },
+    components: { FormWrapper },
 
     data: function() {
         return {
-            error: null,
             task: null,
             taskId: null,
             message: null,
@@ -103,17 +98,17 @@ export default {
                 };
                 this.message = 'Creating task';
             } else {
-                const { data: tasks } = await this.$http.get(
-                    `${serverUrl}/api/admin/tasks/`
+                const { data: task } = await this.$http.get(
+                    `/admin/tasks/${this.taskId}/`
                 );
-                this.task = tasks.filter(({ id }) => id == this.taskId)[0];
-                this.message = `Editing task ${this.task.id} ${this.task.name}`;
+                this.task = task;
+                this.message = `Editing task ${this.task.name} (${this.task.id})`;
             }
         },
         submitForm: async function() {
             if (!this.taskId) {
                 const { data: task } = await this.$http.post(
-                    `${serverUrl}/api/admin/tasks/`,
+                    '/admin/tasks/',
                     this.task
                 );
                 this.$router
@@ -121,10 +116,11 @@ export default {
                     .catch(() => {});
             } else {
                 const { data: task } = await this.$http.put(
-                    `${serverUrl}/api/admin/tasks/${this.taskId}/`,
+                    `/admin/tasks/${this.taskId}/`,
                     this.task
                 );
                 this.task = task;
+                await this.updateData();
             }
         },
     },

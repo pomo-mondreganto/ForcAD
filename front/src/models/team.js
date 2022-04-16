@@ -11,9 +11,7 @@ class Team {
     }
 
     update(teamTasks) {
-        this.tasks = teamTasks
-            .filter(({ team_id: teamId }) => teamId === this.id)
-            .map(teamTask => new TeamTask(teamTask));
+        this.tasks = teamTasks.filter(({ teamId }) => teamId === this.id);
         this.score = this.tasks.reduce(
             (acc, { score, sla }) => acc + score * (sla / 100.0),
             0

@@ -157,13 +157,13 @@ class TasksTestCase(TestCase, AdminAuthMixin):
 
         new_task_data = {
             'name': 'test_created',
-            'checker': '/checkers/test_service/gevent_checker.py',
+            'checker': '/checkers/test_service/checker.py',
             'gets': 2,
             'puts': 2,
             'places': 5,
             'checker_timeout': 10,
             'env_path': '/checkers/bin/',
-            'checker_type': 'forcad_gevent_pfr',
+            'checker_type': 'pfr',
             'get_period': 20,
             'default_score': 2500,
         }
@@ -184,13 +184,13 @@ class TasksTestCase(TestCase, AdminAuthMixin):
 
         update_data = {
             'name': 'test_updated_inactive',
-            'checker': '/checkers/test_service/gevent_checker.py',
+            'checker': '/checkers/test_service/checker.py',
             'gets': 1,
             'puts': 1,
             'places': 3,
             'checker_timeout': 15,
             'env_path': '/checkers/bin/',
-            'checker_type': 'forcad_gevent',
+            'checker_type': '',
             'get_period': 30,
             'default_score': 2000,
             'active': True,

@@ -64,7 +64,7 @@ def backup_config():
 def dump_config(config: models.Config):
     print_bold(f'Writing new configuration to {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config.dict(by_alias=True), f)
+        yaml.safe_dump(config.dict(by_alias=True, exclude_none=True), f)
 
 
 def override_config(
@@ -121,6 +121,7 @@ def setup_auxiliary_structure(config: models.BasicConfig) -> models.Config:
 
 
 def run_command(command: List[str], cwd=None, env=None):
+    print_bold(f'Running command {command}')
     p = subprocess.Popen(command, cwd=cwd, env=env)
     rc = p.wait()
     if rc != 0:
@@ -129,6 +130,7 @@ def run_command(command: List[str], cwd=None, env=None):
 
 
 def get_output(command: List[str], cwd=None, env=None) -> str:
+    print_bold(f'Running command {command}')
     return subprocess.check_output(command, cwd=cwd, env=env).decode()
 
 
@@ -166,15 +168,15 @@ def print_file_exception_info(_func, path, _exc_info):
 
 
 def print_error(message: str):
-    click.secho(message, fg='red')
+    click.secho(message, fg='red', err=True)
 
 
 def print_success(message: str):
-    click.secho(message, fg='green')
+    click.secho(message, fg='green', err=True)
 
 
 def print_bold(message: str):
-    click.secho(message, bold=True)
+    click.secho(message, bold=True, err=True)
 
 
 def remove_file(path: Path):

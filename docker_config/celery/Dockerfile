@@ -21,6 +21,8 @@ RUN chmod +x /await_start.sh
 
 ########## CUSTOMIZE ##########
 
+ENV PWNLIB_NOTERM=true
+
 # uncomment blocks to enable features
 
 ### selenium (chromedriver) dependencies (from https://github.com/joyzoursky/docker-python-chromedriver) ###
