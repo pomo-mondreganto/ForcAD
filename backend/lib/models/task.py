@@ -63,12 +63,6 @@ class Task(BaseModel):
         return self.checker_type.split('_')
 
     @property
-    def is_checker_gevent_optimized(self) -> bool:
-        # Disabling due to major stability issues with Celery + Gevent.
-        # return 'gevent' in self.checker_tags
-        return False
-
-    @property
     def checker_returns_flag_id(self) -> bool:
         return 'nfr' not in self.checker_tags
 

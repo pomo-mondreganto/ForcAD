@@ -18,25 +18,17 @@ game:
 tasks:
   - checker: test_service/checker.py
     checker_timeout: 10
-    checker_type: hackerdom
+    checker_type: ''
     gets: 2
-    name: test_basic_service
+    name: test_service
     places: 5
     puts: 2
 
-  - checker: test_service/gevent_checker.py
+  - checker: test_service/checker.py
     checker_timeout: 10
-    checker_type: forcad_gevent
+    checker_type: pfr
     gets: 2
-    name: test_gevent_service
-    places: 5
-    puts: 2
-
-  - checker: test_service/gevent_checker.py
-    checker_timeout: 10
-    checker_type: forcad_gevent_pfr
-    gets: 2
-    name: test_gevent_service_pfr
+    name: test_service_pfr
     places: 5
     puts: 2
 

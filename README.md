@@ -130,7 +130,7 @@ Highlighted teams will be marked on the scoreboard with a rainbow border.
 ```yaml
 tasks:
   - checker: collacode/checker.py
-    checker_type: gevent_pfr
+    checker_type: pfr
     checker_timeout: 30
     default_score: 1500
     gets: 3

@@ -1,69 +1,47 @@
 #!/usr/bin/env python3
 
-import requests
 import sys
-from checklib import *
 
-PORT = 10000
+from pathlib import Path
 
+BASE_DIR = Path(__file__).absolute().resolve().parent
+sys.path.insert(0, str(BASE_DIR))
 
-def put(host, _flag_id, flag, vuln):
-    new_id = rnd_string(10)
-    r = requests.post(
-        f'http://{host}:{PORT}/put/',
-        json={
-            'id': new_id,
-            'vuln': vuln,
-            'flag': flag,
-        },
-        timeout=2,
-    )
-    check_response(r, 'Could not put flag')
-    cquit(Status.OK, new_id)
+from test_service_lib import *
 
 
-def get(host, flag_id, flag, vuln):
-    r = requests.get(
-        f'http://{host}:{PORT}/get/',
-        params={
-            'id': flag_id,
-            'vuln': vuln,
-        },
-        timeout=2,
-    )
-    check_response(r, 'Could not get flag')
-    data = get_json(r, 'Could not get flag')
-    assert_in('flag', data, 'Could not get flag')
-    assert_eq(data['flag'], flag, 'Could not get flag')
-    cquit(Status.OK)
+class Checker(BaseChecker):
+    def __init__(self, *args, **kwargs):
+        super(Checker, self).__init__(*args, **kwargs)
+        self.mch = CheckMachine(self)
 
+    def action(self, action, *args, **kwargs):
+        try:
+            super(Checker, self).action(action, *args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            self.cquit(
+                Status.DOWN,
+                'Connection error',
+                'Got requests connection error',
+            )
 
-def check(host):
-    r = requests.get(f'http://{host}:{PORT}/ping/', timeout=2)
-    check_response(r, 'Check failed')
-    cquit(Status.OK)
+    def check(self):
+        self.mch.ping()
+        self.cquit(Status.OK)
+
+    def put(self, flag_id, flag, vuln):
+        new_id = self.mch.put_flag(flag, vuln)
+        self.cquit(Status.OK, new_id)
+
+    def get(self, flag_id, flag, vuln):
+        got_flag = self.mch.get_flag(flag_id, vuln)
+        self.assert_eq(got_flag, flag, 'Could not get flag', status=Status.CORRUPT)
+        self.cquit(Status.OK)
 
 
 if __name__ == '__main__':
-    action, *args = sys.argv[1:]
+    c = Checker(sys.argv[2])
     try:
-        if action == "check":
-            host, = args
-            check(host)
-        elif action == "put":
-            host, flag_id, flag, vuln = args
-            put(host, flag_id, flag, vuln)
-        elif action == "get":
-            host, flag_id, flag, vuln = args
-            get(host, flag_id, flag, vuln)
-        else:
-            cquit(Status.ERROR, 'System error', 'Unknown action: ' + action)
-
-        cquit(Status.ERROR)
-    except (
-    requests.exceptions.ConnectionError, requests.exceptions.ConnectTimeout):
-        cquit(Status.DOWN, 'Connection error')
-    except SystemError:
-        raise
-    except Exception as e:
-        cquit(Status.ERROR, 'System error', str(e))
+        c.action(sys.argv[1], *sys.argv[3:])
+    except c.get_check_finished_exception():
+        cquit(Status(c.status), c.public, c.private)

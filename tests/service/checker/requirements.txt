@@ -1,2 +1,1 @@
 checklib==0.5.2
-gevent==21.1.2

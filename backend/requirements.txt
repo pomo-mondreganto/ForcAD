@@ -14,8 +14,7 @@ Flask==2.0.2
 Flask-Cors==3.0.10
 Flask-SocketIO==5.1.1
 flower @ https://github.com/mher/flower/zipball/47a0eb937a1a132a9cb5b2e137d96b93e4cdc89e
-gevent==21.1.2
-greenlet==1.1.0
+greenlet==1.1.2
 gunicorn==20.1.0
 hiredis==2.0.0
 humanize==3.12.0
@@ -42,5 +41,3 @@ vine==5.0.0
 wcwidth==0.2.5
 Werkzeug==2.0.2
 wrapt==1.13.3
-zope.event==4.5.0
-zope.interface==5.4.0
