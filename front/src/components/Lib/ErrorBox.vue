@@ -11,7 +11,7 @@
 export default {
     props: {
         error: {
-            validator: prop => typeof prop === 'string' || prop === null,
+            validator: (prop) => typeof prop === 'string' || prop === null,
             required: true,
         },
     },

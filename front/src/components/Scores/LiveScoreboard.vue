@@ -24,7 +24,7 @@ export default {
         ErrorBox,
     },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
             server: null,
@@ -34,7 +34,7 @@ export default {
         };
     },
 
-    created: async function() {
+    created: async function () {
         try {
             const { data: teams } = await this.$http.get(
                 `${serverUrl}/api/client/teams/`
@@ -55,7 +55,7 @@ export default {
             forceNew: true,
             transports: ['websocket', 'polling'],
         });
-        this.server.on('connect_error', err => {
+        this.server.on('connect_error', (err) => {
             this.server.io.opts.transports = ['polling', 'websockets'];
             if (connectionErrors > 0) {
                 console.error('Connection error:', err.message);

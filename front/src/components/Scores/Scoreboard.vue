@@ -21,7 +21,7 @@ export default {
     computed: mapState(['teams', 'tasks']),
 
     methods: {
-        openTeam: function(id) {
+        openTeam: function (id) {
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
     },

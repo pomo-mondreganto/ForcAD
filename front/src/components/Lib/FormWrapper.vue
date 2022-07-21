@@ -22,14 +22,14 @@ export default {
         },
     },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
         };
     },
 
     methods: {
-        handleSubmit: async function() {
+        handleSubmit: async function () {
             try {
                 await this.submitCallback();
             } catch (e) {

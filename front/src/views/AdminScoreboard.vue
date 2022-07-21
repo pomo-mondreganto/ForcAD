@@ -17,11 +17,11 @@ export default {
     },
 
     methods: {
-        createTask: async function() {
+        createTask: async function () {
             this.$router.push({ name: 'createTask' }).catch(() => {});
         },
 
-        createTeam: async function() {
+        createTeam: async function () {
             this.$router.push({ name: 'createTeam' }).catch(() => {});
         },
     },

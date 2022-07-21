@@ -65,7 +65,7 @@ export default {
         ErrorBox,
     },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
             taskId: null,
@@ -78,7 +78,7 @@ export default {
         };
     },
 
-    created: async function() {
+    created: async function () {
         try {
             this.taskId = this.$route.params.taskId;
             this.teamId = this.$route.params.teamId;
@@ -103,7 +103,7 @@ export default {
     },
 
     methods: {
-        openTeam: function(id) {
+        openTeam: function (id) {
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
     },
