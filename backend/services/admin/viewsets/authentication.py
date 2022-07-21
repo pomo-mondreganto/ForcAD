@@ -7,7 +7,6 @@ from .utils import abort_with_error
 
 
 def check_session():
-    return True
     if 'session' not in request.cookies:
         abort_with_error('No session set', 403)
 
