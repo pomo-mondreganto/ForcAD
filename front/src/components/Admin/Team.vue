@@ -2,41 +2,41 @@
     <form-wrapper
         v-if="team !== null"
         :title="message"
-        :submitCallback="submitForm"
+        :submit-callback="submitForm"
     >
         <p>
             Name:
-            <input type="text" v-model="team.name" />
+            <input v-model="team.name" type="text" />
         </p>
         <p>
             IP:
-            <input type="text" v-model="team.ip" />
+            <input v-model="team.ip" type="text" />
         </p>
         <p>
             Token:
-            <input type="text" v-model="team.token" />
+            <input v-model="team.token" type="text" />
         </p>
         <p>
             Highlighted:
             <input
                 type="checkbox"
-                @input="team.highlighted = $event.target.checked"
                 :checked="team.highlighted"
+                @input="team.highlighted = $event.target.checked"
             />
         </p>
         <p>
             Active:
             <input
                 type="checkbox"
-                @input="team.active = $event.target.checked"
                 :checked="team.active"
+                @input="team.active = $event.target.checked"
             />
         </p>
     </form-wrapper>
 </template>
 
 <script>
-import FormWrapper from '@/components/Lib/FormWrapper';
+import FormWrapper from '@/components/Lib/FormWrapper.vue';
 
 export default {
     components: { FormWrapper },
@@ -50,14 +50,14 @@ export default {
         };
     },
 
-    created: async function() {
-        await this.updateData();
-    },
-
     watch: {
         $route: async function() {
             await this.updateData();
         },
+    },
+
+    created: async function() {
+        await this.updateData();
     },
 
     methods: {

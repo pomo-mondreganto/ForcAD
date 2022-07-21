@@ -6,8 +6,8 @@
 </template>
 
 <script>
-import Statuses from '@/components/General/Statuses';
-import TeamScoreboard from '@/components/Scores/TeamScoreboard';
+import Statuses from '@/components/General/Statuses.vue';
+import TeamScoreboard from '@/components/Scores/TeamScoreboard.vue';
 
 export default {
     components: {

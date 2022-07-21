@@ -1,19 +1,15 @@
 <template>
     <div>
         <div class="create-group">
-            <button class="create-btn" @click="createTask">
-                Create task
-            </button>
-            <button class="create-btn" @click="createTeam">
-                Create team
-            </button>
+            <button class="create-btn" @click="createTask">Create task</button>
+            <button class="create-btn" @click="createTeam">Create team</button>
         </div>
         <admin-scoreboard />
     </div>
 </template>
 
 <script>
-import AdminScoreboard from '@/components/Admin/Scoreboard';
+import AdminScoreboard from '@/components/Admin/Scoreboard.vue';
 
 export default {
     components: {

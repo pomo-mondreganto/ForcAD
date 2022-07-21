@@ -14,8 +14,8 @@
 </template>
 
 <script>
-import Container from '@/components/Lib/Container';
-import Topbar from '@/components/General/Topbar';
+import Container from '@/components/Lib/Container.vue';
+import Topbar from '@/components/General/Topbar.vue';
 import io from 'socket.io-client';
 import { serverUrl } from '@/config';
 
@@ -32,11 +32,18 @@ export default {
     },
 
     created: async function() {
+        let connectionErrors = 0;
         this.server = io(`${serverUrl}/game_events`, {
             forceNew: true,
+            transports: ['websocket', 'polling'],
         });
-        this.server.on('connect_error', () => {
-            this.error = "Can't connect to server";
+        this.server.on('connect_error', err => {
+            this.server.io.opts.transports = ['polling', 'websockets'];
+            if (connectionErrors > 0) {
+                console.error('Connection error:', err.message);
+                this.error = "Can't connect to server";
+            }
+            connectionErrors += 1;
         });
         this.server.on('init_scoreboard', ({ data }) => {
             this.error = null;

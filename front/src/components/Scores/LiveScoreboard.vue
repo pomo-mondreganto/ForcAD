@@ -2,8 +2,8 @@
     <div class="flag">
         <error-box :error="error">
             <div
-                :key="index"
                 v-for="({ attacker, victim, task, delta }, index) in events"
+                :key="index"
             >
                 <span class="mark">{{ attacker }}</span> stole a flag from
                 <span class="mark">{{ victim }}</span
@@ -17,7 +17,7 @@
 <script>
 import { serverUrl } from '@/config';
 import io from 'socket.io-client';
-import ErrorBox from '@/components/Lib/ErrorBox';
+import ErrorBox from '@/components/Lib/ErrorBox.vue';
 
 export default {
     components: {
@@ -50,15 +50,18 @@ export default {
             return;
         }
 
+        let connectionErrors = 0;
         this.server = io(`${serverUrl}/live_events`, {
             forceNew: true,
+            transports: ['websocket', 'polling'],
         });
-        this.server.on('connect_error', error => {
-            console.error(
-                'Error connecting to socket.io server:',
-                error.message
-            );
-            this.error = "Can't connect to server";
+        this.server.on('connect_error', err => {
+            this.server.io.opts.transports = ['polling', 'websockets'];
+            if (connectionErrors > 0) {
+                console.error('Connection error:', err.message);
+                this.error = "Can't connect to server";
+            }
+            connectionErrors += 1;
         });
         this.server.on('flag_stolen', ({ data }) => {
             this.error = null;

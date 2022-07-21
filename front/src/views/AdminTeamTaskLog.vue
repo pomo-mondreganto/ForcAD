@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import AdminTeamTaskLog from '@/components/Admin/TeamTaskLog';
+import AdminTeamTaskLog from '@/components/Admin/TeamTaskLog.vue';
 
 export default {
     components: {

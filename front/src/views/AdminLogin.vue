@@ -1,21 +1,21 @@
 <template>
     <form-wrapper
         title="Log into the admin panel"
-        :submitCallback="submitCallback"
+        :submit-callback="submitCallback"
     >
         <p>
             Username:
-            <input type="text" v-model="username" placeholder="Username" />
+            <input v-model="username" type="text" placeholder="Username" />
         </p>
         <p>
             Password:
-            <input type="password" v-model="password" placeholder="Password" />
+            <input v-model="password" type="password" placeholder="Password" />
         </p>
     </form-wrapper>
 </template>
 
 <script>
-import FormWrapper from '@/components/Lib/FormWrapper';
+import FormWrapper from '@/components/Lib/FormWrapper.vue';
 
 export default {
     components: {

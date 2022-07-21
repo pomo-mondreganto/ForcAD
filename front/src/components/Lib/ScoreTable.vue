@@ -1,22 +1,24 @@
 <template>
     <div class="table">
         <div class="row">
-            <div class="number">{{ headRowTitle }}</div>
-            <div class="team">team</div>
+            <div class="number">
+                {{ headRowTitle }}
+            </div>
+            <div class="team">team 123</div>
             <div class="score">score</div>
             <div class="service-name">
                 <div
+                    v-for="{ name, id } in tasks"
                     :key="name"
                     :style="taskStyle"
-                    @click="$emit('openTask', id)"
                     class="service-cell"
-                    v-for="{ name, id } in tasks"
+                    @click="$emit('openTask', id)"
                 >
                     {{ name }}
                     <button
                         v-if="admin"
-                        @click="$emit('openTaskAdmin', id)"
                         class="edit"
+                        @click="$emit('openTaskAdmin', id)"
                     >
                         <i class="fas fa-edit" />
                     </button>
@@ -25,10 +27,17 @@
         </div>
         <transition-group name="teams-list">
             <div
-                class="row"
-                v-for="({ name, score, tasks, ip, id, highlighted },
+                v-for="({
+                    name,
+                    score: totalScore,
+                    tasks: teamTasks,
+                    ip,
+                    id,
+                    highlighted,
+                },
                 index) in teams"
                 :key="name"
+                class="row"
                 :class="[highlighted ? 'highlighted' : '']"
                 :style="{
                     backgroundColor: getTeamRowBackground(index),
@@ -45,19 +54,23 @@
                     </div>
                     <div
                         class="team team-row"
-                        @click="$emit('openTeam', id)"
                         :style="[
                             teamStyle,
                             { backgroundColor: getTeamRowBackground(index) },
                         ]"
+                        @click="$emit('openTeam', id)"
                     >
-                        <div class="team-name">{{ name }}</div>
-                        <div class="ip">{{ ip }}</div>
+                        <div class="team-name">
+                            {{ name }}
+                        </div>
+                        <div class="ip">
+                            {{ ip }}
+                        </div>
                         <button
-                            @click="$emit('openTeamAdmin', id)"
-                            class="edit"
                             v-if="admin"
-                            v-on:click.stop
+                            class="edit"
+                            @click="$emit('openTeamAdmin', id)"
+                            @click.stop
                         >
                             <i class="fas fa-edit" />
                         </button>
@@ -68,13 +81,13 @@
                             backgroundColor: getTeamRowBackground(index),
                         }"
                     >
-                        {{ score.toFixed(2) }}
+                        {{ totalScore.toFixed(2) }}
                     </div>
                 </div>
                 <div class="service">
                     <div
                         v-for="{
-                            id,
+                            id: teamTaskID,
                             teamId,
                             taskId,
                             sla,
@@ -83,20 +96,20 @@
                             lost,
                             message,
                             status,
-                        } in tasks"
-                        :key="id"
+                        } in teamTasks"
+                        :key="teamTaskID"
                         class="service-cell"
                         :style="{
-                            fontSize: `${1 - tasks.length / 20}em`,
+                            fontSize: `${1 - teamTasks.length / 20}em`,
                             backgroundColor: getTeamTaskBackground(status),
                         }"
                     >
                         <button
                             v-if="admin"
+                            class="tt-edit"
                             @click="
                                 $emit('openTeamTaskHistory', teamId, taskId)
                             "
-                            class="tt-edit"
                         >
                             <i class="fas fa-edit" />
                         </button>
