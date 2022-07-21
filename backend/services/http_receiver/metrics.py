@@ -1,4 +1,3 @@
-from cProfile import label
 from prometheus_client import Counter
 
 flag_submissions = Counter(
