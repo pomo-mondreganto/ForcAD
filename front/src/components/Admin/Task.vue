@@ -2,61 +2,61 @@
     <form-wrapper
         v-if="task !== null"
         :title="message"
-        :submitCallback="submitForm"
+        :submit-callback="submitForm"
     >
         <p>
             Name:
-            <input type="text" v-model="task.name" />
+            <input v-model="task.name" type="text" />
         </p>
         <p>
             Checker:
-            <input type="text" v-model="task.checker" />
+            <input v-model="task.checker" type="text" />
         </p>
         <p>
             Gets:
-            <input type="number" v-model="task.gets" />
+            <input v-model="task.gets" type="number" />
         </p>
         <p>
             Puts:
-            <input type="number" v-model="task.puts" />
+            <input v-model="task.puts" type="number" />
         </p>
         <p>
             Places:
-            <input type="number" v-model="task.places" />
+            <input v-model="task.places" type="number" />
         </p>
         <p>
             Checker timeout:
-            <input type="number" v-model="task.checker_timeout" />
+            <input v-model="task.checker_timeout" type="number" />
         </p>
         <p>
             Checker type:
-            <input type="text" v-model="task.checker_type" />
+            <input v-model="task.checker_type" type="text" />
         </p>
         <p>
             Env path:
-            <input type="text" v-model="task.env_path" />
+            <input v-model="task.env_path" type="text" />
         </p>
         <p>
             Get period:
-            <input type="number" v-model="task.get_period" />
+            <input v-model="task.get_period" type="number" />
         </p>
         <p>
             Default score:
-            <input type="number" v-model="task.default_score" />
+            <input v-model="task.default_score" type="number" />
         </p>
         <p>
             Active:
             <input
                 type="checkbox"
-                @input="task.active = $event.target.checked"
                 :checked="task.active"
+                @input="task.active = $event.target.checked"
             />
         </p>
     </form-wrapper>
 </template>
 
 <script>
-import FormWrapper from '@/components/Lib/FormWrapper';
+import FormWrapper from '@/components/Lib/FormWrapper.vue';
 
 export default {
     components: { FormWrapper },
@@ -69,14 +69,14 @@ export default {
         };
     },
 
-    created: async function() {
-        await this.updateData();
-    },
-
     watch: {
         $route: async function() {
             await this.updateData();
         },
+    },
+
+    created: async function() {
+        await this.updateData();
     },
 
     methods: {

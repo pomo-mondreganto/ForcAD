@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import LiveScoreboard from '@/components/Scores/LiveScoreboard';
+import LiveScoreboard from '@/components/Scores/LiveScoreboard.vue';
 import { mapState } from 'vuex';
 
 export default {
@@ -28,13 +28,13 @@ export default {
         LiveScoreboard,
     },
 
+    computed: mapState(['showPonies']),
+
     methods: {
         togglePonies: function() {
             this.$store.commit('togglePonies');
         },
     },
-
-    computed: mapState(['showPonies']),
 };
 </script>
 

@@ -20,23 +20,35 @@
                     <div class="command">command</div>
                 </div>
                 <div
+                    v-for="tt in teamtasks"
+                    :key="tt.id"
                     class="row content-row"
                     :style="{
                         backgroundColor: getTeamTaskBackground(tt.status),
                     }"
-                    v-for="tt in teamtasks"
-                    :key="tt.id"
                 >
-                    <div class="round">{{ tt.round }}</div>
-                    <div class="status">{{ tt.status }}</div>
-                    <div class="score">{{ tt.score }}</div>
+                    <div class="round">
+                        {{ tt.round }}
+                    </div>
+                    <div class="status">
+                        {{ tt.status }}
+                    </div>
+                    <div class="score">
+                        {{ tt.score }}
+                    </div>
                     <div class="flags">+{{ tt.stolen }}/-{{ tt.lost }}</div>
                     <div class="checks">
                         {{ tt.checks_passed }}/{{ tt.checks }}
                     </div>
-                    <div class="public">{{ tt.public_message }}</div>
-                    <div class="private">{{ tt.private_message }}</div>
-                    <div class="command">{{ tt.command }}</div>
+                    <div class="public">
+                        {{ tt.public_message }}
+                    </div>
+                    <div class="private">
+                        {{ tt.private_message }}
+                    </div>
+                    <div class="command">
+                        {{ tt.command }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -45,7 +57,7 @@
 
 <script>
 import { getTeamTaskBackground } from '@/utils/colors';
-import ErrorBox from '@/components/Lib/ErrorBox';
+import ErrorBox from '@/components/Lib/ErrorBox.vue';
 import '@/assets/table.scss';
 
 export default {
@@ -64,12 +76,6 @@ export default {
 
             getTeamTaskBackground,
         };
-    },
-
-    methods: {
-        openTeam: function(id) {
-            this.$router.push({ name: 'team', params: { id } }).catch(() => {});
-        },
     },
 
     created: async function() {
@@ -94,6 +100,12 @@ export default {
             console.error(e);
             this.error = 'Error occured while fetching data.';
         }
+    },
+
+    methods: {
+        openTeam: function(id) {
+            this.$router.push({ name: 'team', params: { id } }).catch(() => {});
+        },
     },
 };
 </script>

@@ -16,7 +16,7 @@ class Team {
             (acc, { score, sla }) => acc + score * (sla / 100.0),
             0
         );
-        let taskIds = this.tasks.map(x => x.taskId);
+        let taskIds = this.tasks.map((x) => x.taskId);
         for (let task of this.taskModels) {
             if (!taskIds.includes(task.id)) {
                 this.tasks.push(

@@ -13,10 +13,14 @@
             </div>
         </div>
         <div>
-            <div class="row" v-for="(state, index) in states" :key="index">
+            <div v-for="(state, index) in states" :key="index" class="row">
                 <div class="team">
-                    <div class="team-name">{{ team.name }}</div>
-                    <div class="ip">{{ team.ip }}</div>
+                    <div class="team-name">
+                        {{ team.name }}
+                    </div>
+                    <div class="ip">
+                        {{ team.ip }}
+                    </div>
                 </div>
                 <div class="score">
                     {{ state.score.toFixed(2) }}
