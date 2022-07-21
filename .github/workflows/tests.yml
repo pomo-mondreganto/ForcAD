@@ -31,25 +31,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: "3.9"
+
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}-${{ hashFiles('cli/requirements.txt') }}-${{ hashFiles('tests/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
       - name: Setup tests
         run: python tests/setup_forcad.py
+
       - name: Install requirements
         run: |
           pip install -r cli/requirements.txt
           pip install -r tests/requirements.txt
           pip install -r backend/requirements.txt
+
       - name: Setup ForcAD
         run: ./control.py setup
+
       - name: Build ForcAD
         run: ./control.py build
 
@@ -74,14 +80,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: "3.9"
+
       - name: Install dependencies
         run: pip install flake8
+
       - name: Run linters
-        uses: wearerequired/lint-action@v1
+        uses: wearerequired/lint-action@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           flake8: true
@@ -91,15 +100,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Set up Node 13
+
+      - name: Set up Node 16
         uses: actions/setup-node@v2
         with:
-          node-version: '13'
+          node-version: "16"
+
       - name: Install dependencies
         working-directory: front
         run: yarn install
+
       - name: Run linters
-        uses: wearerequired/lint-action@v1
+        uses: wearerequired/lint-action@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           auto_fix: true
@@ -113,34 +125,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: "3.9"
+
       - name: Install skaffold
         run: |
           curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.19.0/skaffold-linux-amd64
           chmod +x skaffold
           sudo mv skaffold /usr/local/bin
+
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.3.0
         with:
-          minikube version: 'v1.17.1'
-          kubernetes version: 'v1.19.3'
+          minikube version: "v1.17.1"
+          kubernetes version: "v1.19.3"
           github token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install cli requirements
         run: pip install -r cli/requirements.txt
+
       - name: Copy test config
         run: python tests/setup_forcad.py
+
       - name: Setup configuration
         run: ./control.py kube setup
+
       - name: Kustomize build
         uses: karancode/kustomize-github-action@master
         with:
-          kustomize_version: '3.9.2'
-          kustomize_build_dir: 'deploy'
+          kustomize_version: "3.9.2"
+          kustomize_build_dir: "deploy"
         env:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Skaffold build
         run: ./control.py kube build
 
@@ -152,12 +172,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
+
       - name: Terraform fmt
         run: terraform fmt -check
         continue-on-error: true
+
       - name: Terraform Init
         run: terraform init
+
       - name: Terraform Validate
         run: terraform validate

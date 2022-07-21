@@ -1,5 +1,6 @@
 .DS_Store
 .idea
+.vscode
 __pycache__
 
 docker_volumes

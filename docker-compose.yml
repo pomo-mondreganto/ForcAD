@@ -78,12 +78,6 @@ services:
       - TEST
       - SERVICE=events
 
-  monitoring:
-    <<: *default-ms
-    environment:
-      - TEST
-      - SERVICE=monitoring
-
   http-receiver:
     <<: *default-ms
     environment:
@@ -105,7 +99,6 @@ services:
       - client-api
       - admin-api
       - events
-      - monitoring
       - http-receiver
 
   redis:
@@ -130,12 +123,13 @@ services:
       - "15672:15672"
 
   postgres:
-    image: postgres:13.4-alpine
+    image: postgres:14.4-alpine
     volumes:
       - ./docker_volumes/postgres/data/:/var/lib/postgresql/data/
     env_file:
       - ./docker_config/postgres_environment.env
     restart: on-failure
+    command: "postgres --max-connections=200"
     ports:
       - "5432:5432"
       - "6432:5432"
