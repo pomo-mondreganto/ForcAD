@@ -27,15 +27,17 @@
         </div>
         <transition-group name="teams-list">
             <div
-                v-for="({
-                    name,
-                    score: totalScore,
-                    tasks: teamTasks,
-                    ip,
-                    id,
-                    highlighted,
-                },
-                index) in teams"
+                v-for="(
+                    {
+                        name,
+                        score: totalScore,
+                        tasks: teamTasks,
+                        ip,
+                        id,
+                        highlighted,
+                    },
+                    index
+                ) in teams"
                 :key="name"
                 class="row"
                 :class="[highlighted ? 'highlighted' : '']"
@@ -159,7 +161,7 @@ export default {
         admin: Boolean,
     },
 
-    data: function() {
+    data: function () {
         return {
             getTeamRowBackground,
             getTeamTaskBackground,
@@ -167,7 +169,7 @@ export default {
     },
 
     computed: {
-        teamStyle: function() {
+        teamStyle: function () {
             return this.teamClickable
                 ? {
                       cursor: 'pointer',
@@ -175,7 +177,7 @@ export default {
                 : {};
         },
 
-        taskStyle: function() {
+        taskStyle: function () {
             return this.taskClickable
                 ? {
                       cursor: 'pointer',

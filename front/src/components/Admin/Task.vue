@@ -61,7 +61,7 @@ import FormWrapper from '@/components/Lib/FormWrapper.vue';
 export default {
     components: { FormWrapper },
 
-    data: function() {
+    data: function () {
         return {
             task: null,
             taskId: null,
@@ -70,17 +70,17 @@ export default {
     },
 
     watch: {
-        $route: async function() {
+        $route: async function () {
             await this.updateData();
         },
     },
 
-    created: async function() {
+    created: async function () {
         await this.updateData();
     },
 
     methods: {
-        updateData: async function() {
+        updateData: async function () {
             this.taskId = this.$route.params.id;
             if (!this.taskId) {
                 this.task = {
@@ -105,7 +105,7 @@ export default {
                 this.message = `Editing task ${this.task.name} (${this.task.id})`;
             }
         },
-        submitForm: async function() {
+        submitForm: async function () {
             if (!this.taskId) {
                 const { data: task } = await this.$http.post(
                     '/admin/tasks/',
