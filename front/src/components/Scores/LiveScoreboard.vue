@@ -45,6 +45,7 @@ export default {
             this.teams = teams;
             this.tasks = tasks;
         } catch (e) {
+            console.error('Fetching data:', e);
             this.error = "Can't connect to server";
             return;
         }
@@ -52,7 +53,11 @@ export default {
         this.server = io(`${serverUrl}/live_events`, {
             forceNew: true,
         });
-        this.server.on('connect_error', () => {
+        this.server.on('connect_error', error => {
+            console.error(
+                'Error connecting to socket.io server:',
+                error.message
+            );
             this.error = "Can't connect to server";
         });
         this.server.on('flag_stolen', ({ data }) => {

@@ -43,9 +43,6 @@ services:
   events:
     <<: *service-test
 
-  monitoring:
-    <<: *service-test
-
   http-receiver:
     <<: *service-test
 

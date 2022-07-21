@@ -8,7 +8,6 @@ resources:
   - config/client_api.yml
   - config/events.yml
   - config/http_receiver.yml
-  - config/monitoring.yml
   - config/initializer.yml
   - config/ticker.yml
 

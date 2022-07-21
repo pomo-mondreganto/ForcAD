@@ -1,6 +1,7 @@
 import logging
 from flask import Flask
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 
 from views import client_bp
 
@@ -9,6 +10,12 @@ CORS(
     app,
     supports_credentials=True,
     automatic_options=True,
+)
+PrometheusMetrics(
+    app,
+    path='/api/client/metrics',
+    group_by='url_rule',
+    default_latency_as_histogram=True,
 )
 
 app.register_blueprint(client_bp, url_prefix='/api/client/')

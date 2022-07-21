@@ -25,7 +25,9 @@ class Judge:
 
         if ar.submit_ok:
             self._notifier.add(ar)
-        self._monitor.add(ar)
+            self._monitor.inc_ok()
+        else:
+            self._monitor.inc_bad()
 
         return ar
 

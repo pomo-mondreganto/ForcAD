@@ -27,12 +27,6 @@ server {
         include proxy_params;
     }
 
-    location /api/metrics {
-        set $backend monitoring:5000;
-        proxy_pass http://$backend;
-        include proxy_params;
-    }
-
     location /flags {
         set $backend http-receiver:5000;
         proxy_pass http://$backend;
@@ -47,6 +41,12 @@ server {
         limit_req zone=token_limit;
         limit_req_log_level info;
         limit_req_status 429;
+    }
+
+    location /api/http-receiver {
+        set $backend http-receiver:5000;
+        proxy_pass http://$backend;
+        include proxy_params_ws;
     }
 
     location /api/events {
