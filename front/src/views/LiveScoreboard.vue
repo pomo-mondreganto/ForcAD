@@ -31,7 +31,7 @@ export default {
     computed: mapState(['showPonies']),
 
     methods: {
-        togglePonies: function() {
+        togglePonies: function () {
             this.$store.commit('togglePonies');
         },
     },

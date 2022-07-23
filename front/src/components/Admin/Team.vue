@@ -41,7 +41,7 @@ import FormWrapper from '@/components/Lib/FormWrapper.vue';
 export default {
     components: { FormWrapper },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
             team: null,
@@ -51,17 +51,17 @@ export default {
     },
 
     watch: {
-        $route: async function() {
+        $route: async function () {
             await this.updateData();
         },
     },
 
-    created: async function() {
+    created: async function () {
         await this.updateData();
     },
 
     methods: {
-        updateData: async function() {
+        updateData: async function () {
             this.teamId = this.$route.params.id;
             if (!this.teamId) {
                 this.team = {
@@ -80,7 +80,7 @@ export default {
                 this.message = `Editing team ${this.team.name} (${this.team.id})`;
             }
         },
-        submitForm: async function() {
+        submitForm: async function () {
             if (!this.teamId) {
                 const { data: team } = await this.$http.post(
                     '/admin/teams/',

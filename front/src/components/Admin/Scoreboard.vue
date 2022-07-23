@@ -25,20 +25,20 @@ export default {
     computed: mapState(['tasks', 'teams']),
 
     methods: {
-        openTeam: function(id) {
+        openTeam: function (id) {
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
-        openTaskAdmin: function(id) {
+        openTaskAdmin: function (id) {
             this.$router
                 .push({ name: 'taskAdmin', params: { id } })
                 .catch(() => {});
         },
-        openTeamAdmin: function(id) {
+        openTeamAdmin: function (id) {
             this.$router
                 .push({ name: 'teamAdmin', params: { id } })
                 .catch(() => {});
         },
-        openTeamTaskHistory: function(teamId, taskId) {
+        openTeamTaskHistory: function (teamId, taskId) {
             this.$router
                 .push({
                     name: 'adminTeamTaskLog',

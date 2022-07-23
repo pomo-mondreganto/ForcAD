@@ -22,7 +22,7 @@ export default {
         FormWrapper,
     },
 
-    data: function() {
+    data: function () {
         return {
             username: null,
             password: null,
@@ -31,7 +31,7 @@ export default {
     },
 
     methods: {
-        submitCallback: async function() {
+        submitCallback: async function () {
             await this.$http.post('/admin/login/', {
                 username: this.username,
                 password: this.password,

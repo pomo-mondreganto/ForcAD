@@ -10,11 +10,11 @@
 import { mapState } from 'vuex';
 
 export default {
-    beforeRouteLeave: function(to, from, next) {
+    beforeRouteLeave: function (to, from, next) {
         clearInterval(this.timer);
         next();
     },
-    data: function() {
+    data: function () {
         return {
             timer: null,
         };
@@ -22,7 +22,7 @@ export default {
 
     computed: mapState(['round', 'roundProgress']),
 
-    created: async function() {
+    created: async function () {
         await this.$store.dispatch('fetchRoundTime');
         this.timer = setInterval(
             () => this.$store.dispatch('calculateRoundProgress'),
