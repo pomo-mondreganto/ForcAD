@@ -42,7 +42,7 @@ def run_command_gracefully(
     with subprocess.Popen(command, **kwargs) as proc:
         try:
             stdout, stderr = proc.communicate(input, timeout=timeout)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as timeout_exc:
             proc.terminate()
             try:
                 stdout, stderr = proc.communicate(
@@ -62,7 +62,7 @@ def run_command_gracefully(
                 timeout=timeout,
                 output=stdout,
                 stderr=stderr,
-            )
+            ) from timeout_exc
         except:  # noqa: E722
             proc.kill()
             raise

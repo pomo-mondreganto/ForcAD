@@ -37,7 +37,7 @@ class GameConfig(BaseModel):
     )
 
     def __init__(self, **kwargs):
-        super(GameConfig, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if isinstance(self.start_time, str):
             self.start_time = parse(self.start_time)
 
@@ -45,6 +45,6 @@ class GameConfig(BaseModel):
         return str(self.to_dict())
 
     def to_dict(self) -> Dict[str, Any]:
-        data = super(GameConfig, self).to_dict()
+        data = super().to_dict()
         data['start_time'] = str(data['start_time'])
         return data

@@ -122,9 +122,8 @@ def setup_auxiliary_structure(config: models.BasicConfig) -> models.Config:
 
 def run_command(command: List[str], cwd=None, env=None):
     print_bold(f'Running command {command}')
-    p = subprocess.Popen(command, cwd=cwd, env=env)
-    rc = p.wait()
-    if rc != 0:
+    p = subprocess.run(command, cwd=cwd, env=env)
+    if p.returncode != 0:
         print_error(f'Command {command} failed!')
         sys.exit(1)
 

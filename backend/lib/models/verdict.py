@@ -22,7 +22,7 @@ class CheckerVerdict(BaseModel):
     )
 
     def __init__(self, **kwargs: Any):
-        super(CheckerVerdict, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if isinstance(self.status, int):
             self.status = TaskStatus(self.status)
 

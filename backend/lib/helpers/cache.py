@@ -17,7 +17,7 @@ def cache_helper(
     if cache_args is None:
         cache_args = tuple()
     if cache_kwargs is None:
-        cache_kwargs = dict()
+        cache_kwargs = {}
 
     # FIXME: there's a possible race condition in caching
     # if cache is reset at the moment the round is updated,

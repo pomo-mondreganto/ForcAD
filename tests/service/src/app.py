@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-flags = dict()
+flags = {}
 app = Flask(__name__)
 
 

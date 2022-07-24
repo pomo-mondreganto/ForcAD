@@ -12,12 +12,12 @@ from test_service_lib import *
 
 class Checker(BaseChecker):
     def __init__(self, *args, **kwargs):
-        super(Checker, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.mch = CheckMachine(self)
 
     def action(self, action, *args, **kwargs):
         try:
-            super(Checker, self).action(action, *args, **kwargs)
+            super().action(action, *args, **kwargs)
         except requests.exceptions.ConnectionError:
             self.cquit(
                 Status.DOWN,
