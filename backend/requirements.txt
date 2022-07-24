@@ -3,7 +3,7 @@ async-timeout==4.0.2
 autopep8==1.6.0
 bidict==0.21.2
 billiard==3.6.4.0
-celery==5.2.7
+celery==5.2.3
 certifi==2020.12.5
 charset-normalizer==2.1.0
 click==8.0.3
