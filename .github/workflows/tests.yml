@@ -110,10 +110,6 @@ jobs:
         working-directory: front
         run: yarn install
 
-      - name: Check the frontend compiles
-        working-directory: front
-        run: yarn build
-
       - name: Run linters
         uses: wearerequired/lint-action@v2
         with:
@@ -123,6 +119,10 @@ jobs:
           prettier: true
           eslint_dir: front/src
           prettier_dir: front/src
+
+      - name: Check the frontend compiles
+        working-directory: front
+        run: yarn build
 
   test_kube:
     runs-on: ubuntu-20.04
