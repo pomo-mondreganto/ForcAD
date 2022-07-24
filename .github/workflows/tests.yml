@@ -110,6 +110,10 @@ jobs:
         working-directory: front
         run: yarn install
 
+      - name: Check the frontend compiles
+        working-directory: front
+        run: yarn build
+
       - name: Run linters
         uses: wearerequired/lint-action@v2
         with:
