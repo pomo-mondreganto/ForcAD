@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import TaskAdmin from '@/components/Admin/Task';
+import TaskAdmin from '@/components/Admin/Task.vue';
 
 export default {
     components: {

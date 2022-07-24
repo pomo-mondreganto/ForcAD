@@ -1,20 +1,20 @@
 <template>
     <score-table
         v-if="teams !== null"
-        headRowTitle="#"
+        head-row-title="#"
+        :team-clickable="true"
+        :admin="true"
+        :tasks="tasks"
+        :teams="teams"
         @openTeam="openTeam"
         @openTeamAdmin="openTeamAdmin"
         @openTaskAdmin="openTaskAdmin"
         @openTeamTaskHistory="openTeamTaskHistory"
-        :teamClickable="true"
-        :admin="true"
-        :tasks="tasks"
-        :teams="teams"
     />
 </template>
 
 <script>
-import ScoreTable from '@/components/Lib/ScoreTable';
+import ScoreTable from '@/components/Lib/ScoreTable.vue';
 import { mapState } from 'vuex';
 
 export default {
@@ -22,21 +22,23 @@ export default {
         ScoreTable,
     },
 
+    computed: mapState(['tasks', 'teams']),
+
     methods: {
-        openTeam: function(id) {
+        openTeam: function (id) {
             this.$router.push({ name: 'team', params: { id } }).catch(() => {});
         },
-        openTaskAdmin: function(id) {
+        openTaskAdmin: function (id) {
             this.$router
                 .push({ name: 'taskAdmin', params: { id } })
                 .catch(() => {});
         },
-        openTeamAdmin: function(id) {
+        openTeamAdmin: function (id) {
             this.$router
                 .push({ name: 'teamAdmin', params: { id } })
                 .catch(() => {});
         },
-        openTeamTaskHistory: function(teamId, taskId) {
+        openTeamTaskHistory: function (teamId, taskId) {
             this.$router
                 .push({
                     name: 'adminTeamTaskLog',
@@ -45,8 +47,6 @@ export default {
                 .catch(() => {});
         },
     },
-
-    computed: mapState(['tasks', 'teams']),
 };
 </script>
 

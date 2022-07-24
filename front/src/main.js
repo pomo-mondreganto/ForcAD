@@ -4,8 +4,8 @@ import router from './router';
 import axios from 'axios';
 import store from '@/store';
 import { apiUrl } from '@/config';
-import DefaultLayout from '@/layouts/DefaultLayout';
-import EmptyLayout from '@/layouts/EmptyLayout';
+import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import EmptyLayout from '@/layouts/EmptyLayout.vue';
 
 Vue.config.productionTip = false;
 
@@ -16,11 +16,11 @@ Vue.prototype.$http = axios;
 router.$http = axios;
 store.$http = axios;
 
-Vue.component('default-layout', DefaultLayout);
-Vue.component('empty-layout', EmptyLayout);
+Vue.component('DefaultLayout', DefaultLayout);
+Vue.component('EmptyLayout', EmptyLayout);
 
 new Vue({
     router,
     store,
-    render: h => h(App),
+    render: (h) => h(App),
 }).$mount('#app');

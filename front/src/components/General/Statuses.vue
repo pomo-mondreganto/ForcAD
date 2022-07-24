@@ -16,7 +16,7 @@ import { statuses, statusesNames } from '@/config';
 import { getTeamTaskBackground } from '@/utils/colors';
 
 export default {
-    data: function() {
+    data: function () {
         return {
             statuses,
             statusesNames,

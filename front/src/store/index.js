@@ -49,7 +49,7 @@ const store = new Vuex.Store({
         },
         updateTeams(state) {
             if (state.teams !== null) {
-                state.teams.forEach(team => {
+                state.teams.forEach((team) => {
                     team.update(state.teamTasks);
                 });
                 state.teams = state.teams.sort(Team.comp);
@@ -69,13 +69,13 @@ const store = new Vuex.Store({
         },
     },
     actions: {
-        fetchRoundTime: async function(context) {
+        fetchRoundTime: async function (context) {
             const {
                 data: { round_time: roundTime },
             } = await this.$http.get('/client/config/');
             context.commit('setRoundTime', roundTime);
         },
-        calculateRoundProgress: function(context) {
+        calculateRoundProgress: function (context) {
             const { round, roundTime, roundStart } = context.state;
             if (roundTime === null || roundStart === null || round < 1) {
                 context.commit('setRoundProgress', null);
@@ -94,7 +94,7 @@ const store = new Vuex.Store({
                 team_tasks: teamTasks,
             } = payload;
 
-            teamTasks = teamTasks.map(tt => new TeamTask(tt));
+            teamTasks = teamTasks.map((tt) => new TeamTask(tt));
             const state = { round, roundStart, teamTasks };
 
             context.commit('setGameState', state);
@@ -103,13 +103,13 @@ const store = new Vuex.Store({
         handleInitScoreboardMessage(context, payload) {
             let { state, teams, tasks } = payload;
 
-            tasks = tasks.map(task => new Task(task)).sort(Task.comp);
+            tasks = tasks.map((task) => new Task(task)).sort(Task.comp);
             context.commit('setTasks', tasks);
             context.dispatch('handleUpdateScoreboardMessage', state);
 
             teams = teams
                 .map(
-                    team =>
+                    (team) =>
                         new Team({
                             teamTasks: context.state.teamTasks,
                             tasks: context.state.tasks,

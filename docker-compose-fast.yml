@@ -40,8 +40,5 @@ services:
   events:
     <<: *service-fast
 
-  monitoring:
-    <<: *service-fast
-
   http-receiver:
     <<: *service-fast

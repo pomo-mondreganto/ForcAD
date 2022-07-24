@@ -2,46 +2,46 @@
     <form-wrapper
         v-if="team !== null"
         :title="message"
-        :submitCallback="submitForm"
+        :submit-callback="submitForm"
     >
         <p>
             Name:
-            <input type="text" v-model="team.name" />
+            <input v-model="team.name" type="text" />
         </p>
         <p>
             IP:
-            <input type="text" v-model="team.ip" />
+            <input v-model="team.ip" type="text" />
         </p>
         <p>
             Token:
-            <input type="text" v-model="team.token" />
+            <input v-model="team.token" type="text" />
         </p>
         <p>
             Highlighted:
             <input
                 type="checkbox"
-                @input="team.highlighted = $event.target.checked"
                 :checked="team.highlighted"
+                @input="team.highlighted = $event.target.checked"
             />
         </p>
         <p>
             Active:
             <input
                 type="checkbox"
-                @input="team.active = $event.target.checked"
                 :checked="team.active"
+                @input="team.active = $event.target.checked"
             />
         </p>
     </form-wrapper>
 </template>
 
 <script>
-import FormWrapper from '@/components/Lib/FormWrapper';
+import FormWrapper from '@/components/Lib/FormWrapper.vue';
 
 export default {
     components: { FormWrapper },
 
-    data: function() {
+    data: function () {
         return {
             error: null,
             team: null,
@@ -50,18 +50,18 @@ export default {
         };
     },
 
-    created: async function() {
-        await this.updateData();
-    },
-
     watch: {
-        $route: async function() {
+        $route: async function () {
             await this.updateData();
         },
     },
 
+    created: async function () {
+        await this.updateData();
+    },
+
     methods: {
-        updateData: async function() {
+        updateData: async function () {
             this.teamId = this.$route.params.id;
             if (!this.teamId) {
                 this.team = {
@@ -80,7 +80,7 @@ export default {
                 this.message = `Editing team ${this.team.name} (${this.team.id})`;
             }
         },
-        submitForm: async function() {
+        submitForm: async function () {
             if (!this.teamId) {
                 const { data: team } = await this.$http.post(
                     '/admin/teams/',

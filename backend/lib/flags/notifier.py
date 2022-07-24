@@ -12,7 +12,7 @@ class Notifier:
         self._logger = logger
         self._q = LightQueue(maxsize=1000)
 
-        # ensure no-one is writing to the same broker connection concurrently
+        # ensure no one is writing to the same broker connection concurrently
         self._sio = storage.utils.SIOManager.create(write_only=True)
 
     def _process(self, ar: AttackResult):

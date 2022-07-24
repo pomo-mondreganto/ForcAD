@@ -39,7 +39,7 @@ def login():
     set_session(session, username)
 
     response = jsonify({'status': 'ok'})
-    response.set_cookie('session', session, httponly=True)
+    response.set_cookie('session', session, httponly=True, samesite='Lax')
     return response
 
 

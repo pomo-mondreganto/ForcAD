@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import TeamAdmin from '@/components/Admin/Team';
+import TeamAdmin from '@/components/Admin/Team.vue';
 
 export default {
     components: {

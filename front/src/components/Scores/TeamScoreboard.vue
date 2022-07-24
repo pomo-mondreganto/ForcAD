@@ -13,18 +13,23 @@
             </div>
         </div>
         <div>
-            <div class="row" v-for="(state, index) in states" :key="index">
+            <div v-for="(state, index) in states" :key="index" class="row">
                 <div class="team">
-                    <div class="team-name">{{ team.name }}</div>
-                    <div class="ip">{{ team.ip }}</div>
+                    <div class="team-name">
+                        {{ team.name }}
+                    </div>
+                    <div class="ip">
+                        {{ team.ip }}
+                    </div>
                 </div>
                 <div class="score">
                     {{ state.score.toFixed(2) }}
                 </div>
                 <div class="service">
                     <div
-                        v-for="({ sla, score, stolen, lost, message, status },
-                        i) in state.tasks"
+                        v-for="(
+                            { sla, score, stolen, lost, message, status }, i
+                        ) in state.tasks"
                         :key="i"
                         class="service-cell"
                         :style="{
@@ -61,7 +66,7 @@ import TeamTask from '@/models/teamTask';
 import '@/assets/table.scss';
 
 export default {
-    data: function() {
+    data: function () {
         return {
             error: null,
             team: null,
@@ -73,7 +78,7 @@ export default {
         };
     },
 
-    created: async function() {
+    created: async function () {
         this.teamId = this.$route.params.id;
         try {
             const { data: teams } = await this.$http.get('/client/teams/');
@@ -82,7 +87,7 @@ export default {
                 `/client/teams/${this.teamId}/`
             );
             this.team = teams.filter(({ id }) => id == this.teamId)[0];
-            this.tasks = tasks.map(task => new Task(task)).sort(Task.comp);
+            this.tasks = tasks.map((task) => new Task(task)).sort(Task.comp);
 
             this.round = states.reduce(
                 (acc, { round }) => Math.max(acc, round),
@@ -91,7 +96,7 @@ export default {
 
             this.$store.commit('setRound', this.round);
 
-            states = states.map(x => ({
+            states = states.map((x) => ({
                 id: Number(x.id),
                 round: Number(x.round),
                 task_id: Number(x.task_id),
@@ -123,7 +128,7 @@ export default {
                 }
             );
 
-            states = states.map(state => new TeamTask(state));
+            states = states.map((state) => new TeamTask(state));
             this.by_task = {};
             for (const state of states) {
                 let key = state.taskId - 1;
@@ -133,14 +138,14 @@ export default {
                 this.by_task[key].push(state);
             }
             this.by_task = Object.values(this.by_task);
-            let row_count = Math.min(...this.by_task.map(x => x.length));
+            let row_count = Math.min(...this.by_task.map((x) => x.length));
 
             this.states = [];
             for (let i = 0; i < row_count; i += 1) {
                 this.states.push({
-                    tasks: this.by_task.map(x => x[i]),
+                    tasks: this.by_task.map((x) => x[i]),
                     score: this.by_task
-                        .map(x => x[i])
+                        .map((x) => x[i])
                         .reduce(
                             (acc, { score, sla }) =>
                                 acc + (score * sla) / 100.0,

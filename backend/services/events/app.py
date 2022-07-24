@@ -24,13 +24,19 @@ sio = SocketIO(
 
 
 @sio.on('connect', namespace='/game_events')
-def handle_connect():
+def handle_game_connect():
+    app.logger.debug("New game events connection")
     scoreboard = storage.game.construct_scoreboard()
     emit(
         'init_scoreboard',
         {'data': scoreboard},
         namespace='/game_events',
     )
+
+
+@sio.on('connect', namespace='/live_events')
+def handle_live_connect():
+    app.logger.debug("New live events connection")
 
 
 @app.route('/api/events/health/')
@@ -43,4 +49,7 @@ if __name__ == '__main__':
 else:
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+    logging.basicConfig(
+        level=gunicorn_logger.level,
+        handlers=gunicorn_logger.handlers,
+    )

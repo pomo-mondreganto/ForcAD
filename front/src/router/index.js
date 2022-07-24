@@ -3,23 +3,15 @@ import VueRouter from 'vue-router';
 
 import { serverUrl } from '@/config';
 
-const Scoreboard = () =>
-    import(/* webpackChunkName: "main" */ '@/views/Scoreboard');
-const LiveScoreboard = () =>
-    import(/* webpackChunkName: "main" */ '@/views/LiveScoreboard');
-const TeamScoreboard = () =>
-    import(/* webpackChunkName: "main" */ '@/views/TeamScoreboard');
+const Scoreboard = () => import('@/views/Scoreboard.vue');
+const LiveScoreboard = () => import('@/views/LiveScoreboard.vue');
+const TeamScoreboard = () => import('@/views/TeamScoreboard.vue');
 
-const AdminLogin = () =>
-    import(/* webpackChunkName: "admin" */ '@/views/AdminLogin');
-const AdminScoreboard = () =>
-    import(/* webpackChunkName: "admin" */ '@/views/AdminScoreboard');
-const TaskAdmin = () =>
-    import(/* webpackChunkName: "admin" */ '@/views/TaskAdmin');
-const TeamAdmin = () =>
-    import(/* webpackChunkName: "admin" */ '@/views/TeamAdmin');
-const AdminTeamTaskLog = () =>
-    import(/* webpackChunkName: "admin" */ '@/views/AdminTeamTaskLog');
+const AdminLogin = () => import('@/views/AdminLogin.vue');
+const AdminScoreboard = () => import('@/views/AdminScoreboard.vue');
+const TaskAdmin = () => import('@/views/TaskAdmin.vue');
+const TeamAdmin = () => import('@/views/TeamAdmin.vue');
+const AdminTeamTaskLog = () => import('@/views/AdminTeamTaskLog.vue');
 
 Vue.use(VueRouter);
 
@@ -99,11 +91,11 @@ const routes = [
 
 const router = new VueRouter({
     mode: 'history',
-    base: process.env.BASE_URL,
+    base: '/',
     routes,
 });
 
-router.beforeEach(async function(to, from, next) {
+router.beforeEach(async function (to, from, next) {
     if (to.meta.auth) {
         let ok = false;
         try {

@@ -1,6 +1,6 @@
 <template>
     <div class="topbar">
-        <router-link class="tp" to="/live/">Live</router-link>
+        <router-link class="tp" to="/live/"> Live </router-link>
         <div class="progress-bar" :style="{ width: `${roundProgress}%` }" />
         <div class="tp">Round: {{ round }}</div>
     </div>
@@ -8,27 +8,27 @@
 
 <script>
 import { mapState } from 'vuex';
+
 export default {
-    data: function() {
+    beforeRouteLeave: function (to, from, next) {
+        clearInterval(this.timer);
+        next();
+    },
+    data: function () {
         return {
             timer: null,
         };
     },
 
-    created: async function() {
+    computed: mapState(['round', 'roundProgress']),
+
+    created: async function () {
         await this.$store.dispatch('fetchRoundTime');
         this.timer = setInterval(
             () => this.$store.dispatch('calculateRoundProgress'),
             500
         );
     },
-
-    beforeRouteLeave: function(to, from, next) {
-        clearInterval(this.timer);
-        next();
-    },
-
-    computed: mapState(['round', 'roundProgress']),
 };
 </script>
 
