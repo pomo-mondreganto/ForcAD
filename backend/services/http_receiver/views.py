@@ -74,7 +74,12 @@ def get_teams():
             ar.message,
         )
 
-        responses.append({'msg': ar.message, 'flag': flag})
+        responses.append(
+            {
+                'msg': f'[{flag}] {ar.message}',
+                'flag': flag,
+            }
+        )
 
     return jsonify(responses)
 
