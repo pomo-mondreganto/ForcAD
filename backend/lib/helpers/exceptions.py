@@ -8,3 +8,4 @@ class FlagExceptionEnum:
     FLAG_TOO_OLD = FlagSubmitException('Flag is too old')
     FLAG_YOUR_OWN = FlagSubmitException('Flag is your own')
     FLAG_ALREADY_STOLEN = FlagSubmitException('Flag already stolen')
+    SERVICE_IS_DOWN = FlagSubmitException('Cannot submit flags while service is down')

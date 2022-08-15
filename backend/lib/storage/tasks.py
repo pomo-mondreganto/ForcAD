@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from lib import models, storage
 from lib.helpers.cache import cache_helper
@@ -185,6 +185,20 @@ def get_teamtasks_for_team(team_id: int) -> List[dict]:
         results.append(record)
 
     return results
+
+
+def get_latest_teamtask(team_id: int, task_id: int) -> Optional[dict]:
+    """Fetch the latest teamtask from redis stream."""
+
+    with storage.utils.redis_pipeline(transaction=False) as pipe:
+        data, = pipe.xrevrange(CacheKeys.teamtasks(team_id, task_id), count=1).execute()
+
+    results = []
+    for timestamp, record in data:
+        record['timestamp'] = timestamp
+        results.append(record)
+
+    return results[0] if results else None
 
 
 def filter_teamtasks_for_participants(teamtasks: List[dict]) -> List[dict]:

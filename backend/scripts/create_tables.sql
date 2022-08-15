@@ -1,15 +1,16 @@
 CREATE TABLE IF NOT EXISTS GameConfig
 (
-    id            SERIAL PRIMARY KEY,
-    game_running  BOOLEAN     DEFAULT FALSE,
-    real_round    INTEGER     DEFAULT 0,
-    flag_lifetime INTEGER CHECK ( flag_lifetime > 0 ),
-    game_hardness FLOAT CHECK ( game_hardness >= 1 ),
-    inflation     BOOLEAN,
-    round_time    INTEGER CHECK ( round_time > 0 ),
-    mode          VARCHAR(8)  DEFAULT 'classic',
-    timezone      VARCHAR(32) DEFAULT 'UTC',
-    start_time    TIMESTAMP WITH TIME ZONE
+    id                 SERIAL PRIMARY KEY,
+    game_running       BOOLEAN     DEFAULT FALSE,
+    real_round         INTEGER     DEFAULT 0,
+    flag_lifetime      INTEGER CHECK ( flag_lifetime > 0 ),
+    game_hardness      FLOAT CHECK ( game_hardness >= 1 ),
+    inflation          BOOLEAN,
+    volga_attacks_mode BOOLEAN,
+    round_time         INTEGER CHECK ( round_time > 0 ),
+    mode               VARCHAR(8)  DEFAULT 'classic',
+    timezone           VARCHAR(32) DEFAULT 'UTC',
+    start_time         TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE IF NOT EXISTS Teams
