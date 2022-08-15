@@ -53,7 +53,8 @@ def handle_attack(
                 team_id=attacker_id,
                 task_id=flag.task_id,
             )
-            if not teamtask or teamtask['status'] != TaskStatus.UP.value:
+            # Status is a string from redis stream.
+            if not teamtask or teamtask['status'] != str(TaskStatus.UP.value):
                 raise FlagExceptionEnum.SERVICE_IS_DOWN
 
         result.victim_id = flag.team_id
