@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from celery import shared_task
 from celery.result import AsyncResult
@@ -52,7 +52,7 @@ def exception_callback(result: AsyncResult, exc: Exception, traceback: str) -> N
 
 @shared_task(name=JobNames.result_handler)
 def checker_results_handler(
-        verdicts: List[models.CheckerVerdict],
+        verdicts: Union[List[models.CheckerVerdict], models.CheckerVerdict],
         team: models.Team,
         task: models.Task,
         current_round: int,
@@ -63,6 +63,12 @@ def checker_results_handler(
     If there were any errors, the first error is returned
     Otherwise, verdict of the first action's verdict is returned.
     """
+
+    # Celery passes the one-task-group's result (e.g. a group of a single put)
+    # as the result itself, not the list, as documented.
+    if not isinstance(verdicts, list):
+        verdicts = [verdicts]
+
     check_verdict = None
     puts_verdicts = []
     gets_verdict = None

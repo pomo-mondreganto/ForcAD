@@ -4,7 +4,7 @@
             <div class="number">
                 {{ headRowTitle }}
             </div>
-            <div class="team">team 123</div>
+            <div class="team">team</div>
             <div class="score">score</div>
             <div class="service-name">
                 <div

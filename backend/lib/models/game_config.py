@@ -13,6 +13,8 @@ class GameConfig(BaseModel):
     flag_lifetime: int
     game_hardness: float
     inflation: bool
+    volga_attacks_mode: bool
+
     round_time: int
     mode: str
     timezone: str
@@ -28,6 +30,7 @@ class GameConfig(BaseModel):
         'flag_lifetime',
         'game_hardness',
         'inflation',
+        'volga_attacks_mode',
         'round_time',
         'mode',
         'timezone',

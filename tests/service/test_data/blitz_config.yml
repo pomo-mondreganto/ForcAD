@@ -18,11 +18,11 @@ game:
 tasks:
   - checker: test_service/checker.py
     checker_timeout: 10
-    checker_type: ''
+    checker_type: ""
     gets: 2
     name: test_service
     places: 5
-    puts: 2
+    puts: 1
 
   - checker: test_service/checker.py
     checker_timeout: 10

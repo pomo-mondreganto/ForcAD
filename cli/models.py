@@ -49,6 +49,7 @@ class GameConfig(BaseModel):
     mode: str = 'classic'
     get_period: Optional[int]
     inflation: bool = True
+    volga_attacks_mode: bool = False
 
     checkers_path: str = '/checkers/'
     env_path: str = ''

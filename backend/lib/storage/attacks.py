@@ -1,6 +1,7 @@
 from lib import models, storage
 from lib.helpers import exceptions
 from lib.helpers.exceptions import FlagExceptionEnum
+from lib.models.types import TaskStatus
 from lib.storage import utils, game
 from lib.storage.keys import CacheKeys
 
@@ -46,6 +47,15 @@ def handle_attack(
         game_config = game.get_current_game_config()
         if current_round - flag.round > game_config.flag_lifetime:
             raise FlagExceptionEnum.FLAG_TOO_OLD
+
+        if game_config.volga_attacks_mode:
+            teamtask = storage.tasks.get_latest_teamtask(
+                team_id=attacker_id,
+                task_id=flag.task_id,
+            )
+            # Status is a string from redis stream.
+            if not teamtask or teamtask['status'] != str(TaskStatus.UP.value):
+                raise FlagExceptionEnum.SERVICE_IS_DOWN
 
         result.victim_id = flag.team_id
         result.task_id = flag.task_id
