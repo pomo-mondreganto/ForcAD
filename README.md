@@ -104,6 +104,8 @@ Config file (`config.yml`) is split into five main parts:
     * `checkers_path` (optional, default `/checkers/`): path to checkers inside Docker container. Do not change unless
       you've changed the `celery` image.
 
+    * `volga_attacks_mode` (optional, default `false`): refuse to accept flags if the attacker's service is down.
+
 * **admin** contains credentials to access celery visualization (`/flower/` on scoreboard) and admin panel:
 
     * `username: forcad`
