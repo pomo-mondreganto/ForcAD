@@ -9,7 +9,7 @@ from cli import constants, utils
 def reset():
     utils.print_bold('Trying to wipe the database')
     command = [
-        'docker-compose',
+        'docker', 'compose',
         '-f', constants.FULL_COMPOSE_PATH,
         'run', 'initializer',
         'python3', '/app/scripts/reset_db.py',
@@ -23,7 +23,7 @@ def reset():
 
     utils.print_bold('Bringing down services')
     command = [
-        'docker-compose',
+        'docker', 'compose',
         '-f', constants.FULL_COMPOSE_PATH,
         'down', '-v',
         '--remove-orphans',
