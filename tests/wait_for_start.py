@@ -29,7 +29,7 @@ def wait_for_initializer():
     result = int(subprocess.check_output(command).decode().strip())
     if result != 0:
         print(f'Error in container {name}')
-        subprocess.run(['docker-compose', 'logs'], cwd=PROJECT_DIR)
+        subprocess.run(['docker', 'compose', 'logs'], cwd=PROJECT_DIR)
         sys.exit(1)
 
 

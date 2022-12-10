@@ -135,7 +135,7 @@ def get_output(command: List[str], cwd=None, env=None) -> str:
 
 def run_docker(args: List[str]):
     base = [
-        'docker-compose',
+        'docker', 'compose',
         '-f', constants.BASE_COMPOSE_FILE,
     ]
 

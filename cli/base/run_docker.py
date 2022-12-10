@@ -6,7 +6,7 @@ from cli.utils import run_docker
 
 @click.command(
     'rd',
-    help='Run docker-compose command with correct compose files',
+    help='Run docker compose command with correct compose files',
     context_settings=dict(
         ignore_unknown_options=True,
     ),

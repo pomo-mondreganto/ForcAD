@@ -10,8 +10,8 @@ export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
 ./control.py build
 ./control.py start
 docker ps
-docker-compose ps
-docker-compose logs -f initializer
+docker compose ps
+docker compose logs -f initializer
 python tests/wait_for_start.py
 ./control.py rd ps
 env | sort

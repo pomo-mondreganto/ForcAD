@@ -3,7 +3,7 @@ version: '2.4'
 x-celery-test: &celery-test
   build:
     context: .
-    dockerfile: ./docker_config/celery/Dockerfile.fast
+    dockerfile: ./docker_config/celery/Dockerfile
     args:
       version: ${FORCAD_VERSION:-latest}
   restart: "no"
@@ -11,7 +11,7 @@ x-celery-test: &celery-test
 x-service-test: &service-test
   build:
     context: .
-    dockerfile: ./docker_config/services/Dockerfile.fast
+    dockerfile: ./docker_config/services/Dockerfile
     args:
       version: ${FORCAD_VERSION:-latest}
   restart: "no"
@@ -26,7 +26,7 @@ services:
   initializer:
     build:
       context: .
-      dockerfile: ./docker_config/initializer/Dockerfile.fast
+      dockerfile: ./docker_config/initializer/Dockerfile
       args:
         version: ${FORCAD_VERSION:-latest}
     restart: "no"

@@ -27,3 +27,5 @@ def clean():
 
     terraform_cache_path = constants.TERRAFORM_DIR / '.terraform'
     utils.remove_dir(terraform_cache_path)
+
+    utils.remove_dir(constants.DOCKER_VOLUMES_DIR)

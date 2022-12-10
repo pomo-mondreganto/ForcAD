@@ -1,3 +1,4 @@
+import os
 import json
 from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Dict, Any
@@ -12,7 +13,7 @@ class Singleton(Generic[T], metaclass=ABCMeta):
     @classmethod
     def __get_key(cls, data: Dict[str, Any]):
         rep = json.dumps(data, sort_keys=True)
-        return f'{cls.__module__}.{cls.__name__}-{rep}'
+        return f'{os.getpid()}.{cls.__module__}.{cls.__name__}-{rep}'
 
     @staticmethod
     @abstractmethod

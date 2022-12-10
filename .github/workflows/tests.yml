@@ -21,7 +21,7 @@ jobs:
           - BLITZ
           - CLASSIC
 
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     timeout-minutes: 15
     env:
       TEST: 1
@@ -64,8 +64,8 @@ jobs:
           export $(find ./docker_config -name "*.env" -exec egrep -v '^#' {} \; | xargs)
           ./control.py start
           docker ps
-          docker-compose ps
-          docker-compose logs -f initializer
+          docker compose ps
+          docker compose logs -f initializer
           python tests/wait_for_start.py
           ./control.py rd ps
           env | sort
@@ -76,7 +76,7 @@ jobs:
         run: ./control.py rd logs --tail 2000
 
   backend_linter:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -96,7 +96,7 @@ jobs:
           flake8: true
 
   frontend_linter:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -124,52 +124,8 @@ jobs:
         working-directory: front
         run: yarn build
 
-  test_kube:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.9"
-
-      - name: Install skaffold
-        run: |
-          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.19.0/skaffold-linux-amd64
-          chmod +x skaffold
-          sudo mv skaffold /usr/local/bin
-
-      - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.3.0
-        with:
-          minikube version: "v1.17.1"
-          kubernetes version: "v1.19.3"
-          github token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install cli requirements
-        run: pip install -r cli/requirements.txt
-
-      - name: Copy test config
-        run: python tests/setup_forcad.py
-
-      - name: Setup configuration
-        run: ./control.py kube setup
-
-      - name: Kustomize build
-        uses: karancode/kustomize-github-action@master
-        with:
-          kustomize_version: "3.9.2"
-          kustomize_build_dir: "deploy"
-        env:
-          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Skaffold build
-        run: ./control.py kube build
-
   terraform_checks:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: deploy/terraform
