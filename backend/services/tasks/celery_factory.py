@@ -1,5 +1,4 @@
 from celery import Celery
-
 from lib import config
 
 
@@ -13,5 +12,5 @@ def get_celery_app():
         ],
     )
 
-    app.conf.update(celery_config.dict())
+    app.conf.update(celery_config.model_dump())
     return app

@@ -2,16 +2,15 @@ import os
 from typing import List
 
 from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def env_field(key: str) -> Field:
-    return Field(default_factory=lambda: os.environ[key])
+class Redis(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='redis_')
 
-
-class Redis(BaseModel):
-    host: str = env_field('REDIS_HOST')
-    port: int = env_field('REDIS_PORT')
-    password: str = env_field('REDIS_PASSWORD')
+    host: str
+    port: int
+    password: str
     db: int = 0
 
     @property
@@ -19,17 +18,21 @@ class Redis(BaseModel):
         return f'redis://:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
-class WebCredentials(BaseModel):
-    username: str = env_field('ADMIN_USERNAME')
-    password: str = env_field('ADMIN_PASSWORD')
+class WebCredentials(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='admin_')
+
+    username: str
+    password: str
 
 
-class Database(BaseModel):
-    host: str = env_field('POSTGRES_HOST')
-    port: int = env_field('POSTGRES_PORT')
-    user: str = env_field('POSTGRES_USER')
-    password: str = env_field('POSTGRES_PASSWORD')
-    dbname: str = env_field('POSTGRES_DB')
+class Database(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='postgres_')
+
+    host: str
+    port: int
+    user: str
+    password: str
+    dbname: str = Field(validation_alias='postgres_db')
 
 
 class Celery(BaseModel):
@@ -39,7 +42,7 @@ class Celery(BaseModel):
 
     worker_prefetch_multiplier: int = 1
 
-    result_expires = 15 * 60
+    result_expires: int = 15 * 60
     redis_socket_timeout: int = 10
     redis_socket_keepalive: bool = True
     redis_retry_on_timeout: bool = True

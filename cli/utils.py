@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import click
 import yaml
@@ -34,7 +34,7 @@ def load_basic_config() -> models.BasicConfig:
     raw = load_raw_config(constants.CONFIG_PATH)
 
     try:
-        config = models.BasicConfig.parse_obj(raw)
+        config = models.BasicConfig.model_validate(raw, strict=True)
     except ValidationError as e:
         print_error(f'Invalid configuration file: {e}')
         sys.exit(1)
@@ -64,14 +64,14 @@ def backup_config():
 def dump_config(config: models.Config):
     print_bold(f'Writing new configuration to {constants.CONFIG_PATH}')
     with constants.CONFIG_PATH.open(mode='w') as f:
-        yaml.safe_dump(config.dict(by_alias=True, exclude_none=True), f)
+        yaml.safe_dump(config.model_dump(by_alias=True, exclude_none=True), f)
 
 
 def override_config(
         config: models.Config, *,
-        redis: str = None,
-        database: str = None,
-        rabbitmq: str = None):
+        redis: Optional[str] = None,
+        database: Optional[str] = None,
+        rabbitmq: Optional[str] = None):
     # patch config host variables to connect to the right place
     if redis:
         host, port = parse_host_data(redis, 6379)

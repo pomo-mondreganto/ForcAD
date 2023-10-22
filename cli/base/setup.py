@@ -1,7 +1,7 @@
 import click
 import yaml
 
-from cli import utils, constants, models
+from cli import constants, models, utils
 from cli.options import with_external_services_option
 
 
@@ -77,7 +77,7 @@ def setup_admin_api(config: models.AdminConfig):
     constants.ADMIN_ENV_PATH.write_text('\n'.join(admin_config))
 
 
-def prepare_compose(redis: str = None, database: str = None, rabbitmq: str = None):
+def prepare_compose(redis: str, database: str, rabbitmq: str):
     with constants.FULL_COMPOSE_PATH.open(mode='r') as f:
         base_conf = yaml.safe_load(f)
 

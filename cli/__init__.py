@@ -1,6 +1,6 @@
 import click
 
-from . import base, kube
+from . import base
 
 
 @click.group()
@@ -9,7 +9,5 @@ def cli():
 
 
 base.register(cli)
-
-cli.add_command(kube.cli)
 
 __all__ = ('cli',)
