@@ -7,7 +7,7 @@ from .utils import abort_with_error
 
 
 class ApiSet:
-    model: str = None
+    model: str
 
     def get_id_kwarg(self) -> str:
         return f'{self.model}_id'

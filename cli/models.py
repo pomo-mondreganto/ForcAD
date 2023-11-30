@@ -47,7 +47,7 @@ class GameConfig(BaseModel):
     default_score: float = 2500
     game_hardness: float = 10
     mode: str = 'classic'
-    get_period: Optional[int]
+    get_period: Optional[int] = None
     inflation: bool = True
     volga_attacks_mode: bool = False
 
@@ -58,14 +58,14 @@ class GameConfig(BaseModel):
 class Task(BaseModel):
     name: str
     checker: str
-    gets: int
-    puts: int
-    places: int
-    checker_timeout: int
+    gets: int = 1
+    puts: int = 1
+    places: int = 1
+    checker_timeout: int = 10
     checker_type: str = 'hackerdom'
-    env_path: Optional[str]
-    default_score: Optional[float]
-    get_period: Optional[int]
+    env_path: Optional[str] = None
+    default_score: Optional[float] = None
+    get_period: Optional[int] = None
 
 
 class Team(BaseModel):
@@ -75,7 +75,7 @@ class Team(BaseModel):
 
 
 class BasicConfig(BaseModel):
-    admin: Optional[AdminConfig]
+    admin: Optional[AdminConfig] = None
     game: GameConfig
     tasks: List[Task]
     teams: List[Team]

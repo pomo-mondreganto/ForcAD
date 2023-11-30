@@ -3,16 +3,16 @@ from typing import List, Union
 from celery import shared_task
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
-
-from lib import storage, models
+from lib import models, storage
 from lib.helpers.jobs import JobNames
-from lib.models import TaskStatus, Action
+from lib.models import Action, TaskStatus
 
 logger = get_task_logger(__name__)
 
 
 @shared_task(name=JobNames.error_handler)
 def exception_callback(result: AsyncResult, exc: Exception, traceback: str) -> None:
+    print('!!!', result, type(result))
     action_name = result.task.split('.')[-1].split('_')[0].upper()
     action = Action[action_name]
 

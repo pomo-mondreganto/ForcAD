@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import TestCase
 
 import requests
-from psycopg2 import pool, extras
+from psycopg2 import extras, pool
 
 PROJECT_DIR = Path(__file__).absolute().resolve().parents[1]
 BACKEND_DIR = PROJECT_DIR / 'backend'
@@ -15,8 +15,8 @@ TESTS_DIR = PROJECT_DIR / 'tests'
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(TESTS_DIR))
 
-from lib import config
 from helpers import wait_rounds
+from lib import config
 
 
 class FlagSubmitTestCase(TestCase):
@@ -38,7 +38,7 @@ class FlagSubmitTestCase(TestCase):
         self.db_pool = pool.SimpleConnectionPool(
             minconn=1,
             maxconn=20,
-            **database_config.dict(),
+            **database_config.model_dump(),
         )
 
     def get_last_flags_from_db(self, team_token):

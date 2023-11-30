@@ -3,10 +3,9 @@ from contextlib import contextmanager
 import kombu
 import redis
 import socketio
-from psycopg2 import pool, extras
-
 from lib import config
-from lib.helpers.singleton import Singleton, T
+from lib.helpers.singleton import Singleton
+from psycopg2 import extras, pool
 
 
 class DBPool(Singleton[pool.SimpleConnectionPool]):
@@ -17,7 +16,7 @@ class DBPool(Singleton[pool.SimpleConnectionPool]):
         return pool.SimpleConnectionPool(
             minconn=5,
             maxconn=20,
-            **database_config.dict(),
+            **database_config.model_dump(),
         )
 
 
@@ -26,7 +25,7 @@ class RedisStorage(Singleton[redis.Redis]):
     @staticmethod
     def create() -> redis.Redis:
         redis_config = config.get_redis_config()
-        return redis.Redis(decode_responses=True, **redis_config.dict())
+        return redis.Redis(decode_responses=True, **redis_config.model_dump())
 
 
 class SIOManager(Singleton[socketio.KombuManager]):
@@ -41,7 +40,7 @@ class SIOManager(Singleton[socketio.KombuManager]):
         )
 
     @classmethod
-    def get(cls, *, write_only: bool) -> T:
+    def get(cls, *, write_only: bool) -> socketio.KombuManager:
         return super().get(write_only=write_only)
 
     @classmethod

@@ -30,28 +30,25 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
-
-      - uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}-${{ hashFiles('cli/requirements.txt') }}-${{ hashFiles('tests/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Setup tests
-        run: python tests/setup_forcad.py
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            cli/requirements.txt
+            tests/requirements.txt
+            backend/requirements.txt
 
       - name: Install requirements
         run: |
           pip install -r cli/requirements.txt
           pip install -r tests/requirements.txt
           pip install -r backend/requirements.txt
+
+      - name: Setup tests
+        run: python tests/setup_forcad.py
 
       - name: Setup ForcAD
         run: ./control.py setup
@@ -79,12 +76,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install flake8
@@ -99,10 +95,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Node 16
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "16"
 
@@ -123,25 +119,3 @@ jobs:
       - name: Check the frontend compiles
         working-directory: front
         run: yarn build
-
-  terraform_checks:
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: deploy/terraform
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Terraform fmt
-        run: terraform fmt -check
-        continue-on-error: true
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate

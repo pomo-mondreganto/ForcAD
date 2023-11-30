@@ -1,4 +1,4 @@
-checklib==0.5.2
-requests
-psycopg2-binary==2.9.3
-PyYAML==5.4.1
+checklib==0.7.0
+requests==2.31.0
+psycopg2==2.9.9
+PyYAML==6.0.1
