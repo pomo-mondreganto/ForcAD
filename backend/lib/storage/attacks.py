@@ -65,7 +65,7 @@ def handle_attack(
             current_round=current_round,
         )
         if not success:
-            raise FlagExceptionEnum.FLAG_YOUR_OWN
+            raise FlagExceptionEnum.FLAG_ALREADY_STOLEN
 
     except exceptions.FlagSubmitException as e:
         result.submit_ok = False
